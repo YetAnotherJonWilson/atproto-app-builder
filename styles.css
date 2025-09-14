@@ -1,3 +1,5 @@
+@layer reset, base;
+
 @layer reset {
   *,
   *::before,
@@ -73,4 +75,36 @@
 }
 
 @layer base {
+  @font-face {
+    font-family: djgross;
+    src: url(./fonts/DJGROSS.ttf);
+  }
+
+  @font-face {
+    font-family: bilbo-swash;
+    src: url(./fonts/bilbo/BilboSwashCaps-Regular.otf);
+  }
+
+  h1 {
+    margin-left: 2rem;
+    font-family: 'djgross';
+    font-size: 9rem;
+    color: black;
+  }
+
+  body {
+    font-family: bilbo-swash;
+    font-size: 54px;
+  }
+
+  .intro-tooltip {
+    padding: 0px 14px 0px 14px;
+    color: white;
+    background-color: black;
+  }
+
+  .intro-tooltip:hover {
+    background-color: cadetblue;
+    cursor: pointer;
+  }
 }
