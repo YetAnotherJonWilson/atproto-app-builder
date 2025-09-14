@@ -1,5 +1,15 @@
 @layer reset, base;
 
+@font-face {
+  font-family: djgross;
+  src: url(./fonts/DJGROSS.ttf);
+}
+
+@font-face {
+  font-family: bilbo-swash;
+  src: url(./fonts/bilbo/BilboSwashCaps-Regular.otf);
+}
+
 @layer reset {
   *,
   *::before,
@@ -75,36 +85,31 @@
 }
 
 @layer base {
-  @font-face {
-    font-family: djgross;
-    src: url(./fonts/DJGROSS.ttf);
-  }
-
-  @font-face {
-    font-family: bilbo-swash;
-    src: url(./fonts/bilbo/BilboSwashCaps-Regular.otf);
-  }
-
-  h1 {
-    margin-left: 2rem;
-    font-family: 'djgross';
-    font-size: 9rem;
-    color: black;
+  :root {
+    --ff-body: 'bilbo-swash', sans-serif;
+    --ff-heading: 'djgross', serif;
   }
 
   body {
-    font-family: bilbo-swash;
+    font-family: var(--ff-body);
     font-size: 54px;
   }
+}
 
-  .intro-tooltip {
-    padding: 0px 14px 0px 14px;
-    color: white;
-    background-color: black;
-  }
+header h1 {
+  margin-left: 2rem;
+  font-family: var(--ff-heading);
+  font-size: 9rem;
+  color: black;
+}
 
-  .intro-tooltip:hover {
-    background-color: cadetblue;
-    cursor: pointer;
-  }
+.intro-tooltip {
+  padding: 0px 14px 0px 14px;
+  color: white;
+  background-color: black;
+}
+
+.intro-tooltip:hover {
+  background-color: cadetblue;
+  cursor: pointer;
 }
