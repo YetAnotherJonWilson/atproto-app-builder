@@ -88,18 +88,26 @@
   :root {
     --ff-body: 'bilbo-swash', sans-serif;
     --ff-heading: 'djgross', serif;
+
+    --fs-500: 1.5rem;
+    --fs-1000: 2rem;
+
+    @media (width > 760px) {
+      --fs-500: 3.5rem;
+      --fs-1000: 9rem;
+    }
   }
 
   body {
     font-family: var(--ff-body);
-    font-size: 54px;
+    font-size: var(--fs-500);
   }
 }
 
 header h1 {
   margin-left: 2rem;
   font-family: var(--ff-heading);
-  font-size: 9rem;
+  font-size: var(--fs-1000);
   color: black;
 }
 
