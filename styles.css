@@ -1,4 +1,4 @@
-@layer reset, base;
+@layer reset, base, layout, utilities;
 
 @font-face {
   font-family: djgross;
@@ -102,22 +102,40 @@
     font-family: var(--ff-body);
     font-size: var(--fs-500);
   }
+
+  header h1 {
+    margin-left: 2rem;
+    font-family: var(--ff-heading);
+    font-size: var(--fs-1000);
+    color: black;
+  }
+
+  .intro-tooltip {
+    padding: 0px 14px 0px 14px;
+    color: white;
+    background-color: black;
+  }
+
+  .intro-tooltip:hover {
+    background-color: cadetblue;
+    cursor: pointer;
+  }
 }
 
-header h1 {
-  margin-left: 2rem;
-  font-family: var(--ff-heading);
-  font-size: var(--fs-1000);
-  color: black;
+@layer layout {
+  .intro-content {
+    display: flex;
+  }
 }
 
-.intro-tooltip {
-  padding: 0px 14px 0px 14px;
-  color: white;
-  background-color: black;
-}
-
-.intro-tooltip:hover {
-  background-color: cadetblue;
-  cursor: pointer;
+@layer utilities {
+  .screen-reader {
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+  }
 }
