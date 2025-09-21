@@ -1,18 +1,25 @@
-@layer reset, base, layout, utilities;
+@layer fonts, reset, base, layout, utilities;
 
-@font-face {
-  font-family: djgross;
-  src: url(./fonts/DJGROSS.ttf);
-}
+@layer fonts {
+  @font-face {
+    font-family: djgross;
+    src: url(./fonts/DJGROSS.ttf);
+  }
 
-@font-face {
-  font-family: bilbo-swash;
-  src: url(./fonts/bilbo/BilboSwashCaps-Regular.otf);
-}
+  @font-face {
+    font-family: bilbo-swash;
+    src: url(./fonts/bilbo/BilboSwashCaps-Regular.otf);
+  }
 
-@font-face {
-  font-family: bilbo-regular;
-  src: url(./fonts/bilbo/Bilbo-Regular.otf);
+  @font-face {
+    font-family: bilbo-regular;
+    src: url(./fonts/bilbo/Bilbo-Regular.otf);
+  }
+
+  @font-face {
+    font-family: dirty-ego;
+    src: url(./fonts/DIRTYEGO.TTF);
+  }
 }
 
 @layer reset {
@@ -92,11 +99,11 @@
 @layer base {
   :root {
     --ff-body: sans-serif;
-    --ff-heading: 'djgross', serif;
+    --ff-heading: 'dirty-ego', serif;
 
     --fs-500: 1.25rem;
     --fs-700: 1.5rem;
-    --fs-1000: 2rem;
+    --fs-1000: 3rem;
 
     @media (width > 760px) {
       --ff-body: 'bilbo-regular', sans-serif;
@@ -112,9 +119,9 @@
   }
 
   header h1 {
-    margin-top: 2rem;
+    margin-top: 1rem;
     font-family: var(--ff-heading);
-    font-size: var(--fs-700);
+    font-size: var(--fs-1000);
     color: black;
   }
 
