@@ -1,26 +1,4 @@
-@layer fonts, reset, base, layout, utilities;
-
-@layer fonts {
-  @font-face {
-    font-family: djgross;
-    src: url(./fonts/DJGROSS.ttf);
-  }
-
-  @font-face {
-    font-family: bilbo-swash;
-    src: url(./fonts/bilbo/BilboSwashCaps-Regular.otf);
-  }
-
-  @font-face {
-    font-family: bilbo-regular;
-    src: url(./fonts/bilbo/Bilbo-Regular.otf);
-  }
-
-  @font-face {
-    font-family: dirty-ego;
-    src: url(./fonts/DIRTYEGO.TTF);
-  }
-}
+@layer reset, base, layout, utilities;
 
 @layer reset {
   *,
@@ -97,6 +75,23 @@
 }
 
 @layer base {
+  @font-face {
+    font-family: djgross;
+    src: url(./fonts/DJGROSS.ttf);
+  }
+  @font-face {
+    font-family: bilbo-swash;
+    src: url(./fonts/bilbo/BilboSwashCaps-Regular.otf);
+  }
+  @font-face {
+    font-family: bilbo-regular;
+    src: url(./fonts/bilbo/Bilbo-Regular.otf);
+  }
+  @font-face {
+    font-family: dirty-ego;
+    src: url(./fonts/DIRTYEGO.TTF);
+  }
+
   :root {
     --ff-body: sans-serif;
     --ff-heading: 'dirty-ego', serif;
@@ -104,6 +99,14 @@
     --fs-500: 1.25rem;
     --fs-700: 1.5rem;
     --fs-1000: 3rem;
+
+    --primary-dark: #191e39;
+    --primary: #232d53;
+    --secondary-darkish: #772935;
+    --secondary: #ca2516;
+    --secondary-lightish: #df877c;
+    --bg1: #f7f0eb;
+    --bg2: #f3e8e2;
 
     @media (width > 760px) {
       --ff-body: 'bilbo-regular', sans-serif;
@@ -116,14 +119,15 @@
   body {
     font-family: var(--ff-body);
     font-size: var(--fs-500);
+    background-color: var(--bg1);
+    color: var(--primary);
   }
 }
 
 @layer layout {
-  main {
+  .row {
     display: flex;
     flex-direction: column;
-    align-items: end;
     padding-inline: 1rem;
     @media (width > 760px) {
       flex-direction: row;
@@ -133,12 +137,16 @@
   section {
     margin: 2rem 1rem 0 1rem;
     flex: 1;
+  }
+
+  section.dashed {
     @media (width > 760px) {
       border: 4px dashed darkgray;
       border-radius: 10%;
       padding: 1.75rem;
     }
   }
+
   @media (width > 760px) {
     section:first-child {
       margin-left: 0;
@@ -162,14 +170,30 @@ header h1 {
   margin: 1rem 0 0 2rem;
   font-family: var(--ff-heading);
   font-size: var(--fs-1000);
-  color: black;
+  color: var(--primary);
 }
 
-.intro-tooltip {
-  border-bottom: 3px solid black;
+.term {
+  border-bottom: 3px solid var(--primary);
 }
 
-.intro-tooltip:hover {
-  background-color: cadetblue;
+.term:hover {
+  background-color: var(--secondary-darkish);
+  color: white;
   cursor: pointer;
+  border-bottom: var(--secondary-darkish);
+}
+
+#content-display {
+  padding: 1rem;
+  margin-top: 1rem;
+  border-radius: 8px;
+  background-color: var(--bg2);
+  border-left: 4px solid var(--primary);
+  font-size: var(--fs-500);
+  line-height: 1.6;
+}
+
+#content-display p {
+  margin: 0;
 }
