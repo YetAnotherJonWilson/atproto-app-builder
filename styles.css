@@ -102,6 +102,7 @@
 
     --primary-dark: #191e39;
     --primary: #232d53;
+    --primary-lightish: #9aa6d5;
     --secondary-darkish: #772935;
     --secondary: #ca2516;
     --secondary-lightish: #df877c;
@@ -141,7 +142,7 @@
 
   section.dashed {
     @media (width > 760px) {
-      border: 4px dashed darkgray;
+      /* border: 4px dashed darkgray; */
       border-radius: 10%;
       padding: 1.75rem;
     }
@@ -167,6 +168,8 @@
 }
 
 header h1 {
+  display: inline-block;
+  transform: rotate(-1deg);
   margin: 1rem 0 0 2rem;
   font-family: var(--ff-heading);
   font-size: var(--fs-1000);
@@ -178,10 +181,9 @@ header h1 {
 }
 
 .term:hover {
-  background-color: var(--secondary-darkish);
+  background-color: var(--primary-lightish);
   color: white;
   cursor: pointer;
-  border-bottom: var(--secondary-darkish);
 }
 
 #content-display {
