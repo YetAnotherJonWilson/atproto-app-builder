@@ -4,7 +4,7 @@ let isFrozen = false;
 const termDefinitions = {
   ATProtocol:
     'The AT Protocol enables creating decentralized web applications, where users can see and control all of their data, and move freely between applications. Read more here: <a href="https://atproto.com/" target="_blank" rel="noopener noreferrer">https://atproto.com/</a>',
-  what: 'Learn what decentralized applications are and how they differ from traditional web apps.',
+  what: 'Web apps that allow users to log in with their own decentralized id, and use data from storage that is owned and controlled by that user',
   why: 'Understand the benefits of user-owned data and freedom from platform lock-in.',
   how: 'Discover the technical foundations and tools needed to build on the AT Protocol.',
   'ATProto ID':
