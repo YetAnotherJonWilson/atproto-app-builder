@@ -1,5 +1,5 @@
-const contentDisplay = document.getElementById('content-display');
-let isFrozen = false;
+const tooltip = document.getElementById('tooltip');
+let activeTooltip = null;
 
 const termDefinitions = {
   ATProtocol:
@@ -13,13 +13,41 @@ const termDefinitions = {
     'Your personal data storage that you control and can take with you anywhere.',
 };
 
-function updateContentDisplay(text) {
-  contentDisplay.innerHTML = `<p>${text}</p>`;
+function showTooltip(element, content) {
+  const rect = element.getBoundingClientRect();
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+  const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+
+  tooltip.innerHTML = content;
+  tooltip.classList.add('show');
+
+  // Position tooltip above the element
+  const tooltipRect = tooltip.getBoundingClientRect();
+  let left = rect.left + scrollLeft + (rect.width / 2) - (tooltipRect.width / 2);
+  let top = rect.top + scrollTop - tooltipRect.height - 12;
+
+  // Adjust if tooltip would go off screen
+  if (left < 10) left = 10;
+  if (left + tooltipRect.width > window.innerWidth - 10) {
+    left = window.innerWidth - tooltipRect.width - 10;
+  }
+  if (top < 10) {
+    top = rect.bottom + scrollTop + 12;
+    // Flip arrow to point up when tooltip is below
+    tooltip.classList.add('tooltip-below');
+  } else {
+    tooltip.classList.remove('tooltip-below');
+  }
+
+  tooltip.style.left = left + 'px';
+  tooltip.style.top = top + 'px';
+
+  activeTooltip = element;
 }
 
-function resetContentDisplay() {
-  contentDisplay.innerHTML =
-    '<p>Hover or click on the highlighted terms above to learn more.</p>';
+function hideTooltip() {
+  tooltip.classList.remove('show');
+  activeTooltip = null;
 }
 
 document.querySelectorAll('.term').forEach((term) => {
@@ -28,23 +56,28 @@ document.querySelectorAll('.term').forEach((term) => {
 
   if (content) {
     term.addEventListener('mouseenter', () => {
-      if (!isFrozen) {
-        updateContentDisplay(content);
-      }
+      showTooltip(term, content);
     });
 
+    term.addEventListener('mouseleave', () => {
+      hideTooltip();
+    });
+
+    // For mobile/touch devices
     term.addEventListener('click', (e) => {
       e.preventDefault();
-      updateContentDisplay(content);
-      isFrozen = true;
+      if (activeTooltip === term) {
+        hideTooltip();
+      } else {
+        showTooltip(term, content);
+      }
     });
   }
 });
 
-// Reset on clicking elsewhere (for mobile and unfreezing on desktop)
+// Hide tooltip when clicking elsewhere
 document.addEventListener('click', (e) => {
-  if (!e.target.classList.contains('term')) {
-    isFrozen = false;
-    resetContentDisplay();
+  if (!e.target.classList.contains('term') && !tooltip.contains(e.target)) {
+    hideTooltip();
   }
 });
