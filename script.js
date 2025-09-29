@@ -3,7 +3,7 @@ let activeTooltip = null;
 
 const termDefinitions = {
   ATProtocol:
-    'The AT Protocol enables creating decentralized web applications, where users can see and control all of their data, and move freely between applications. Read more here: <a href="https://atproto.com/" target="_blank" rel="noopener noreferrer">https://atproto.com/</a>',
+    'The AT Protocol enables creating decentralized web applications, where users can see and control all of their data, and move freely between applications.',
   what: 'Web apps that allow users to log in with their own decentralized id, and use data from storage that is owned and controlled by that user',
   why: 'Understand the benefits of user-owned data and freedom from platform lock-in.',
   how: 'Discover the technical foundations and tools needed to build on the AT Protocol.',
@@ -23,7 +23,7 @@ function showTooltip(element, content) {
 
   // Position tooltip above the element
   const tooltipRect = tooltip.getBoundingClientRect();
-  let left = rect.left + scrollLeft + (rect.width / 2) - (tooltipRect.width / 2);
+  let left = rect.left + scrollLeft + rect.width / 2 - tooltipRect.width / 2;
   let top = rect.top + scrollTop - tooltipRect.height - 12;
 
   // Adjust if tooltip would go off screen
