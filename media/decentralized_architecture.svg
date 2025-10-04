@@ -11,7 +11,7 @@
   <path d="M 410 158 Q 410 141 430 141 Q 450 141 450 158 L 448 158 Q 448 143 430 143 Q 412 143 412 158 Z" fill="none" stroke="#232d53" stroke-width="2"/>
   
   <!-- Identity Label -->
-  <text x="430" y="195" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#232d53">Identity</text>
+  <text x="430" y="195" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#232d53">Your Identity</text>
   
   <!-- Data Icon -->
   <ellipse cx="610" cy="125" rx="20" ry="8" fill="none" stroke="#232d53" stroke-width="2"/>
@@ -21,7 +21,7 @@
   <path d="M 592 138 A 18 7 0 0 0 628 138" fill="none" stroke="#232d53" stroke-width="1"/>
   
   <!-- Data Label -->
-  <text x="610" y="195" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#232d53">Data</text>
+  <text x="610" y="195" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#232d53">Your Data</text>
   
   <!-- Caption for top section -->
   <text x="760" y="130" text-anchor="left" font-family="Arial, sans-serif" font-size="32" fill="#232d53">Owned and</text>

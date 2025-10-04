@@ -7,10 +7,9 @@ const termDefinitions = {
   what: 'Web apps that allow users to log in with their own decentralized id, and use data from storage that is owned and controlled by that user',
   why: 'Understand the benefits of user-owned data and freedom from platform lock-in.',
   how: 'Discover the technical foundations and tools needed to build on the AT Protocol.',
-  'ATProto ID':
+  'Decentralized ID':
     'Your unique identifier that works across all AT Protocol applications.',
-  'ATProto pod':
-    'Your personal data storage that you control and can take with you anywhere.',
+  'Personal Data Storage': 'Data storage that belongs to you.',
 };
 
 function showTooltip(element, content) {
