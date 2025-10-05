@@ -16,21 +16,39 @@ function showTooltip(element, content) {
   const rect = element.getBoundingClientRect();
   const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
   const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+  console.log({ scrollLeft });
 
   tooltip.innerHTML = content;
   tooltip.classList.add('show');
 
-  // Position tooltip above the element
+  // Note: the tooltip starts out at the bottom left of the screen
+  // we're only getting its rect object for its width and height
   const tooltipRect = tooltip.getBoundingClientRect();
+
+  // Position tooltip above the element
   let left = rect.left + scrollLeft + rect.width / 2 - tooltipRect.width / 2;
   let top = rect.top + scrollTop - tooltipRect.height - 12;
+
+  // Calculate the intended center of the element (for arrow positioning)
+  const elementCenter = rect.left + scrollLeft + rect.width / 2;
 
   // Adjust if tooltip would go off screen
   if (left < 10) left = 10;
   if (left + tooltipRect.width > window.innerWidth - 10) {
     left = window.innerWidth - tooltipRect.width - 10;
   }
-  if (top < 10) {
+
+  // Calculate arrow position relative to the tooltip
+  const arrowLeft = elementCenter - left;
+  const arrowLeftPercent = (arrowLeft / tooltipRect.width) * 100;
+
+  // Clamp arrow position to stay within tooltip bounds (with some padding)
+  const clampedArrowPercent = Math.max(10, Math.min(90, arrowLeftPercent));
+
+  // Set the arrow position using CSS custom property
+  tooltip.style.setProperty('--arrow-left', clampedArrowPercent + '%');
+
+  if (rect.top < tooltipRect.height + 22) {
     top = rect.bottom + scrollTop + 12;
     // Flip arrow to point up when tooltip is below
     tooltip.classList.add('tooltip-below');

@@ -230,7 +230,7 @@ header h1 {
   content: '';
   position: absolute;
   bottom: -8px;
-  left: 50%;
+  left: var(--arrow-left, 50%);
   transform: translateX(-50%);
   border-left: 8px solid transparent;
   border-right: 8px solid transparent;
@@ -241,7 +241,7 @@ header h1 {
   content: '';
   position: absolute;
   bottom: -10px;
-  left: 50%;
+  left: var(--arrow-left, 50%);
   transform: translateX(-50%);
   border-left: 9px solid transparent;
   border-right: 9px solid transparent;
@@ -252,6 +252,7 @@ header h1 {
 .tooltip.tooltip-below::before {
   bottom: auto;
   top: -8px;
+  left: var(--arrow-left, 50%);
   border-top: none;
   border-bottom: 8px solid var(--bg2);
 }
@@ -259,17 +260,9 @@ header h1 {
 .tooltip.tooltip-below::after {
   bottom: auto;
   top: -10px;
+  left: var(--arrow-left, 50%);
   border-top: none;
   border-bottom: 9px solid var(--primary-lightish);
-}
-
-.tooltip a {
-  color: var(--primary-dark);
-  text-decoration: underline;
-}
-
-.tooltip a:hover {
-  color: var(--secondary);
 }
 
 @media (width > 760px) {
