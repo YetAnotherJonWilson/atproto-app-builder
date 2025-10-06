@@ -75,18 +75,27 @@
           </ul>
         </div>
       </div>
-      <section id="block-two">
-        <p>
-          Logging in with an ATProtocol
-          <span class="term">Decentralized ID</span> allows you to store
-          settings and save your work in your
-          <span class="term">Personal Data Storage</span>, but logging in is not
-          required to build apps with this site.
-        </p>
-      </section>
-      <!-- <div id="get-started">
-        <p>Get<br />Started</p>
-      </div> -->
+      <div id="get-started-container">
+        <button type="button" id="get-started-btn" class="get-started-button">Get Started</button>
+      </div>
+      <dialog id="get-started-dialog">
+        <button type="button" class="dialog-close" id="dialog-close-x">&times;</button>
+        <div class="dialog-content">
+          <p>
+            Logging in with an ATProtocol
+            <span class="term">Decentralized ID</span> allows you to store
+            settings and save your work in your
+            <span class="term">Personal Data Storage</span>, but logging in is not
+            required to build apps with this site.
+          </p>
+          <div class="dialog-buttons">
+            <button type="button" class="dialog-button" id="continue-without-login">Continue without logging in</button>
+            <button type="button" class="dialog-button" id="login-with-atproto">Log in with your ATProto ID</button>
+            <button type="button" class="dialog-button" id="get-atproto-id">Get your decentralized ATProto ID</button>
+            <button type="button" class="dialog-cancel" id="dialog-cancel">Cancel</button>
+          </div>
+        </div>
+      </dialog>
     </main>
     <div id="tooltip" class="tooltip"></div>
     <script src="script.js"></script>
