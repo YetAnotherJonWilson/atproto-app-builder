@@ -13,7 +13,11 @@ const termDefinitions = {
 };
 
 function showTooltip(element, content) {
-  const rect = element.getBoundingClientRect();
+  // Get all client rects - there will be multiple if the term wraps to multiple lines
+  const rects = Array.from(element.getClientRects());
+  // Sort by top position and use the topmost line for positioning
+  rects.sort((a, b) => a.top - b.top);
+  const rect = rects[0] || element.getBoundingClientRect();
 
   // Check if tooltip is inside the dialog (which is in the top layer)
   const isInDialog = tooltip.closest('dialog');
@@ -43,11 +47,17 @@ function showTooltip(element, content) {
   const tooltipRect = tooltip.getBoundingClientRect();
 
   // Position tooltip above the element
-  let left = rect.left + scrollLeft + rect.width / 2 - tooltipRect.width / 2 - dialogOffsetLeft;
+  let left =
+    rect.left +
+    scrollLeft +
+    rect.width / 2 -
+    tooltipRect.width / 2 -
+    dialogOffsetLeft;
   let top = rect.top + scrollTop - tooltipRect.height - 12 - dialogOffsetTop;
 
   // Calculate the intended center of the element (for arrow positioning)
-  const elementCenter = rect.left + scrollLeft + rect.width / 2 - dialogOffsetLeft;
+  const elementCenter =
+    rect.left + scrollLeft + rect.width / 2 - dialogOffsetLeft;
 
   // Adjust if tooltip would go off screen
   if (left < 10) left = 10;
