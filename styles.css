@@ -77,7 +77,7 @@
 @layer base {
   @font-face {
     font-family: djgross;
-    src: url(./fonts/DJGROSS.ttf);
+    src: url(./fonts/DJ-Gross/DJGROSS.ttf);
   }
   @font-face {
     font-family: bilbo-swash;
@@ -89,7 +89,7 @@
   }
   @font-face {
     font-family: dirty-ego;
-    src: url(./fonts/DIRTYEGO.TTF);
+    src: url(./fonts/DirtyEgo/Truetype/DIRTYEGO.TTF);
   }
 
   :root {
