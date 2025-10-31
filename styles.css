@@ -161,6 +161,29 @@ header h1 {
   }
 }
 
+#block-one h2,
+#block-two h2 {
+  margin-bottom: 1rem;
+}
+
+#block-one ul,
+#block-two ul,
+#block-one ol,
+#block-two ol {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+#block-one li,
+#block-two li {
+  margin-bottom: 0.75rem;
+}
+
+#block-one li:last-child,
+#block-two li:last-child {
+  margin-bottom: 0;
+}
+
 #block-one::before {
   content: '';
   position: absolute;

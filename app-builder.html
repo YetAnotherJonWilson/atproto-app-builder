@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>App Builder - ATProto</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>build the Web you want</h1>
+    </header>
+    <main>
+      <section id="block-one">
+        <h2 style="font-family: var(--ff-heading); font-size: var(--fs-700); margin-bottom: 1rem;">Let's get started</h2>
+        <p>
+          A decentralized web app is any web page or application where: 1) you
+          login with an identity that you own, and 2) the app uses data from a
+          source that you own.
+        </p>
+      </section>
+
+      <section id="block-two">
+        <h2 style="font-family: var(--ff-heading); font-size: var(--fs-700); margin-bottom: 1rem;">Some examples are:</h2>
+        <ul style="margin: 0; padding-left: 1.5rem;">
+          <li style="margin-bottom: 0.75rem;">
+            A personal app that you use to keep track of music you've listened
+            to, and music you want to check out.
+          </li>
+          <li style="margin-bottom: 0.75rem;">
+            A grocery list app that you can share with a roommate or spouse.
+          </li>
+          <li>
+            An app shared with a group of people who are planning an event
+            together.
+          </li>
+        </ul>
+      </section>
+
+      <section id="block-one">
+        <p style="margin-bottom: 1rem;">
+          There are four necessary functions of an ATProtocol application, and
+          in the next step we will build an app while walking through each item.
+          They are:
+        </p>
+        <ol style="margin: 0; padding-left: 1.5rem;">
+          <li style="margin-bottom: 0.75rem;">
+            <strong>Login/logout:</strong> this step will be mostly handled for
+            you by existing libraries.
+          </li>
+          <li style="margin-bottom: 0.75rem;">
+            <strong>Retrieve data from one or more Personal Data Servers:</strong>
+            think about what data you need in your app. We'll define it and
+            create it in this step, then set up a means for the app to retrieve
+            it.
+          </li>
+          <li style="margin-bottom: 0.75rem;">
+            <strong>Use retrieved data to create a user interface (UI):</strong>
+            in this step, you determine how you will display the data—it could
+            be displayed directly (e.g. a todo list that shows every item by
+            default), or used to create a list of options (e.g. a dropdown menu
+            that allows you to select an option), or you could use the data to
+            display more information related to it (e.g. a list of movies you
+            want to see could be used to show local movie times or streaming
+            options).
+          </li>
+          <li>
+            <strong>Interact with your data:</strong> in the UI, you could
+            select and rearrange items to change what you see and how it's
+            displayed, and you could also have options to update or delete items
+            (which will make updates directly to your Personal Data Server).
+          </li>
+        </ol>
+      </section>
+
+      <div id="get-started-container">
+        <button type="button" id="start-building-btn" class="get-started-button">
+          Start building
+        </button>
+      </div>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>

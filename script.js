@@ -161,7 +161,7 @@ getStartedDialog.addEventListener('click', (e) => {
 continueWithoutLoginBtn.addEventListener('click', () => {
   console.log('Continue without logging in');
   getStartedDialog.close();
-  // Add your logic here
+  window.location.href = 'app-builder.html';
 });
 
 loginWithAtprotoBtn.addEventListener('click', () => {
