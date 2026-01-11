@@ -78,7 +78,258 @@
           Start building
         </button>
       </div>
+
+      <!-- Wizard Container (initially hidden) -->
+      <div id="wizard-container" class="wizard-container" style="display: none;">
+
+        <!-- Progress Indicator -->
+        <div class="wizard-progress">
+          <div class="wizard-progress-bar">
+            <div class="wizard-progress-fill" id="wizard-progress-fill" style="width: 0%;"></div>
+          </div>
+          <p class="wizard-progress-text" id="wizard-progress-text">Step 1 of 6: App Information</p>
+        </div>
+
+        <!-- Step Container (content changes based on current step) -->
+        <div id="wizard-step-content" class="wizard-step-content">
+          <!-- Dynamic step content inserted here by JavaScript -->
+        </div>
+
+        <!-- Navigation Buttons -->
+        <div class="wizard-nav">
+          <button type="button" id="wizard-save" class="wizard-button wizard-button-secondary">
+            Save Progress
+          </button>
+          <div class="wizard-nav-main">
+            <button type="button" id="wizard-back" class="wizard-button wizard-button-secondary" disabled>
+              Back
+            </button>
+            <button type="button" id="wizard-next" class="wizard-button wizard-button-primary">
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
     </main>
+
+    <!-- Resume Dialog -->
+    <dialog id="resume-dialog" class="wizard-dialog">
+      <button type="button" class="dialog-close" id="resume-close-x">&times;</button>
+      <div class="dialog-content">
+        <h2>Resume Your Work?</h2>
+        <p>We found a saved wizard session from <span id="resume-date"></span>.</p>
+        <div class="dialog-buttons">
+          <button type="button" class="dialog-button" id="resume-continue">
+            Resume Building
+          </button>
+          <button type="button" class="dialog-button" id="resume-start-fresh">
+            Start Fresh
+          </button>
+          <button type="button" class="dialog-cancel" id="resume-cancel">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- Add/Edit Record Type Dialog -->
+    <dialog id="edit-record-dialog" class="wizard-dialog">
+      <button type="button" class="dialog-close" id="edit-record-close-x">&times;</button>
+      <div class="dialog-content">
+        <h2 id="edit-record-title">Add Record Type</h2>
+        <form id="edit-record-form" class="wizard-form">
+          <div class="wizard-field">
+            <label for="record-name">Name *</label>
+            <input type="text" id="record-name" class="wizard-input" required />
+            <span class="wizard-field-help">
+              Lowercase, no spaces (e.g., "todo", "post", "bookmark")
+            </span>
+          </div>
+
+          <div class="wizard-field">
+            <label for="record-description">Description</label>
+            <textarea id="record-description" class="wizard-textarea" rows="2"></textarea>
+          </div>
+
+          <div class="dialog-buttons">
+            <button type="submit" class="dialog-button">Save</button>
+            <button type="button" class="dialog-cancel" id="cancel-record">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </dialog>
+
+    <!-- Add/Edit Field Dialog -->
+    <dialog id="edit-field-dialog" class="wizard-dialog">
+      <button type="button" class="dialog-close" id="edit-field-close-x">&times;</button>
+      <div class="dialog-content">
+        <h2 id="edit-field-title">Add Field</h2>
+        <form id="edit-field-form" class="wizard-form">
+          <div class="wizard-field">
+            <label for="field-name">Name *</label>
+            <input type="text" id="field-name" class="wizard-input" required />
+            <span class="wizard-field-help">
+              lowerCamelCase (e.g., "text", "createdAt", "isCompleted")
+            </span>
+          </div>
+
+          <div class="wizard-field">
+            <label for="field-type">Type *</label>
+            <select id="field-type" class="wizard-select" required>
+              <option value="string">String</option>
+              <option value="boolean">Boolean</option>
+              <option value="integer">Integer</option>
+              <option value="bytes">Bytes</option>
+              <option value="cid-link">CID Link</option>
+              <option value="blob">Blob</option>
+              <option value="array-string">Array of Strings</option>
+              <option value="array-number">Array of Numbers</option>
+              <option value="media-url">Media URL</option>
+            </select>
+          </div>
+
+          <div class="wizard-field" id="field-media-type-container" style="display: none;">
+            <label for="field-media-type">Media Type *</label>
+            <select id="field-media-type" class="wizard-select">
+              <option value="image">Image</option>
+              <option value="audio">Audio</option>
+              <option value="video">Video</option>
+            </select>
+            <span class="wizard-field-help">
+              The type of media this URL will link to (for preview purposes)
+            </span>
+          </div>
+
+          <div class="wizard-field" id="field-format-container" style="display: none;">
+            <label for="field-format">Format</label>
+            <select id="field-format" class="wizard-select">
+              <option value="">None</option>
+              <option value="datetime">Datetime</option>
+              <option value="uri">URI</option>
+              <option value="at-uri">AT-URI</option>
+              <option value="did">DID</option>
+            </select>
+          </div>
+
+          <div class="wizard-field" id="field-maxlength-container" style="display: none;">
+            <label for="field-maxlength">Max Length</label>
+            <input type="number" id="field-maxlength" class="wizard-input" min="1" />
+          </div>
+
+          <div class="wizard-field">
+            <label for="field-description">Description</label>
+            <textarea id="field-description" class="wizard-textarea" rows="2"></textarea>
+          </div>
+
+          <div class="wizard-field">
+            <label class="wizard-checkbox-label">
+              <input type="checkbox" id="field-required" />
+              Required field
+            </label>
+          </div>
+
+          <div class="dialog-buttons">
+            <button type="submit" class="dialog-button">Save</button>
+            <button type="button" class="dialog-cancel" id="cancel-field">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </dialog>
+
+    <!-- Add/Edit Query Dialog -->
+    <dialog id="edit-query-dialog" class="wizard-dialog">
+      <button type="button" class="dialog-close" id="edit-query-close-x">&times;</button>
+      <div class="dialog-content">
+        <h2 id="edit-query-title">Add Query Method</h2>
+        <form id="edit-query-form" class="wizard-form">
+          <div class="wizard-field">
+            <label for="query-name">Name *</label>
+            <input type="text" id="query-name" class="wizard-input" required />
+            <span class="wizard-field-help">
+              lowerCamelCase (e.g., "listTodos", "getPost", "searchBookmarks")
+            </span>
+          </div>
+
+          <div class="wizard-field">
+            <label for="query-description">Description</label>
+            <textarea id="query-description" class="wizard-textarea" rows="2"></textarea>
+          </div>
+
+          <div class="wizard-field">
+            <label for="query-returns-record">Returns Record Type *</label>
+            <select id="query-returns-record" class="wizard-select" required>
+              <!-- Options populated by JavaScript -->
+            </select>
+          </div>
+
+          <div class="wizard-field">
+            <label class="wizard-checkbox-label">
+              <input type="checkbox" id="query-returns-list" checked />
+              Returns a list (array) of records
+            </label>
+          </div>
+
+          <div class="dialog-buttons">
+            <button type="submit" class="dialog-button">Save</button>
+            <button type="button" class="dialog-cancel" id="cancel-query">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </dialog>
+
+    <!-- Add/Edit Procedure Dialog -->
+    <dialog id="edit-procedure-dialog" class="wizard-dialog">
+      <button type="button" class="dialog-close" id="edit-procedure-close-x">&times;</button>
+      <div class="dialog-content">
+        <h2 id="edit-procedure-title">Add Procedure Method</h2>
+        <form id="edit-procedure-form" class="wizard-form">
+          <div class="wizard-field">
+            <label for="procedure-name">Name *</label>
+            <input type="text" id="procedure-name" class="wizard-input" required />
+            <span class="wizard-field-help">
+              lowerCamelCase (e.g., "createTodo", "updatePost", "deleteBookmark")
+            </span>
+          </div>
+
+          <div class="wizard-field">
+            <label for="procedure-description">Description</label>
+            <textarea id="procedure-description" class="wizard-textarea" rows="2"></textarea>
+          </div>
+
+          <div class="wizard-field">
+            <label for="procedure-input-record">Input Record Type</label>
+            <select id="procedure-input-record" class="wizard-select">
+              <option value="">None</option>
+              <!-- Options populated by JavaScript -->
+            </select>
+          </div>
+
+          <div class="wizard-field">
+            <label for="procedure-output-type">Output Type *</label>
+            <select id="procedure-output-type" class="wizard-select" required>
+              <option value="success">Success Response</option>
+              <option value="record">Record</option>
+            </select>
+          </div>
+
+          <div class="wizard-field" id="procedure-output-record-container" style="display: none;">
+            <label for="procedure-output-record">Output Record Type</label>
+            <select id="procedure-output-record" class="wizard-select">
+              <!-- Options populated by JavaScript -->
+            </select>
+          </div>
+
+          <div class="dialog-buttons">
+            <button type="submit" class="dialog-button">Save</button>
+            <button type="button" class="dialog-cancel" id="cancel-procedure">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </dialog>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="script.js"></script>
+    <script src="generator.js"></script>
+    <script src="app.js"></script>
   </body>
 </html>
