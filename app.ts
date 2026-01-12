@@ -1,7 +1,7 @@
 const tooltip = document.getElementById('tooltip');
-let activeTooltip = null;
+let activeTooltip: Element | null = null;
 
-const termDefinitions = {
+const termDefinitions: Record<string, string> = {
   ATProtocol:
     'The AT Protocol enables creating decentralized web applications, where users can see and control all of their data, and move freely between applications.',
   what: 'Web apps that allow users to log in with their own decentralized id, and use data from storage that is owned and controlled by that user',
@@ -12,11 +12,13 @@ const termDefinitions = {
   'Personal Data Storage': 'Data storage that belongs to you.',
 };
 
-function showTooltip(element, content) {
+function showTooltip(element: Element, content: string): void {
+  if (!tooltip) return;
+
   // Get all client rects - there will be multiple if the term wraps to multiple lines
   const rects = Array.from(element.getClientRects());
   // Sort by top position and use the topmost line for positioning
-  rects.sort((a, b) => a.top - b.top);
+  rects.sort((a: DOMRect, b: DOMRect) => a.top - b.top);
   const rect = rects[0] || element.getBoundingClientRect();
 
   // Check if tooltip is inside the dialog (which is in the top layer)
@@ -89,13 +91,15 @@ function showTooltip(element, content) {
   activeTooltip = element;
 }
 
-function hideTooltip() {
+function hideTooltip(): void {
+  if (!tooltip) return;
   tooltip.classList.remove('show');
   activeTooltip = null;
 }
 
 document.querySelectorAll('.term').forEach((term) => {
   const text = term.textContent;
+  if (!text) return;
   const content = termDefinitions[text];
 
   if (content) {
@@ -121,73 +125,93 @@ document.querySelectorAll('.term').forEach((term) => {
 
 // Hide tooltip when clicking elsewhere
 document.addEventListener('click', (e) => {
-  if (!e.target.classList.contains('term') && !tooltip.contains(e.target)) {
+  const target = e.target as HTMLElement | null;
+  if (target && !target.classList.contains('term') && tooltip && !tooltip.contains(target)) {
     hideTooltip();
   }
 });
 
 // Get Started dialog functionality
 const getStartedBtn = document.getElementById('get-started-btn');
-const getStartedDialog = document.getElementById('get-started-dialog');
-const continueWithoutLoginBtn = document.getElementById(
-  'continue-without-login'
-);
+const getStartedDialog = document.getElementById('get-started-dialog') as HTMLDialogElement | null;
+const continueWithoutLoginBtn = document.getElementById('continue-without-login');
 const loginWithAtprotoBtn = document.getElementById('login-with-atproto');
 const getAtprotoIdBtn = document.getElementById('get-atproto-id');
 const dialogCloseBtn = document.getElementById('dialog-close-x');
 const dialogCancelBtn = document.getElementById('dialog-cancel');
 
 // Open dialog when Get Started button is clicked
-getStartedBtn.addEventListener('click', () => {
-  getStartedDialog.showModal();
-  // Move tooltip into dialog so it appears above the modal backdrop
-  getStartedDialog.appendChild(tooltip);
-});
+if (getStartedBtn && getStartedDialog) {
+  getStartedBtn.addEventListener('click', () => {
+    console.log('Get Started dialog opened');
+    getStartedDialog.showModal();
+    // Move tooltip into dialog so it appears above the modal backdrop
+    if (tooltip) {
+      getStartedDialog.appendChild(tooltip);
+    }
+  });
+}
 
 // Close dialog when clicking outside (on backdrop)
-getStartedDialog.addEventListener('click', (e) => {
-  const rect = getStartedDialog.getBoundingClientRect();
-  if (
-    e.clientX < rect.left ||
-    e.clientX > rect.right ||
-    e.clientY < rect.top ||
-    e.clientY > rect.bottom
-  ) {
-    getStartedDialog.close();
-  }
-});
+if (getStartedDialog) {
+  getStartedDialog.addEventListener('click', (e) => {
+    const rect = getStartedDialog.getBoundingClientRect();
+    if (
+      e.clientX < rect.left ||
+      e.clientX > rect.right ||
+      e.clientY < rect.top ||
+      e.clientY > rect.bottom
+    ) {
+      getStartedDialog.close();
+    }
+  });
+}
 
 // Handle button clicks
-continueWithoutLoginBtn.addEventListener('click', () => {
-  console.log('Continue without logging in');
-  getStartedDialog.close();
-  window.location.href = 'app-builder.html';
-});
+if (continueWithoutLoginBtn) {
+  continueWithoutLoginBtn.addEventListener('click', () => {
+    console.log('Continue without logging in');
+    if (getStartedDialog) getStartedDialog.close();
+    window.location.href = 'app-builder.html';
+  });
+}
 
-loginWithAtprotoBtn.addEventListener('click', () => {
-  console.log('Log in with ATProto ID');
-  getStartedDialog.close();
-  // Add your logic here
-});
+if (loginWithAtprotoBtn) {
+  loginWithAtprotoBtn.addEventListener('click', () => {
+    console.log('Log in with ATProto ID');
+    if (getStartedDialog) getStartedDialog.close();
+    // TODO: Add login logic
+  });
+}
 
-getAtprotoIdBtn.addEventListener('click', () => {
-  console.log('Get ATProto ID');
-  getStartedDialog.close();
-  // Add your logic here
-});
+if (getAtprotoIdBtn) {
+  getAtprotoIdBtn.addEventListener('click', () => {
+    console.log('Get ATProto ID');
+    if (getStartedDialog) getStartedDialog.close();
+    // TODO: Add logic to get ATProto ID
+  });
+}
 
 // Close dialog with X button
-dialogCloseBtn.addEventListener('click', () => {
-  getStartedDialog.close();
-});
+if (dialogCloseBtn && getStartedDialog) {
+  dialogCloseBtn.addEventListener('click', () => {
+    getStartedDialog.close();
+  });
+}
 
 // Close dialog with Cancel button
-dialogCancelBtn.addEventListener('click', () => {
-  getStartedDialog.close();
-});
+if (dialogCancelBtn && getStartedDialog) {
+  dialogCancelBtn.addEventListener('click', () => {
+    getStartedDialog.close();
+  });
+}
 
 // Move tooltip back to body when dialog closes
-getStartedDialog.addEventListener('close', () => {
-  document.body.appendChild(tooltip);
-  hideTooltip();
-});
+if (getStartedDialog) {
+  getStartedDialog.addEventListener('close', () => {
+    if (tooltip) {
+      document.body.appendChild(tooltip);
+    }
+    hideTooltip();
+  });
+}
