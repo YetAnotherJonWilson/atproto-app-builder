@@ -126,6 +126,170 @@
 }
 
 @layer layout {
+  /* Intro sections for app-builder page */
+  /* Mobile: matches #block-one style (dark rotated background) */
+  /* Desktop: clean comparison column style */
+
+  .intro-grid {
+    display: flex;
+    flex-direction: column;
+  }
+
+  @media (width > 760px) {
+    .intro-grid {
+      gap: 3rem;
+      padding: 3rem 2rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+  }
+
+  /* Mobile styles - match #block-one */
+  .intro-block {
+    position: relative;
+    color: white;
+    width: 75%;
+    margin: 1rem 0 0 12.5%;
+    padding: 1.75rem;
+  }
+
+  .intro-block::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -10px;
+    width: 100%;
+    height: 100%;
+    background-color: var(--primary-dark);
+    z-index: -1;
+  }
+
+  .intro-block:first-child::before {
+    transform: rotate(2deg);
+  }
+
+  .intro-block:last-child::before {
+    transform: rotate(-1.5deg);
+  }
+
+  .intro-block h2 {
+    font-family: var(--ff-heading);
+    font-size: var(--fs-700);
+    margin-bottom: 1rem;
+  }
+
+  .intro-block > p {
+    margin-bottom: 0.5rem;
+  }
+
+  .intro-block ul,
+  .intro-block ol {
+    margin: 0;
+    padding-left: 1.5rem;
+  }
+
+  .intro-block li {
+    margin-bottom: 0.75rem;
+  }
+
+  .intro-block li:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Desktop styles - clean comparison column style */
+  @media (width > 760px) {
+    .intro-block {
+      position: static;
+      color: var(--primary);
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .intro-block::before {
+      display: none;
+    }
+
+    .intro-block h2 {
+      font-family: var(--ff-heading);
+      font-size: 2.25rem;
+      font-weight: 700;
+      color: white;
+      text-align: center;
+      background-color: var(--primary-dark);
+      padding: 0.75rem 1.5rem;
+      margin-bottom: 1rem;
+      width: fit-content;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .intro-block:first-child h2 {
+      transform: rotate(1.5deg);
+    }
+
+    .intro-block:last-child h2 {
+      transform: rotate(-1deg);
+    }
+
+    .intro-block > p {
+      font-family: sans-serif;
+      font-size: 1.35rem;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+      text-align: left;
+    }
+
+    .intro-block ul,
+    .intro-block ol {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      counter-reset: intro-counter;
+    }
+
+    .intro-block ol {
+      padding-left: 1.5rem;
+    }
+
+    .intro-block ol li {
+      font-family: sans-serif;
+      font-size: 1.35rem;
+      counter-increment: intro-counter;
+      border-bottom: none;
+      padding: 0.25rem 0;
+      margin-bottom: 0;
+    }
+
+    .intro-block ol li::before {
+      content: counter(intro-counter) ')';
+      font-weight: 700;
+      margin-right: 0.5rem;
+      color: var(--primary);
+    }
+
+    .intro-block ul li {
+      font-family: sans-serif;
+      font-size: 1.35rem;
+      line-height: 1.5;
+      color: var(--primary);
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--primary-lightish);
+      flex: 1;
+      display: flex;
+      align-items: center;
+      margin-bottom: 0;
+    }
+
+    .intro-block ul li:last-child {
+      border-bottom: none;
+    }
+  }
 }
 
 @layer utilities {
@@ -729,7 +893,7 @@ header h1 {
   }
 }
 
-.wizard-checkbox-label input[type="checkbox"] {
+.wizard-checkbox-label input[type='checkbox'] {
   width: 1.2rem;
   height: 1.2rem;
   cursor: pointer;
@@ -1160,7 +1324,7 @@ details[open] summary {
   border-color: var(--primary);
 }
 
-.wizard-radio-label input[type="radio"] {
+.wizard-radio-label input[type='radio'] {
   width: 1.2rem;
   height: 1.2rem;
   cursor: pointer;
