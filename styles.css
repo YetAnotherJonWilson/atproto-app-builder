@@ -213,7 +213,8 @@
     }
 
     .intro-block h2 {
-      font-family: var(--ff-heading);
+      font-family: Andale Mono, sans-serif;
+      text-transform: uppercase;
       font-size: 2.25rem;
       font-weight: 700;
       color: white;
