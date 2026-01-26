@@ -7,17 +7,21 @@ import {
   setWizardState,
   initializeWizardState,
   saveWizardState,
-  getWizardState
+  getWizardState,
 } from '../state/WizardState';
 import { collectCurrentStepData } from '../state/DataCollector';
-import { goToNextStep, goToPreviousStep, updateProgressBar } from '../navigation/StepNavigation';
+import {
+  goToNextStep,
+  goToPreviousStep,
+  updateProgressBar,
+} from '../navigation/StepNavigation';
 import { renderCurrentStep } from '../views/StepRenderer';
 import { setupDialogHandlers } from '../dialogs/DialogHandlers';
 import { setupWizardOps } from './WizardOps';
 
 export function startWizard(): void {
   const wizardContainer = document.getElementById('wizard-container');
-  const mainSection = document.querySelector('main section');
+  const mainSection = document.querySelector('main div');
   const getStartedContainer = document.getElementById('get-started-container');
 
   if (wizardContainer) wizardContainer.style.display = 'block';
@@ -26,6 +30,7 @@ export function startWizard(): void {
 
   renderCurrentStep();
   updateProgressBar();
+  window.scrollTo(0, 0);
 }
 
 export function initializeApp(): void {
@@ -43,7 +48,9 @@ export function initializeApp(): void {
     if (resumeDate) {
       resumeDate.textContent = savedDate.toLocaleString();
     }
-    const dialog = document.getElementById('resume-dialog') as HTMLDialogElement;
+    const dialog = document.getElementById(
+      'resume-dialog'
+    ) as HTMLDialogElement;
     if (dialog) dialog.showModal();
   } else {
     setWizardState(initializeWizardState());
