@@ -1,13 +1,8 @@
 /**
- * Step 1: App Information
+ * Step 0: About the App Builder Tool
  */
 
-import { getWizardState } from '../state/WizardState';
-import { escapeHtml } from '../../utils';
-
-export function renderStep1A(): string {
-  const wizardState = getWizardState();
-
+export function renderStep0(): string {
   return `
     <div class="wizard-step">
       <h2 class="wizard-step-title">Getting Started</h2>

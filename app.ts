@@ -4,8 +4,8 @@ let activeTooltip: Element | null = null;
 const termDefinitions: Record<string, string> = {
   ATProtocol:
     'The AT Protocol enables creating decentralized web applications, where users can see and control all of their data, and move freely between applications.',
-  what: 'Web apps that allow users to log in with their own decentralized id, and use data from storage that is owned and controlled by that user',
-  why: 'Understand the benefits of user-owned data and freedom from platform lock-in.',
+  what: 'Decentralized apps allow users to log in with their own decentralized ID, and use data from storage that is owned and controlled by that user.',
+  why: 'Learn the benefits of users owning their data. For example, gaining freedom from platform lock-in.',
   how: 'Discover the technical foundations and tools needed to build on the AT Protocol.',
   'Decentralized ID':
     'Your unique identifier that works across all AT Protocol applications.',
@@ -126,15 +126,24 @@ document.querySelectorAll('.term').forEach((term) => {
 // Hide tooltip when clicking elsewhere
 document.addEventListener('click', (e) => {
   const target = e.target as HTMLElement | null;
-  if (target && !target.classList.contains('term') && tooltip && !tooltip.contains(target)) {
+  if (
+    target &&
+    !target.classList.contains('term') &&
+    tooltip &&
+    !tooltip.contains(target)
+  ) {
     hideTooltip();
   }
 });
 
 // Get Started dialog functionality
 const getStartedBtn = document.getElementById('get-started-btn');
-const getStartedDialog = document.getElementById('get-started-dialog') as HTMLDialogElement | null;
-const continueWithoutLoginBtn = document.getElementById('continue-without-login');
+const getStartedDialog = document.getElementById(
+  'get-started-dialog'
+) as HTMLDialogElement | null;
+const continueWithoutLoginBtn = document.getElementById(
+  'continue-without-login'
+);
 const loginWithAtprotoBtn = document.getElementById('login-with-atproto');
 const getAtprotoIdBtn = document.getElementById('get-atproto-id');
 const dialogCloseBtn = document.getElementById('dialog-close-x');

@@ -780,32 +780,32 @@ header h1 {
   border: 3px solid var(--primary-lightish);
   border-radius: 8px;
   margin-bottom: 2rem;
-}
-
-.wizard-step-title {
-  font-family: var(--ff-heading);
-  font-size: 2rem;
-  color: var(--primary);
-  margin-bottom: 1rem;
-}
-
-@media (width > 760px) {
-  .wizard-step-title {
-    font-size: 3rem;
+  p,
+  ol,
+  ul {
+    font-family: sans-serif;
+    font-size: 1.2rem;
+    color: var(--primary);
+    margin-bottom: 2rem;
+    line-height: 1.5;
   }
-}
-
-.wizard-step-description {
-  font-family: sans-serif;
-  font-size: 1.2rem;
-  color: var(--primary);
-  margin-bottom: 2rem;
-  line-height: 1.5;
-}
-
-@media (width > 760px) {
-  .wizard-step-description {
-    font-size: 1.4rem;
+  @media (width > 760px) {
+    p,
+    ol,
+    ul {
+      font-size: 1.4rem;
+    }
+  }
+  h2 {
+    font-family: var(--ff-heading);
+    font-size: 2rem;
+    color: var(--primary);
+    margin-bottom: 1rem;
+  }
+  @media (width > 760px) {
+    h2 {
+      font-size: 3rem;
+    }
   }
 }
 
