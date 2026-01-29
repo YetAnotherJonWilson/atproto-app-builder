@@ -3,6 +3,7 @@
  */
 
 import { getWizardState } from '../state/WizardState';
+import { renderStep0 } from './Step0AboutAppBuilder';
 import { renderStep1 } from './Step1GettingStarted';
 // import { renderStep1 } from './deprecatedStep1AppInfo';
 import { renderStep2, wireStep2Events } from './deprecatedStep2RecordTypes';
@@ -18,6 +19,9 @@ export function renderCurrentStep(): void {
   if (!container) return;
 
   switch (wizardState.currentStep) {
+    case 0:
+      container.innerHTML = renderStep0();
+      break;
     case 1:
       container.innerHTML = renderStep1();
       break;

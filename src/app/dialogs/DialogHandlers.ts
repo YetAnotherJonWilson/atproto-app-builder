@@ -7,7 +7,8 @@ import { handleRecordFormSubmit } from '../operations/RecordTypeOps';
 import { handleFieldFormSubmit, updateFieldTypeOptions } from '../operations/FieldOps';
 import { handleQueryFormSubmit } from '../operations/QueryOps';
 import { handleProcedureFormSubmit, updateProcedureOutputOptions } from '../operations/ProcedureOps';
-import { startWizard } from '../bootstrap/Initialization';
+import { renderCurrentStep } from '../views/StepRenderer';
+import { updateProgressBar } from '../navigation/StepNavigation';
 
 export function setupDialogHandlers(): void {
   setupRecordDialog();
@@ -109,7 +110,8 @@ function setupResumeDialog(): void {
   if (continueBtn) {
     continueBtn.addEventListener('click', () => {
       dialog?.close();
-      startWizard();
+      renderCurrentStep();
+      updateProgressBar();
     });
   }
   if (startFreshBtn) {
@@ -117,7 +119,8 @@ function setupResumeDialog(): void {
       clearWizardState();
       setWizardState(initializeWizardState());
       dialog?.close();
-      startWizard();
+      renderCurrentStep();
+      updateProgressBar();
     });
   }
   if (cancelBtn) {

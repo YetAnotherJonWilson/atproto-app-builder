@@ -1,0 +1,56 @@
+<div class="wizard-step">
+  <h2>Let's get started</h2>
+  <p>A decentralized web app is any web page or application where:</p>
+  <ol>
+    <li>You login with an identity that you own</li>
+    <li>The app uses data from a source that you own</li>
+  </ol>
+  <h2>Some examples are:</h2>
+  <ul>
+    <li>
+      A meditation app with a timer and sound settings, that tracks your
+      sessions.
+    </li>
+    <li>
+      A grocery list app that you might share with your family or roommates.
+    </li>
+    <li>
+      An event-planning app that helps with organization, tracking RSVP's,
+      schedules, and tasks.
+    </li>
+  </ul>
+  <h2>The four functions of an ATProtocol application</h2>
+  <ol style="margin: 0; padding-left: 1.5rem">
+    <li style="margin-bottom: 0.75rem">
+      <strong>Login/logout:</strong> <br />
+      This step will be mostly handled for you by existing libraries.
+    </li>
+    <li style="margin-bottom: 0.75rem">
+      <strong>Retrieve data from one or more Personal Data Servers:</strong>
+      <br />
+      Think about what data you need in your app, and how you will define it. In
+      ATProtocol applications, your data exists as Records and Properties on
+      those records. For example, an item on a todo list might be a Record of
+      type "todo", with Properties like "text" (the content of the todo item),
+      and "completed" (a boolean indicating whether the item is done).
+    </li>
+    <li style="margin-bottom: 0.75rem">
+      <strong>Use retrieved data to create a user interface (UI):</strong>
+      <br />
+      Determine how you will display your data—it could be displayed directly
+      (e.g. a todo list that shows every item by default), or used to create a
+      list of options (e.g. a dropdown menu that allows you to select an
+      option). For now, the app-builder tool will create default views and a
+      simple UI for you. In the future, our goal is to allow you to customize
+      the UI further.
+    </li>
+    <li>
+      <strong>Interact with your data:</strong>
+      <br />
+      Based on your input about what methods should be available to interact
+      with your data (creating, retrieving, updating, and/or deleting records),
+      the app-builder tool will generate the necessary methods to enable those
+      interactions.
+    </li>
+  </ol>
+</div>

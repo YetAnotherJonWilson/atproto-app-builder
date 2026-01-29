@@ -19,20 +19,6 @@ import { renderCurrentStep } from '../views/StepRenderer';
 import { setupDialogHandlers } from '../dialogs/DialogHandlers';
 import { setupWizardOps } from './WizardOps';
 
-export function startWizard(): void {
-  const wizardContainer = document.getElementById('wizard-container');
-  const mainSection = document.querySelector('main div');
-  const getStartedContainer = document.getElementById('get-started-container');
-
-  if (wizardContainer) wizardContainer.style.display = 'block';
-  if (mainSection) (mainSection as HTMLElement).style.display = 'none';
-  if (getStartedContainer) getStartedContainer.style.display = 'none';
-
-  renderCurrentStep();
-  updateProgressBar();
-  window.scrollTo(0, 0);
-}
-
 export function initializeApp(): void {
   // Setup window.wizardOps for onclick handlers
   setupWizardOps();
@@ -59,14 +45,6 @@ export function initializeApp(): void {
   // Setup dialog handlers
   setupDialogHandlers();
 
-  // Wire up "Start building" button
-  const startBtn = document.getElementById('start-building-btn');
-  if (startBtn) {
-    startBtn.addEventListener('click', () => {
-      startWizard();
-    });
-  }
-
   // Wire up navigation buttons
   const nextBtn = document.getElementById('wizard-next');
   const backBtn = document.getElementById('wizard-back');
@@ -84,4 +62,8 @@ export function initializeApp(): void {
       saveWizardState(getWizardState());
     });
   }
+
+  // Render the initial step
+  renderCurrentStep();
+  updateProgressBar();
 }

@@ -22,7 +22,7 @@ export function initializeWizardState(): WizardState {
   return {
     version: "1.0",
     lastSaved: new Date().toISOString(),
-    currentStep: 1,
+    currentStep: 0,
     currentRecordTypeIndex: 0,
     appInfo: {
       appName: '',
