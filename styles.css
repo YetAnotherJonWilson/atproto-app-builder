@@ -91,10 +91,15 @@
     font-family: dirty-ego;
     src: url(./fonts/DirtyEgo/Truetype/DIRTYEGO.TTF);
   }
+  @font-face {
+    font-family: fira-sans;
+    src: url(./fonts/FiraSans/FiraSans-Medium.otf);
+  }
 
   :root {
     --ff-body: sans-serif;
     --ff-heading: 'dirty-ego', serif;
+    --ff-heading-2: 'fira-sans', sans-serif;
 
     --fs-500: 1.25rem;
     --fs-700: 1.5rem;
@@ -797,16 +802,27 @@ header h1 {
     }
   }
   h2 {
-    font-family: var(--ff-heading);
+    font-family: var(--ff-heading-2);
     font-size: 2rem;
     color: var(--primary);
     margin-bottom: 1rem;
   }
   @media (width > 760px) {
     h2 {
-      font-size: 3rem;
+      font-size: 2rem;
     }
   }
+}
+
+.step-header {
+  font-size: 3rem !important;
+  max-width: fit-content;
+  transform: rotate(-4deg);
+  position: relative;
+  bottom: 60px;
+  right: 60px;
+  color: white !important;
+  background-color: #191e39;
 }
 
 /* Form Elements */
