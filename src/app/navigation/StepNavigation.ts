@@ -15,7 +15,7 @@ const STEP_NAMES = [
   'Query Methods',
   'Procedure Methods',
   'App Configuration',
-  'Generate App'
+  'Generate App',
 ];
 
 export function goToNextStep(): void {
@@ -43,7 +43,7 @@ export function goToNextStep(): void {
 export function goToPreviousStep(): void {
   const wizardState = getWizardState();
 
-  if (wizardState.currentStep > 1) {
+  if (wizardState.currentStep > 0) {
     collectCurrentStepData();
     wizardState.currentStep--;
     saveWizardState(wizardState);
@@ -63,18 +63,20 @@ export function updateProgressBar(): void {
 
   const progressText = document.getElementById('wizard-progress-text');
   if (progressText) {
-    progressText.textContent =
-      `Step ${wizardState.currentStep} of 7: ${STEP_NAMES[wizardState.currentStep - 1]}`;
+    progressText.textContent = `Step ${wizardState.currentStep} of 7: ${
+      STEP_NAMES[wizardState.currentStep - 1]
+    }`;
   }
 
   // Update button states
   const backBtn = document.getElementById('wizard-back') as HTMLButtonElement;
   if (backBtn) {
-    backBtn.disabled = wizardState.currentStep === 1;
+    backBtn.disabled = wizardState.currentStep === 0;
   }
 
   const nextBtn = document.getElementById('wizard-next');
   if (nextBtn) {
-    nextBtn.textContent = wizardState.currentStep === 7 ? 'Generate App' : 'Next';
+    nextBtn.textContent =
+      wizardState.currentStep === 7 ? 'Generate App' : 'Next';
   }
 }
