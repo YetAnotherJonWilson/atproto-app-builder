@@ -34,6 +34,7 @@ export function goToNextStep(): void {
     saveWizardState(wizardState);
     renderCurrentStep();
     updateProgressBar();
+    window.scrollTo(0, 0);
   } else {
     // Final step - generate app
     generateApp();
@@ -49,6 +50,7 @@ export function goToPreviousStep(): void {
     saveWizardState(wizardState);
     renderCurrentStep();
     updateProgressBar();
+    window.scrollTo(0, 0);
   }
 }
 
