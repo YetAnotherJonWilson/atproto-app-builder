@@ -1049,8 +1049,13 @@ header h1 {
 }
 
 .wizard-button-primary {
+  margin-left: auto;
   background-color: var(--primary);
   color: white;
+}
+
+.wizard-solo {
+  margin: auto;
 }
 
 .wizard-button-primary:hover:not(:disabled) {
@@ -1122,10 +1127,6 @@ header h1 {
   display: flex;
   gap: 1rem;
   width: 100%;
-}
-
-#wizard-next {
-  margin-left: auto;
 }
 
 .wizard-nav-main.wizard-nav-compact {
