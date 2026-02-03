@@ -5,122 +5,356 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Getting Started with ATProto</title>
     <link rel="stylesheet" href="styles.css" />
-    <script type="module" src="app.ts" defer></script>
+    <script type="module" src="/src/app.ts" defer></script>
   </head>
   <body>
     <header>
       <h1>build the Web you want</h1>
     </header>
     <main>
-      <section id="block-one">
-        <p>
-          Using the
-          <span class="term">ATProtocol</span>
-          , learn the <span class="term">what</span>,
-          <span class="term">why</span>
-          and
-          <span class="term">how</span>
-          of decentralized web applications while you build apps for yourself,
-          your friends and family, or the world.
-        </p>
-      </section>
-      <div class="comparison-section">
-        <div class="comparison-column">
-          <h2>Centralized Applications</h2>
-          <p>The application owns your identity and data</p>
-          <div class="centralized-app-architecture">
-            <img
-              src="media/centralized_architecture.svg"
-              alt="Centralized Architecture Diagram"
-            />
+      <div id="wizard-container">
+        <!-- Progress Indicator -->
+        <!-- <div class="wizard-progress">
+          <div class="wizard-progress-bar">
+            <div
+              class="wizard-progress-fill"
+              id="wizard-progress-fill"
+              style="width: 0%"
+            ></div>
           </div>
-          <ul class="comparison-list">
-            <li>
-              Each app that you use owns all of the data about you, and often
-              will not allow you to view it or change it
-            </li>
-            <li>
-              If you decide that you no longer want to use an app, you can't
-              leave because everyone you interact with uses it
-            </li>
-            <li>
-              If you decide to leave anyway, the app won't let you take all of
-              your data with you
-            </li>
-            <li>
-              Algorithms optimize for "user engagement", even when that means
-              manipulation, tracking, spreading misinformation or hate
-            </li>
-          </ul>
+          <p class="wizard-progress-text" id="wizard-progress-text">
+            Step 1 of 6: App Information
+          </p>
+        </div> -->
+
+        <!-- Step Container (content changes based on current step) -->
+        <div id="wizard-step-content">
+          <!-- Dynamic step content inserted here by JavaScript -->
         </div>
-        <div class="comparison-column">
-          <h2>Decentralized Applications</h2>
-          <p>You own your identity and data</p>
-          <div class="decentralized-app-architecture">
-            <img
-              src="media/decentralized_architecture.svg"
-              alt="Decentralized Architecture Diagram"
-            />
+
+        <!-- Navigation Buttons -->
+        <div class="wizard-narrow">
+          <div class="wizard-nav">
+            <button
+              type="button"
+              id="wizard-save"
+              class="wizard-button wizard-button-secondary"
+              style="display: none"
+            >
+              Save Progress
+            </button>
+            <div class="wizard-nav-main">
+              <button
+                type="button"
+                id="wizard-back"
+                class="wizard-button wizard-button-secondary"
+                style="display: none"
+                disabled
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                id="wizard-next"
+                class="wizard-button wizard-button-primary"
+              >
+                Next
+              </button>
+            </div>
           </div>
-          <ul class="comparison-list">
-            <li>You own your data, and you can change it however you like</li>
-            <li>
-              If you want to leave an app, you don't have to lose access to your
-              friends
-            </li>
-            <li>
-              Because you own your data, you can keep using it in any new app
-              you choose
-            </li>
-            <li>You choose the apps that offer the experience you want</li>
-          </ul>
         </div>
       </div>
-      <div id="get-started-container">
-        <button type="button" id="get-started-btn" class="get-started-button">
-          Get Started
-        </button>
-      </div>
-      <dialog id="get-started-dialog">
-        <button type="button" class="dialog-close" id="dialog-close-x">
+
+      <!-- Resume Dialog -->
+      <dialog id="resume-dialog" class="wizard-dialog">
+        <button type="button" class="dialog-close" id="resume-close-x">
           &times;
         </button>
         <div class="dialog-content">
+          <h2>Resume Your Work?</h2>
           <p>
-            Logging in with an ATProtocol
-            <span class="term">Decentralized ID</span> allows you to store
-            settings and save your work in your
-            <span class="term">Personal Data Storage</span>, but logging in is
-            not required to build apps with this site.
+            We found a saved wizard session from <span id="resume-date"></span>.
           </p>
           <div class="dialog-buttons">
-            <button
-              type="button"
-              class="dialog-button"
-              id="continue-without-login"
-            >
-              Continue without logging in
+            <button type="button" class="dialog-button" id="resume-continue">
+              Resume Building
             </button>
-            <button
-              type="button"
-              disabled
-              class="dialog-button"
-              id="login-with-atproto"
-            >
-              Log in with your ATProto ID (Coming soon)
+            <button type="button" class="dialog-button" id="resume-start-fresh">
+              Start Fresh
             </button>
-            <button
-              type="button"
-              disabled
-              class="dialog-button"
-              id="get-atproto-id"
-            >
-              Get your decentralized ATProto ID (Coming soon)
-            </button>
-            <button type="button" class="dialog-cancel" id="dialog-cancel">
+            <button type="button" class="dialog-cancel" id="resume-cancel">
               Cancel
             </button>
           </div>
+        </div>
+      </dialog>
+
+      <!-- Add/Edit Record Type Dialog -->
+      <dialog id="edit-record-dialog" class="wizard-dialog">
+        <button type="button" class="dialog-close" id="edit-record-close-x">
+          &times;
+        </button>
+        <div class="dialog-content">
+          <h2 id="edit-record-title">Add Record Type</h2>
+          <form id="edit-record-form" class="wizard-form">
+            <div class="wizard-field">
+              <label for="record-name">Name *</label>
+              <input
+                type="text"
+                id="record-name"
+                class="wizard-input"
+                required
+              />
+              <span class="wizard-field-help">
+                Lowercase, no spaces (e.g., "todo", "post", "bookmark")
+              </span>
+            </div>
+
+            <div class="wizard-field">
+              <label for="record-description">Description</label>
+              <textarea
+                id="record-description"
+                class="wizard-textarea"
+                rows="2"
+              ></textarea>
+            </div>
+
+            <div class="dialog-buttons">
+              <button type="submit" class="dialog-button">Save</button>
+              <button type="button" class="dialog-cancel" id="cancel-record">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </dialog>
+
+      <!-- Add/Edit Field Dialog -->
+      <dialog id="edit-field-dialog" class="wizard-dialog">
+        <button type="button" class="dialog-close" id="edit-field-close-x">
+          &times;
+        </button>
+        <div class="dialog-content">
+          <h2 id="edit-field-title">Add Field</h2>
+          <form id="edit-field-form" class="wizard-form">
+            <div class="wizard-field">
+              <label for="field-name">Name *</label>
+              <input
+                type="text"
+                id="field-name"
+                class="wizard-input"
+                required
+              />
+              <span class="wizard-field-help">
+                lowerCamelCase (e.g., "text", "createdAt", "isCompleted")
+              </span>
+            </div>
+
+            <div class="wizard-field">
+              <label for="field-type">Type *</label>
+              <select id="field-type" class="wizard-select" required>
+                <option value="string">String</option>
+                <option value="boolean">Boolean</option>
+                <option value="integer">Integer</option>
+                <option value="bytes">Bytes</option>
+                <option value="cid-link">CID Link</option>
+                <option value="blob">Blob</option>
+                <option value="array-string">Array of Strings</option>
+                <option value="array-number">Array of Numbers</option>
+                <option value="media-url">Media URL</option>
+              </select>
+            </div>
+
+            <div
+              class="wizard-field"
+              id="field-media-type-container"
+              style="display: none"
+            >
+              <label for="field-media-type">Media Type *</label>
+              <select id="field-media-type" class="wizard-select">
+                <option value="image">Image</option>
+                <option value="audio">Audio</option>
+                <option value="video">Video</option>
+              </select>
+              <span class="wizard-field-help">
+                The type of media this URL will link to (for preview purposes)
+              </span>
+            </div>
+
+            <div
+              class="wizard-field"
+              id="field-format-container"
+              style="display: none"
+            >
+              <label for="field-format">Format</label>
+              <select id="field-format" class="wizard-select">
+                <option value="">None</option>
+                <option value="datetime">Datetime</option>
+                <option value="uri">URI</option>
+                <option value="at-uri">AT-URI</option>
+                <option value="did">DID</option>
+              </select>
+            </div>
+
+            <div
+              class="wizard-field"
+              id="field-maxlength-container"
+              style="display: none"
+            >
+              <label for="field-maxlength">Max Length</label>
+              <input
+                type="number"
+                id="field-maxlength"
+                class="wizard-input"
+                min="1"
+              />
+            </div>
+
+            <div class="wizard-field">
+              <label for="field-description">Description</label>
+              <textarea
+                id="field-description"
+                class="wizard-textarea"
+                rows="2"
+              ></textarea>
+            </div>
+
+            <div class="wizard-field">
+              <label class="wizard-checkbox-label">
+                <input type="checkbox" id="field-required" />
+                Required field
+              </label>
+            </div>
+
+            <div class="dialog-buttons">
+              <button type="submit" class="dialog-button">Save</button>
+              <button type="button" class="dialog-cancel" id="cancel-field">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </dialog>
+
+      <!-- Add/Edit Query Dialog -->
+      <dialog id="edit-query-dialog" class="wizard-dialog">
+        <button type="button" class="dialog-close" id="edit-query-close-x">
+          &times;
+        </button>
+        <div class="dialog-content">
+          <h2 id="edit-query-title">Add Query Method</h2>
+          <form id="edit-query-form" class="wizard-form">
+            <div class="wizard-field">
+              <label for="query-name">Name *</label>
+              <input
+                type="text"
+                id="query-name"
+                class="wizard-input"
+                required
+              />
+              <span class="wizard-field-help">
+                lowerCamelCase (e.g., "listTodos", "getPost", "searchBookmarks")
+              </span>
+            </div>
+
+            <div class="wizard-field">
+              <label for="query-description">Description</label>
+              <textarea
+                id="query-description"
+                class="wizard-textarea"
+                rows="2"
+              ></textarea>
+            </div>
+
+            <div class="wizard-field">
+              <label for="query-returns-record">Returns Record Type *</label>
+              <select id="query-returns-record" class="wizard-select" required>
+                <!-- Options populated by JavaScript -->
+              </select>
+            </div>
+
+            <div class="wizard-field">
+              <label class="wizard-checkbox-label">
+                <input type="checkbox" id="query-returns-list" checked />
+                Returns a list (array) of records
+              </label>
+            </div>
+
+            <div class="dialog-buttons">
+              <button type="submit" class="dialog-button">Save</button>
+              <button type="button" class="dialog-cancel" id="cancel-query">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </dialog>
+
+      <!-- Add/Edit Procedure Dialog -->
+      <dialog id="edit-procedure-dialog" class="wizard-dialog">
+        <button type="button" class="dialog-close" id="edit-procedure-close-x">
+          &times;
+        </button>
+        <div class="dialog-content">
+          <h2 id="edit-procedure-title">Add Procedure Method</h2>
+          <form id="edit-procedure-form" class="wizard-form">
+            <div class="wizard-field">
+              <label for="procedure-name">Name *</label>
+              <input
+                type="text"
+                id="procedure-name"
+                class="wizard-input"
+                required
+              />
+              <span class="wizard-field-help">
+                lowerCamelCase (e.g., "createTodo", "updatePost",
+                "deleteBookmark")
+              </span>
+            </div>
+
+            <div class="wizard-field">
+              <label for="procedure-description">Description</label>
+              <textarea
+                id="procedure-description"
+                class="wizard-textarea"
+                rows="2"
+              ></textarea>
+            </div>
+
+            <div class="wizard-field">
+              <label for="procedure-input-record">Input Record Type</label>
+              <select id="procedure-input-record" class="wizard-select">
+                <option value="">None</option>
+                <!-- Options populated by JavaScript -->
+              </select>
+            </div>
+
+            <div class="wizard-field">
+              <label for="procedure-output-type">Output Type *</label>
+              <select id="procedure-output-type" class="wizard-select" required>
+                <option value="success">Success Response</option>
+                <option value="record">Record</option>
+              </select>
+            </div>
+
+            <div
+              class="wizard-field"
+              id="procedure-output-record-container"
+              style="display: none"
+            >
+              <label for="procedure-output-record">Output Record Type</label>
+              <select id="procedure-output-record" class="wizard-select">
+                <!-- Options populated by JavaScript -->
+              </select>
+            </div>
+
+            <div class="dialog-buttons">
+              <button type="submit" class="dialog-button">Save</button>
+              <button type="button" class="dialog-cancel" id="cancel-procedure">
+                Cancel
+              </button>
+            </div>
+          </form>
         </div>
       </dialog>
     </main>

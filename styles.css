@@ -737,7 +737,7 @@ header h1 {
 
 /* ===== WIZARD STYLES ===== */
 
-.wizard-container {
+.wizard-narrow {
   max-width: 900px;
   margin: 2rem auto;
   padding: 0 1rem;
@@ -1121,6 +1121,16 @@ header h1 {
 .wizard-nav-main {
   display: flex;
   gap: 1rem;
+  width: 100%;
+}
+
+#wizard-next {
+  margin-left: auto;
+}
+
+.wizard-nav-main.wizard-nav-compact {
+  width: auto;
+  margin-left: auto;
 }
 
 /* Review Section */

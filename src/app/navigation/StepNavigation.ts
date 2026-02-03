@@ -74,11 +74,23 @@ export function updateProgressBar(): void {
   const backBtn = document.getElementById('wizard-back') as HTMLButtonElement;
   if (backBtn) {
     backBtn.disabled = wizardState.currentStep === 0;
+    backBtn.style.display = wizardState.currentStep > 0 ? '' : 'none';
   }
 
   const nextBtn = document.getElementById('wizard-next');
   if (nextBtn) {
     nextBtn.textContent =
       wizardState.currentStep === 7 ? 'Generate App' : 'Next';
+  }
+
+  // Show Save Progress button and compact nav layout on step 2+
+  const saveBtn = document.getElementById('wizard-save');
+  if (saveBtn) {
+    saveBtn.style.display = wizardState.currentStep >= 2 ? '' : 'none';
+  }
+
+  const navMain = document.querySelector('.wizard-nav-main');
+  if (navMain) {
+    navMain.classList.toggle('wizard-nav-compact', wizardState.currentStep >= 2);
   }
 }

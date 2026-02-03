@@ -8,9 +8,12 @@ import { escapeHtml } from '../../utils';
 export function renderStep2(): string {
   const wizardState = getWizardState();
 
-  const recordsHtml = wizardState.recordTypes.length === 0
-    ? '<p class="wizard-empty-message">No record types defined yet. Click "Add Record Type" to get started.</p>'
-    : wizardState.recordTypes.map(record => `
+  const recordsHtml =
+    wizardState.recordTypes.length === 0
+      ? '<p class="wizard-empty-message">No record types defined yet. Click "Add Record Type" to get started.</p>'
+      : wizardState.recordTypes
+          .map(
+            (record) => `
         <div class="wizard-list-item" data-id="${record.id}">
           <div class="wizard-list-item-header">
             <h3>${escapeHtml(record.name || 'Untitled Record')}</h3>
@@ -34,28 +37,30 @@ export function renderStep2(): string {
             ${record.fields.length} field(s) defined
           </p>
         </div>
-      `).join('');
+      `
+          )
+          .join('');
 
   return `
-    <div class="wizard-step">
-      <h2 class="wizard-step-title">Define Record Types</h2>
-      <p class="wizard-step-description">
-        Record types are the data structures your app will store.
-        Examples: "todo", "post", "bookmark", "note"
-      </p>
-
-      <div class="wizard-form">
-        <div id="record-types-list" class="wizard-list">
-          ${recordsHtml}
+    <div class="wizard-narrow">
+      <div class="wizard-step">
+        <h2 class="wizard-step-title">Define Record Types</h2>
+        <p class="wizard-step-description">
+          Record types are the data structures your app will store.
+          Examples: "todo", "post", "bookmark", "note"
+        </p>
+        <div class="wizard-form">
+          <div id="record-types-list" class="wizard-list">
+            ${recordsHtml}
+          </div>
+          <button
+            type="button"
+            id="add-record-type"
+            class="wizard-button wizard-button-secondary"
+          >
+            + Add Record Type
+          </button>
         </div>
-
-        <button
-          type="button"
-          id="add-record-type"
-          class="wizard-button wizard-button-secondary"
-        >
-          + Add Record Type
-        </button>
       </div>
     </div>
   `;

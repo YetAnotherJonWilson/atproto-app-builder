@@ -4,7 +4,11 @@
 
 import type { AppInfo, RecordType } from '../types/wizard';
 
-export function generateReadme(appInfo: AppInfo, recordTypes: RecordType[], domain: string): string {
+export function generateReadme(
+  appInfo: AppInfo,
+  recordTypes: RecordType[],
+  domain: string
+): string {
   return `# ${appInfo.appName}
 
 ${appInfo.description || 'An AT Protocol application'}
@@ -30,12 +34,18 @@ ${appInfo.authorName || 'Unknown'}
 
 ## Record Types
 
-${recordTypes.map(r => `### ${r.name}
+${recordTypes
+  .map(
+    (r) => `### ${r.name}
 ${r.description || 'No description'}
 
 **Fields:**
-${r.fields.map(f => `- \`${f.name}\` (${f.type})${f.required ? ' - Required' : ''}`).join('\n')}
-`).join('\n')}
+${r.fields
+  .map((f) => `- \`${f.name}\` (${f.type})${f.required ? ' - Required' : ''}`)
+  .join('\n')}
+`
+  )
+  .join('\n')}
 
 ## Building for Production
 
@@ -44,9 +54,5 @@ npm run build
 \`\`\`
 
 The built files will be in the \`dist/\` directory.
-
----
-
-Generated with the AT Protocol App Builder
 `;
 }
