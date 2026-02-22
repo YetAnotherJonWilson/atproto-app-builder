@@ -64,6 +64,28 @@ export function initializeApp(): void {
       saveWizardState(getWizardState());
     });
   }
+
+  // Wire up site navigation menu
+  const navAppWizard = document.getElementById('nav-app-wizard');
+  if (navAppWizard) {
+    navAppWizard.addEventListener('click', (e) => {
+      e.preventDefault();
+      const wizardState = getWizardState();
+      if (wizardState.currentStep === 0) {
+        // If on Step 0, go to Step 1
+        goToNextStep();
+      } else if (wizardState.currentStep !== 1) {
+        // If not already on Step 1, navigate there
+        collectCurrentStepData();
+        wizardState.currentStep = 1;
+        saveWizardState(wizardState);
+        renderCurrentStep();
+        updateProgressBar();
+        window.scrollTo(0, 0);
+      }
+    });
+  }
+
   const tooltip = document.getElementById('tooltip');
   let activeTooltip: Element | null = null;
 
