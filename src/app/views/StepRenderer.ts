@@ -19,6 +19,12 @@ export function renderCurrentStep(): void {
   const container = document.getElementById('wizard-step-content');
   if (!container) return;
 
+  // Show header only on Step 0 (front page)
+  const header = document.querySelector('header');
+  if (header) {
+    header.style.display = wizardState.currentStep === 0 ? '' : 'none';
+  }
+
   switch (wizardState.currentStep) {
     case 0:
       container.innerHTML = renderStep0();

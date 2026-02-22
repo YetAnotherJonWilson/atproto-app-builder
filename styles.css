@@ -218,7 +218,9 @@
     }
 
     .intro-block h2 {
-      font-family: Andale Mono, sans-serif;
+      font-family:
+        Andale Mono,
+        sans-serif;
       text-transform: uppercase;
       font-size: 2.25rem;
       font-weight: 700;
@@ -409,7 +411,9 @@ header h1 {
   z-index: 1000;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.3s ease, visibility 0.3s ease;
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s ease;
   pointer-events: none;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
@@ -815,14 +819,11 @@ header h1 {
 }
 
 .step-header {
-  font-size: 3rem !important;
-  max-width: fit-content;
-  transform: rotate(-4deg);
-  position: relative;
-  bottom: 60px;
-  right: 60px;
-  color: white !important;
-  background-color: #191e39;
+  display: inline-block;
+  margin: 1rem 0 0 2rem;
+  font-family: var(--ff-heading);
+  font-size: var(--fs-1000);
+  color: var(--primary);
 }
 
 /* Form Elements */
@@ -944,7 +945,9 @@ header h1 {
   border: 2px solid var(--primary-lightish);
   border-radius: 8px;
   padding: 1.25rem;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .wizard-list-item:hover {
