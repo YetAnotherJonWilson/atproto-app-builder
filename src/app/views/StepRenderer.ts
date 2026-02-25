@@ -19,10 +19,13 @@ export function renderCurrentStep(): void {
   const container = document.getElementById('wizard-step-content');
   if (!container) return;
 
-  // Show header only on Step 0 (front page)
-  const header = document.querySelector('header');
-  if (header) {
-    header.style.display = wizardState.currentStep === 0 ? '' : 'none';
+  // Swap header text based on current step
+  const headerH1 = document.querySelector('header h1');
+  if (headerH1) {
+    headerH1.textContent =
+      wizardState.currentStep === 0
+        ? 'build the Web you want'
+        : 'THE APP WIZARD';
   }
 
   switch (wizardState.currentStep) {

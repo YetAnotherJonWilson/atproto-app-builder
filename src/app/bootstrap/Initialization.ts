@@ -19,7 +19,7 @@ import {
 import { renderCurrentStep } from '../views/StepRenderer';
 import { setupDialogHandlers } from '../dialogs/DialogHandlers';
 import { setupWizardOps } from './WizardOps';
-import { initializeHistoryManager } from '../navigation/HistoryManager';
+import { initializeHistoryManager, pushStepToHistory } from '../navigation/HistoryManager';
 
 export let setupTooltips: () => void;
 
@@ -72,24 +72,17 @@ export function initializeApp(): void {
     });
   }
 
-  // Wire up site navigation menu
-  const navAppWizard = document.getElementById('nav-app-wizard');
-  if (navAppWizard) {
-    navAppWizard.addEventListener('click', (e) => {
+  // Wire up App Wizard menu link
+  const appWizardLink = document.getElementById('menu-app-wizard');
+  if (appWizardLink) {
+    appWizardLink.addEventListener('click', (e) => {
       e.preventDefault();
       const wizardState = getWizardState();
-      if (wizardState.currentStep === 0) {
-        // If on Step 0, go to Step 1
-        goToNextStep();
-      } else if (wizardState.currentStep !== 1) {
-        // If not already on Step 1, navigate there
-        collectCurrentStepData();
-        wizardState.currentStep = 1;
-        saveWizardState(wizardState);
-        renderCurrentStep();
-        updateProgressBar();
-        window.scrollTo(0, 0);
-      }
+      wizardState.currentStep = 1;
+      renderCurrentStep();
+      updateProgressBar();
+      pushStepToHistory(1);
+      window.scrollTo(0, 0);
     });
   }
 

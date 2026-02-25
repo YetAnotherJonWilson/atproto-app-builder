@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -8,15 +8,21 @@
     <script type="module" src="/src/app.ts" defer></script>
   </head>
   <body>
-    <nav class="site-nav">
-      <ul class="site-nav-list" role="list">
-        <li><a href="#" id="nav-app-wizard">App Wizard</a></li>
-        <li><a href="javascript:void(0)" id="nav-app-examples">App Examples</a></li>
-        <li><a href="javascript:void(0)" id="nav-login">Login</a></li>
-      </ul>
-    </nav>
     <header>
-      <h1>build the Web you want</h1>
+      <div class="header-content">
+        <h1>build the Web you want</h1>
+        <!-- Paint blotch menu background (upper-right) -->
+        <nav class="menu-nav">
+          <div class="menu-blotch" aria-hidden="true">
+            <div class="menu-blotch__drip"></div>
+            <div class="menu-blotch__splat"></div>
+          </div>
+          <ul class="menu-nav__list" role="list">
+            <li><a href="#" class="menu-nav__link" id="menu-app-wizard">App Wizard</a></li>
+            <li><a href="#" class="menu-nav__link" id="menu-login">LOGIN</a></li>
+          </ul>
+        </nav>
+      </div>
     </header>
     <main>
       <div id="wizard-container">
@@ -366,5 +372,52 @@
       </dialog>
     </main>
     <div id="tooltip" class="tooltip"></div>
+
+    <!-- SVG filter for jagged paint-splatter edges.
+         feTurbulence generates fractal noise; feDisplacementMap
+         uses it to distort the edges of any element that references
+         this filter via CSS filter: url(#paint-roughen). -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <filter id="paint-roughen">
+          <!-- Fractal noise — type="turbulence" gives a more chaotic,
+               torn look than "fractalNoise". numOctaves controls detail
+               level; baseFrequency controls the scale of the distortion. -->
+          <feTurbulence
+            type="turbulence"
+            baseFrequency="0.04"
+            numOctaves="4"
+            seed="2"
+            result="noise"
+          />
+          <!-- Displace the source graphic's pixels using the noise.
+               scale="14" = how far pixels get pushed = how jagged the edges are. -->
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="noise"
+            scale="14"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
+        </filter>
+        <!-- A second, more aggressive filter for the smaller splatter bits -->
+        <filter id="paint-roughen-heavy">
+          <feTurbulence
+            type="turbulence"
+            baseFrequency="0.05"
+            numOctaves="4"
+            seed="7"
+            result="noise"
+          />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="noise"
+            scale="9"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
+        </filter>
+      </defs>
+    </svg>
   </body>
 </html>

@@ -113,12 +113,13 @@
     --secondary-lightish: #df877c;
     --bg1: #f7f0eb;
     --bg2: #f3e8e2;
+    --bg3: #edddd4;
 
     @media (width > 760px) {
       --ff-body: 'bilbo-regular', sans-serif;
       --fs-500: 3rem;
       --fs-700: 6rem;
-      --fs-1000: 11rem;
+      --fs-1000: 10rem;
     }
   }
 
@@ -312,68 +313,153 @@
   }
 }
 
-/* Site Navigation */
-.site-nav {
-  position: fixed;
-  top: 1rem;
-  right: 1rem;
-  z-index: 100;
-}
-
-.site-nav-list {
+.header-content {
   display: flex;
-  gap: 0.5rem;
-  align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  justify-content: space-between;
+  width: 100%;
+  height: auto;
+  background-color: var(--bg3);
+  z-index: 10;
+  overflow: hidden;
 }
 
-.site-nav-list a {
-  display: inline-block;
-  font-family: sans-serif;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--primary);
-  text-decoration: none;
-  padding: 0.5rem 1rem;
-  background-color: var(--bg2);
-  border: 2px solid var(--primary-lightish);
-  border-radius: 6px;
-  transition: all 0.2s ease;
+.header-content::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -2%;
+  width: 104%;
+  height: 6px;
+  background-color: var(--primary-dark);
+  filter: url(#paint-roughen-heavy);
 }
 
-.site-nav-list a:hover {
-  background-color: var(--primary);
-  color: white;
-  border-color: var(--primary);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.site-nav-list a:active {
-  transform: translateY(0);
-}
-
-@media (width > 760px) {
-  .site-nav {
-    top: 1.5rem;
-    right: 2rem;
-  }
-
-  .site-nav-list {
-    gap: 1rem;
-  }
-
-  .site-nav-list a {
-    font-size: 1.1rem;
-    padding: 0.75rem 1.5rem;
+main {
+  padding-top: 5rem;
+  @media (width > 760px) {
+    padding-top: 13rem;
   }
 }
 
 header h1 {
   display: inline-block;
   margin: 1rem 0 0 2rem;
+  color: var(--primary);
   font-family: var(--ff-heading);
   font-size: var(--fs-1000);
-  color: var(--primary);
+}
+
+/* ===== PAINT BLOTCH MENU BACKGROUND ===== */
+/* Organic, messy paint splatter shape to serve as the background
+   for a vertical navigation menu in the upper-right corner.
+   Matches the graffiti/stencil aesthetic of the dirty-ego header font.
+
+   Edge roughness comes from an inline SVG filter (feTurbulence +
+   feDisplacementMap) defined in index.html. The filter warps pixels
+   at the boundary using fractal noise, producing genuinely jagged,
+   torn edges that look like real dried paint. Each sub-element
+   references a filter with different noise seeds so no two edges
+   repeat the same pattern. */
+
+.menu-nav {
+  position: relative;
+  width: 220px;
+  z-index: 100;
+}
+
+.menu-blotch {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+
+  /* Core blotch shape — asymmetric border-radius for the organic base form.
+     The SVG filter then chews up these smooth curves into jagged edges. */
+  background-color: var(--secondary-darkish);
+  border-radius: 62% 38% 46% 54% / 30% 45% 55% 70%;
+
+  /* The SVG displacement filter — this is what makes the edges jagged.
+     It references the <filter id="paint-roughen"> defined in the HTML. */
+  filter: url(#paint-roughen);
+
+  /* Hard-offset shadows add extra irregular mass around the shape.
+     Zero blur = flat solid shapes, not depth. The filter distorts
+     these too, so they get their own jagged silhouettes. Vertical
+     offsets kept small so the blotch fits inside the header. */
+  box-shadow:
+    12px -4px 0 -4px var(--secondary-darkish),
+    6px -8px 0 -3px var(--secondary-darkish),
+    -14px -5px 0 -5px var(--secondary-darkish);
+
+  /* Slight rotation — nothing sprayed on a wall is perfectly straight */
+  transform: rotate(-3deg);
+}
+
+/* Drip running down from the main blotch.
+   Moved from ::before pseudo-element to a real child div so it can
+   have its own SVG filter with a different noise seed.
+   Sized to stay within the header area. */
+.menu-blotch__drip {
+  position: absolute;
+  bottom: 12px;
+  left: 35px;
+  width: 14px;
+  height: 30px;
+  background-color: var(--secondary-darkish);
+  border-radius: 40% 50% 60% 45% / 10% 10% 50% 45%;
+  transform: rotate(4deg);
+  filter: url(#paint-roughen-heavy);
+}
+
+/* Secondary splatter — a smaller satellite blob flung off the main mass.
+   Uses the heavier filter variant for more aggressive edge distortion
+   on this smaller shape. Positioned to stay inside the header. */
+.menu-blotch__splat {
+  position: absolute;
+  bottom: 10px;
+  left: -35px;
+  width: 35px;
+  height: 26px;
+  background-color: var(--secondary-darkish);
+  border-radius: 70% 40% 55% 30% / 55% 35% 65% 50%;
+  transform: rotate(15deg);
+  filter: url(#paint-roughen-heavy);
+  box-shadow: -8px 3px 0 -6px var(--secondary-darkish);
+}
+
+.menu-nav__list {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 0.15rem;
+  line-height: 1;
+}
+
+.menu-nav__link {
+  font-family: var(--ff-heading);
+  font-size: 2rem;
+  letter-spacing: 0.15em;
+  color: white;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.menu-nav__link:hover {
+  color: var(--bg2);
+}
+
+/* On narrower viewports, scale down so it does not overwhelm
+   the content area */
+@media (width <= 760px) {
+  .menu-nav {
+    display: none;
+  }
 }
 
 #block-one,
@@ -872,14 +958,6 @@ header h1 {
       font-size: 2rem;
     }
   }
-}
-
-.step-header {
-  display: inline-block;
-  margin: 1rem 0 0 2rem;
-  font-family: var(--ff-heading);
-  font-size: var(--fs-1000);
-  color: var(--primary);
 }
 
 /* Form Elements */
