@@ -10,13 +10,10 @@
   <body>
     <header>
       <div class="header-content">
-        <h1>build the Web you want</h1>
-        <!-- Paint blotch menu background (upper-right) -->
+        <h1>Reclaim the web</h1>
+        <!-- Cut-out tape label menu (upper-right) -->
         <nav class="menu-nav">
-          <div class="menu-blotch" aria-hidden="true">
-            <div class="menu-blotch__drip"></div>
-            <div class="menu-blotch__splat"></div>
-          </div>
+          <div class="menu-label" aria-hidden="true"></div>
           <ul class="menu-nav__list" role="list">
             <li>
               <a href="#" class="menu-nav__link" id="menu-app-wizard"
@@ -396,7 +393,7 @@
     </main>
     <div id="tooltip" class="tooltip"></div>
 
-    <!-- SVG filter for jagged paint-splatter edges.
+    <!-- SVG filter for rough torn-paper edges.
          feTurbulence generates fractal noise; feDisplacementMap
          uses it to distort the edges of any element that references
          this filter via CSS filter: url(#paint-roughen). -->
@@ -414,11 +411,11 @@
             result="noise"
           />
           <!-- Displace the source graphic's pixels using the noise.
-               scale="14" = how far pixels get pushed = how jagged the edges are. -->
+               scale = how far pixels get pushed = how jagged the edges are. -->
           <feDisplacementMap
             in="SourceGraphic"
             in2="noise"
-            scale="14"
+            scale="22"
             xChannelSelector="R"
             yChannelSelector="G"
           />

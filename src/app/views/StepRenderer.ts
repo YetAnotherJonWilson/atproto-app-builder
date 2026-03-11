@@ -23,14 +23,15 @@ export function renderCurrentStep(): void {
   const headerH1 = document.querySelector('header h1');
   if (headerH1) {
     headerH1.textContent =
-      wizardState.currentStep === 0
-        ? 'build the Web you want'
-        : 'THE APP WIZARD';
+      wizardState.currentStep === 0 ? 'Reclaim the web' : 'THE APP WIZARD';
   }
 
   // Toggle body class for wizard-specific layout
   document.body.classList.toggle('wizard-active', wizardState.currentStep >= 1);
-  document.body.classList.toggle('wizard-step-intro', wizardState.currentStep === 1);
+  document.body.classList.toggle(
+    'wizard-step-intro',
+    wizardState.currentStep === 1,
+  );
 
   switch (wizardState.currentStep) {
     case 0:
