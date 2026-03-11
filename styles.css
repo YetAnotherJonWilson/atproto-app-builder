@@ -134,8 +134,16 @@
     font-size: var(--fs-500);
     background-color: var(--bg-primary);
     background-image:
-      radial-gradient(ellipse at 15% 30%, rgba(0, 229, 255, 0.04) 0%, transparent 55%),
-      radial-gradient(ellipse at 85% 60%, rgba(255, 51, 85, 0.035) 0%, transparent 55%);
+      radial-gradient(
+        ellipse at 15% 30%,
+        rgba(0, 229, 255, 0.04) 0%,
+        transparent 55%
+      ),
+      radial-gradient(
+        ellipse at 85% 60%,
+        rgba(255, 51, 85, 0.035) 0%,
+        transparent 55%
+      );
     color: var(--text-primary);
   }
 }
@@ -163,7 +171,12 @@
   left: 0;
   width: 100%;
   height: 2px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-red), var(--accent));
+  background: linear-gradient(
+    90deg,
+    var(--accent),
+    var(--accent-red),
+    var(--accent)
+  );
   opacity: 0.55;
 }
 
@@ -266,7 +279,8 @@ header h1 {
 /* ===== GLITCH ANIMATION ===== */
 
 @keyframes hero-glitch {
-  0%, 100% {
+  0%,
+  100% {
     text-shadow: none;
     transform: translate(0, 0);
   }
@@ -275,15 +289,21 @@ header h1 {
     transform: translate(0, 0);
   }
   49.5% {
-    text-shadow: 3px 0 var(--accent-red), -3px 0 var(--accent);
+    text-shadow:
+      3px 0 var(--accent-red),
+      -3px 0 var(--accent);
     transform: translate(2px, 0);
   }
   50% {
-    text-shadow: -2px 0 var(--accent-red), 2px 0 var(--accent);
+    text-shadow:
+      -2px 0 var(--accent-red),
+      2px 0 var(--accent);
     transform: translate(-1px, 1px);
   }
   50.5% {
-    text-shadow: 1px 0 var(--accent-red), -1px 0 var(--accent);
+    text-shadow:
+      1px 0 var(--accent-red),
+      -1px 0 var(--accent);
     transform: translate(1px, -1px);
   }
   51% {
@@ -552,7 +572,9 @@ body:not(.wizard-active) #wizard-next:hover:not(:disabled) {
   color: var(--text-primary);
   position: relative;
   cursor: pointer;
-  transition: color 0.2s ease, background-color 0.2s ease;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
 }
 
 .term:hover {
@@ -637,11 +659,8 @@ body:not(.wizard-active) #wizard-next:hover:not(:disabled) {
 /* ===== WIZARD STYLES ===== */
 
 .wizard-window {
-  max-width: 90%;
+  width: 100%;
   margin: 0 auto 2rem;
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: 8px;
 }
 
 .wizard-intro {
@@ -655,13 +674,25 @@ body:not(.wizard-active) #wizard-next:hover:not(:disabled) {
   }
 }
 
-.wizard-columns {
+.wizard-column-labels,
+.wizard-column-content {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
 }
 
-.wizard-column + .wizard-column {
-  border-left: 1px solid var(--border-subtle);
+.wizard-column-labels {
+  margin: 0;
+}
+
+.wizard-column-content .wizard-column + .wizard-column {
+  border-left: 1px solid var(--accent);
+}
+
+.wizard-column-label {
+  padding: 0.75rem 1rem;
+  margin: 0;
+  font-size: var(--fs-400);
+  color: var(--accent);
 }
 
 /* Progress Bar */
@@ -699,6 +730,9 @@ body:not(.wizard-active) #wizard-next:hover:not(:disabled) {
 }
 
 /* Step Content */
+.p-accent {
+  color: var(--accent);
+}
 .wizard-step {
   position: relative;
   padding: 1rem;
