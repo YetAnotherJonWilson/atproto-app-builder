@@ -1,127 +1,99 @@
-<svg viewBox="0 0 1200 500" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background -->
-  <rect width="1200" height="500" fill="#f8f9fa"/>
-  
-  <!-- Arrow marker definition with open tip -->
+<svg viewBox="85 25 630 485" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-      <path d="M 0 0 L 10 3.5 L 0 7" fill="none" stroke="#232d53" stroke-width="1"/>
+      <path d="M 0 0 L 10 3.5 L 0 7" fill="none" stroke="#d4607e" stroke-width="1"/>
     </marker>
   </defs>
-  
-  <!-- MUSIC APP -->
-  <!-- Main enclosing circle -->
-  <circle cx="200" cy="200" r="120" fill="none" stroke="#232d53" stroke-width="2"/>
-  
-  <!-- Username Icon - Simple person icon -->
-  <circle cx="140" cy="150" r="8" fill="none" stroke="#232d53" stroke-width="2"/>
-  <path d="M 128 170 Q 128 160 140 160 Q 152 160 152 170 L 150 170 Q 150 163 140 163 Q 130 163 130 170 Z" fill="none" stroke="#232d53" stroke-width="2"/>
-  
-  <!-- Identity Label -->
-  <text x="140" y="190" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#232d53">Your Identity</text>
-  
-  <!-- Data Icon - Vertical cylindrical hard disk -->
-  <ellipse cx="250" cy="145" rx="12" ry="4" fill="none" stroke="#232d53" stroke-width="2"/>
-  <line x1="238" y1="145" x2="238" y2="165" stroke="#232d53" stroke-width="2"/>
-  <line x1="262" y1="145" x2="262" y2="165" stroke="#232d53" stroke-width="2"/>
-  <path d="M 238 165 A 12 4 0 0 0 262 165" fill="none" stroke="#232d53" stroke-width="2"/>
-  <path d="M 240 155 A 10 3 0 0 0 260 155" fill="none" stroke="#232d53" stroke-width="1"/>
-  
-  <!-- Data Label -->
-  <text x="250" y="185" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#232d53">Your Data</text>
-  
-  <!-- User Interface Icon - Simple phone screen (vertical) -->
-  <rect x="190" y="225" width="20" height="35" fill="none" stroke="#232d53" stroke-width="2" rx="3"/>
-  <rect x="192" y="228" width="16" height="24" fill="none" stroke="#232d53" stroke-width="1"/>
-  <line x1="194" y1="234" x2="206" y2="234" stroke="#232d53" stroke-width="1"/>
-  <line x1="194" y1="237" x2="204" y2="237" stroke="#232d53" stroke-width="1"/>
-  <line x1="194" y1="240" x2="208" y2="240" stroke="#232d53" stroke-width="1"/>
-  <line x1="194" y1="243" x2="202" y2="243" stroke="#232d53" stroke-width="1"/>
-  
-  <!-- UI Label -->
-  <text x="200" y="275" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#232d53">User Interface</text>
-  
+
+  <!-- MUSIC APP (top-left) -->
+  <circle cx="210" cy="150" r="105" fill="#ff3355" fill-opacity="0.04" stroke="#9a5a70" stroke-width="1.5"/>
+
+  <!-- Identity Icon -->
+  <circle cx="155" cy="105" r="8" fill="none" stroke="#d4607e" stroke-width="1.5"/>
+  <path d="M 143 125 Q 143 115 155 115 Q 167 115 167 125 L 165 125 Q 165 118 155 118 Q 145 118 145 125 Z" fill="none" stroke="#d4607e" stroke-width="1.5"/>
+  <text x="155" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#d4607e">Your Identity</text>
+
+  <!-- Data Icon -->
+  <ellipse cx="260" cy="100" rx="12" ry="4" fill="none" stroke="#d4607e" stroke-width="1.5"/>
+  <line x1="248" y1="100" x2="248" y2="120" stroke="#d4607e" stroke-width="1.5"/>
+  <line x1="272" y1="100" x2="272" y2="120" stroke="#d4607e" stroke-width="1.5"/>
+  <path d="M 248 120 A 12 4 0 0 0 272 120" fill="none" stroke="#d4607e" stroke-width="1.5"/>
+  <path d="M 250 110 A 10 3 0 0 0 270 110" fill="none" stroke="#d4607e" stroke-width="1"/>
+  <text x="260" y="140" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#d4607e">Your Data</text>
+
+  <!-- UI Icon - Phone -->
+  <rect x="200" y="175" width="20" height="35" fill="none" stroke="#d4607e" stroke-width="1.5" rx="3"/>
+  <rect x="202" y="178" width="16" height="24" fill="none" stroke="#d4607e" stroke-width="0.75"/>
+  <line x1="204" y1="184" x2="216" y2="184" stroke="#d4607e" stroke-width="0.75"/>
+  <line x1="204" y1="187" x2="214" y2="187" stroke="#d4607e" stroke-width="0.75"/>
+  <line x1="204" y1="190" x2="218" y2="190" stroke="#d4607e" stroke-width="0.75"/>
+  <line x1="204" y1="193" x2="212" y2="193" stroke="#d4607e" stroke-width="0.75"/>
+  <text x="210" y="225" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#d4607e">User Interface</text>
+
   <!-- Arrows -->
-  <path d="M 185 240 Q 165 215 145 195" fill="none" stroke="#232d53" stroke-width="2" marker-end="url(#arrowhead)"/>
-  <path d="M 215 240 Q 230 215 245 190" fill="none" stroke="#232d53" stroke-width="2" marker-end="url(#arrowhead)"/>
-  
-  <!-- Music App Label -->
-  <text x="200" y="350" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#232d53">Music App</text>
-  
-  <!-- SOCIAL APP -->
-  <!-- Main enclosing circle -->
-  <circle cx="600" cy="200" r="120" fill="none" stroke="#232d53" stroke-width="2"/>
-  
-  <!-- Username Icon - Simple person icon -->
-  <circle cx="540" cy="150" r="8" fill="none" stroke="#232d53" stroke-width="2"/>
-  <path d="M 528 170 Q 528 160 540 160 Q 552 160 552 170 L 550 170 Q 550 163 540 163 Q 530 163 530 170 Z" fill="none" stroke="#232d53" stroke-width="2"/>
-  
-  <!-- Identity Label -->
-  <text x="540" y="190" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#232d53">Your Identity</text>
-  
-  <!-- Data Icon - Vertical cylindrical hard disk -->
-  <ellipse cx="650" cy="145" rx="12" ry="4" fill="none" stroke="#232d53" stroke-width="2"/>
-  <line x1="638" y1="145" x2="638" y2="165" stroke="#232d53" stroke-width="2"/>
-  <line x1="662" y1="145" x2="662" y2="165" stroke="#232d53" stroke-width="2"/>
-  <path d="M 638 165 A 12 4 0 0 0 662 165" fill="none" stroke="#232d53" stroke-width="2"/>
-  <path d="M 640 155 A 10 3 0 0 0 660 155" fill="none" stroke="#232d53" stroke-width="1"/>
-  
-  <!-- Data Label -->
-  <text x="650" y="185" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#232d53">Your Data</text>
-  
-  <!-- User Interface Icon - Simple computer screen (horizontal) -->
-  <rect x="580" y="235" width="40" height="25" fill="none" stroke="#232d53" stroke-width="2" rx="2"/>
-  <rect x="583" y="238" width="34" height="16" fill="none" stroke="#232d53" stroke-width="1"/>
-  <line x1="585" y1="245" x2="605" y2="245" stroke="#232d53" stroke-width="1"/>
-  <line x1="585" y1="248" x2="600" y2="248" stroke="#232d53" stroke-width="1"/>
-  <line x1="585" y1="251" x2="610" y2="251" stroke="#232d53" stroke-width="1"/>
-  
-  <!-- UI Label -->
-  <text x="600" y="275" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#232d53">User Interface</text>
-  
+  <path d="M 195 190 Q 178 165 160 150" fill="none" stroke="#d4607e" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 225 190 Q 240 165 255 145" fill="none" stroke="#d4607e" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <text x="210" y="280" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#d4607e">Music App</text>
+
+  <!-- SOCIAL APP (top-right) -->
+  <circle cx="590" cy="150" r="105" fill="#ff3355" fill-opacity="0.04" stroke="#9a5a70" stroke-width="1.5"/>
+
+  <!-- Identity Icon -->
+  <circle cx="535" cy="105" r="8" fill="none" stroke="#d4607e" stroke-width="1.5"/>
+  <path d="M 523 125 Q 523 115 535 115 Q 547 115 547 125 L 545 125 Q 545 118 535 118 Q 525 118 525 125 Z" fill="none" stroke="#d4607e" stroke-width="1.5"/>
+  <text x="535" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#d4607e">Your Identity</text>
+
+  <!-- Data Icon -->
+  <ellipse cx="640" cy="100" rx="12" ry="4" fill="none" stroke="#d4607e" stroke-width="1.5"/>
+  <line x1="628" y1="100" x2="628" y2="120" stroke="#d4607e" stroke-width="1.5"/>
+  <line x1="652" y1="100" x2="652" y2="120" stroke="#d4607e" stroke-width="1.5"/>
+  <path d="M 628 120 A 12 4 0 0 0 652 120" fill="none" stroke="#d4607e" stroke-width="1.5"/>
+  <path d="M 630 110 A 10 3 0 0 0 650 110" fill="none" stroke="#d4607e" stroke-width="1"/>
+  <text x="640" y="140" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#d4607e">Your Data</text>
+
+  <!-- UI Icon - Computer -->
+  <rect x="570" y="185" width="40" height="25" fill="none" stroke="#d4607e" stroke-width="1.5" rx="2"/>
+  <rect x="573" y="188" width="34" height="16" fill="none" stroke="#d4607e" stroke-width="0.75"/>
+  <line x1="575" y1="195" x2="595" y2="195" stroke="#d4607e" stroke-width="0.75"/>
+  <line x1="575" y1="198" x2="590" y2="198" stroke="#d4607e" stroke-width="0.75"/>
+  <line x1="575" y1="201" x2="600" y2="201" stroke="#d4607e" stroke-width="0.75"/>
+  <text x="590" y="225" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#d4607e">User Interface</text>
+
   <!-- Arrows -->
-  <path d="M 585 240 Q 565 215 545 195" fill="none" stroke="#232d53" stroke-width="2" marker-end="url(#arrowhead)"/>
-  <path d="M 615 240 Q 630 215 645 190" fill="none" stroke="#232d53" stroke-width="2" marker-end="url(#arrowhead)"/>
-  
-  <!-- Social App Label -->
-  <text x="600" y="350" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#232d53">Social App</text>
-  
-  <!-- PODCAST APP -->
-  <!-- Main enclosing circle -->
-  <circle cx="1000" cy="200" r="120" fill="none" stroke="#232d53" stroke-width="2"/>
-  
-  <!-- Username Icon - Simple person icon -->
-  <circle cx="940" cy="150" r="8" fill="none" stroke="#232d53" stroke-width="2"/>
-  <path d="M 928 170 Q 928 160 940 160 Q 952 160 952 170 L 950 170 Q 950 163 940 163 Q 930 163 930 170 Z" fill="none" stroke="#232d53" stroke-width="2"/>
-  
-  <!-- Identity Label -->
-  <text x="940" y="190" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#232d53">Your Identity</text>
-  
-  <!-- Data Icon - Vertical cylindrical hard disk -->
-  <ellipse cx="1050" cy="145" rx="12" ry="4" fill="none" stroke="#232d53" stroke-width="2"/>
-  <line x1="1038" y1="145" x2="1038" y2="165" stroke="#232d53" stroke-width="2"/>
-  <line x1="1062" y1="145" x2="1062" y2="165" stroke="#232d53" stroke-width="2"/>
-  <path d="M 1038 165 A 12 4 0 0 0 1062 165" fill="none" stroke="#232d53" stroke-width="2"/>
-  <path d="M 1040 155 A 10 3 0 0 0 1060 155" fill="none" stroke="#232d53" stroke-width="1"/>
-  
-  <!-- Data Label -->
-  <text x="1050" y="185" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#232d53">Your Data</text>
-  
-  <!-- User Interface Icon - Simple phone screen (vertical) -->
-  <rect x="990" y="225" width="20" height="35" fill="none" stroke="#232d53" stroke-width="2" rx="3"/>
-  <rect x="992" y="228" width="16" height="24" fill="none" stroke="#232d53" stroke-width="1"/>
-  <line x1="994" y1="234" x2="1006" y2="234" stroke="#232d53" stroke-width="1"/>
-  <line x1="994" y1="237" x2="1004" y2="237" stroke="#232d53" stroke-width="1"/>
-  <line x1="994" y1="240" x2="1008" y2="240" stroke="#232d53" stroke-width="1"/>
-  <line x1="994" y1="243" x2="1002" y2="243" stroke="#232d53" stroke-width="1"/>
-  
-  <!-- UI Label -->
-  <text x="1000" y="275" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#232d53">User Interface</text>
-  
+  <path d="M 575 200 Q 558 175 540 150" fill="none" stroke="#d4607e" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 605 200 Q 620 175 635 145" fill="none" stroke="#d4607e" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <text x="590" y="280" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#d4607e">Social App</text>
+
+  <!-- PODCAST APP (bottom-center) -->
+  <circle cx="400" cy="360" r="105" fill="#ff3355" fill-opacity="0.04" stroke="#9a5a70" stroke-width="1.5"/>
+
+  <!-- Identity Icon -->
+  <circle cx="345" cy="315" r="8" fill="none" stroke="#d4607e" stroke-width="1.5"/>
+  <path d="M 333 335 Q 333 325 345 325 Q 357 325 357 335 L 355 335 Q 355 328 345 328 Q 335 328 335 335 Z" fill="none" stroke="#d4607e" stroke-width="1.5"/>
+  <text x="345" y="355" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#d4607e">Your Identity</text>
+
+  <!-- Data Icon -->
+  <ellipse cx="450" cy="310" rx="12" ry="4" fill="none" stroke="#d4607e" stroke-width="1.5"/>
+  <line x1="438" y1="310" x2="438" y2="330" stroke="#d4607e" stroke-width="1.5"/>
+  <line x1="462" y1="310" x2="462" y2="330" stroke="#d4607e" stroke-width="1.5"/>
+  <path d="M 438 330 A 12 4 0 0 0 462 330" fill="none" stroke="#d4607e" stroke-width="1.5"/>
+  <path d="M 440 320 A 10 3 0 0 0 460 320" fill="none" stroke="#d4607e" stroke-width="1"/>
+  <text x="450" y="350" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#d4607e">Your Data</text>
+
+  <!-- UI Icon - Phone -->
+  <rect x="390" y="385" width="20" height="35" fill="none" stroke="#d4607e" stroke-width="1.5" rx="3"/>
+  <rect x="392" y="388" width="16" height="24" fill="none" stroke="#d4607e" stroke-width="0.75"/>
+  <line x1="394" y1="394" x2="406" y2="394" stroke="#d4607e" stroke-width="0.75"/>
+  <line x1="394" y1="397" x2="404" y2="397" stroke="#d4607e" stroke-width="0.75"/>
+  <line x1="394" y1="400" x2="408" y2="400" stroke="#d4607e" stroke-width="0.75"/>
+  <line x1="394" y1="403" x2="402" y2="403" stroke="#d4607e" stroke-width="0.75"/>
+  <text x="400" y="435" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#d4607e">User Interface</text>
+
   <!-- Arrows -->
-  <path d="M 985 240 Q 965 215 945 195" fill="none" stroke="#232d53" stroke-width="2" marker-end="url(#arrowhead)"/>
-  <path d="M 1015 240 Q 1030 215 1045 190" fill="none" stroke="#232d53" stroke-width="2" marker-end="url(#arrowhead)"/>
-  
-  <!-- Podcast App Label -->
-  <text x="1000" y="350" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#232d53">Podcast App</text>
+  <path d="M 385 400 Q 368 375 350 360" fill="none" stroke="#d4607e" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <path d="M 415 400 Q 430 375 445 355" fill="none" stroke="#d4607e" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <text x="400" y="490" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#d4607e">Podcast App</text>
 </svg>

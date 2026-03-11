@@ -10,7 +10,7 @@ export function validateCurrentStep(): string[] {
 
   switch (wizardState.currentStep) {
     case 1:
-      return validateStep1();
+      return [];
     case 2:
       return validateStep2();
     case 3:
@@ -26,24 +26,6 @@ export function validateCurrentStep(): string[] {
   }
 }
 
-function validateStep1(): string[] {
-  collectCurrentStepData();
-  const wizardState = getWizardState();
-  const errors: string[] = [];
-
-  if (!wizardState.appInfo.appName || wizardState.appInfo.appName.trim() === '') {
-    errors.push('App name is required');
-  }
-
-  if (!wizardState.appInfo.domain || wizardState.appInfo.domain.trim() === '') {
-    errors.push('Domain is required');
-  } else if (!isValidDomain(wizardState.appInfo.domain)) {
-    errors.push('Domain must be a valid domain name (e.g., example.com)');
-  }
-
-  return errors;
-}
-
 function validateStep2(): string[] {
   const wizardState = getWizardState();
   const errors: string[] = [];
@@ -52,8 +34,10 @@ function validateStep2(): string[] {
     errors.push('At least one record type is required');
   }
 
-  const names = wizardState.recordTypes.map(r => r.name.toLowerCase());
-  const duplicates = names.filter((name, index) => names.indexOf(name) !== index);
+  const names = wizardState.recordTypes.map((r) => r.name.toLowerCase());
+  const duplicates = names.filter(
+    (name, index) => names.indexOf(name) !== index
+  );
   if (duplicates.length > 0) {
     errors.push(`Duplicate record type names: ${duplicates.join(', ')}`);
   }
@@ -65,15 +49,19 @@ function validateStep3(): string[] {
   const wizardState = getWizardState();
   const errors: string[] = [];
 
-  wizardState.recordTypes.forEach(record => {
+  wizardState.recordTypes.forEach((record) => {
     if (record.fields.length === 0) {
       errors.push(`Record type "${record.name}" has no fields`);
     }
 
-    const fieldNames = record.fields.map(f => f.name.toLowerCase());
-    const duplicates = fieldNames.filter((name, index) => fieldNames.indexOf(name) !== index);
+    const fieldNames = record.fields.map((f) => f.name.toLowerCase());
+    const duplicates = fieldNames.filter(
+      (name, index) => fieldNames.indexOf(name) !== index
+    );
     if (duplicates.length > 0) {
-      errors.push(`Record "${record.name}" has duplicate fields: ${duplicates.join(', ')}`);
+      errors.push(
+        `Record "${record.name}" has duplicate fields: ${duplicates.join(', ')}`
+      );
     }
   });
 

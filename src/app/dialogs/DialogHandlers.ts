@@ -7,7 +7,9 @@ import { handleRecordFormSubmit } from '../operations/RecordTypeOps';
 import { handleFieldFormSubmit, updateFieldTypeOptions } from '../operations/FieldOps';
 import { handleQueryFormSubmit } from '../operations/QueryOps';
 import { handleProcedureFormSubmit, updateProcedureOutputOptions } from '../operations/ProcedureOps';
-import { startWizard } from '../bootstrap/Initialization';
+import { renderCurrentStep } from '../views/StepRenderer';
+import { updateProgressBar } from '../navigation/StepNavigation';
+import { confirmLeaveWizard, cancelLeaveWizard } from '../navigation/HistoryManager';
 
 export function setupDialogHandlers(): void {
   setupRecordDialog();
@@ -15,6 +17,7 @@ export function setupDialogHandlers(): void {
   setupQueryDialog();
   setupProcedureDialog();
   setupResumeDialog();
+  setupLeaveWizardDialog();
 }
 
 function setupRecordDialog(): void {
@@ -99,6 +102,28 @@ function setupProcedureDialog(): void {
   }
 }
 
+function setupLeaveWizardDialog(): void {
+  const confirmBtn = document.getElementById('leave-wizard-confirm');
+  const cancelBtn = document.getElementById('leave-wizard-cancel');
+  const closeBtn = document.getElementById('leave-wizard-close-x');
+  const dialog = document.getElementById('leave-wizard-dialog') as HTMLDialogElement;
+
+  if (confirmBtn) {
+    confirmBtn.addEventListener('click', () => confirmLeaveWizard());
+  }
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => cancelLeaveWizard());
+  }
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => cancelLeaveWizard());
+  }
+  if (dialog) {
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) cancelLeaveWizard();
+    });
+  }
+}
+
 function setupResumeDialog(): void {
   const continueBtn = document.getElementById('resume-continue');
   const startFreshBtn = document.getElementById('resume-start-fresh');
@@ -109,7 +134,8 @@ function setupResumeDialog(): void {
   if (continueBtn) {
     continueBtn.addEventListener('click', () => {
       dialog?.close();
-      startWizard();
+      renderCurrentStep();
+      updateProgressBar();
     });
   }
   if (startFreshBtn) {
@@ -117,7 +143,8 @@ function setupResumeDialog(): void {
       clearWizardState();
       setWizardState(initializeWizardState());
       dialog?.close();
-      startWizard();
+      renderCurrentStep();
+      updateProgressBar();
     });
   }
   if (cancelBtn) {

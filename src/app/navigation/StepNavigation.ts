@@ -7,6 +7,7 @@ import { collectCurrentStepData } from '../state/DataCollector';
 import { validateCurrentStep } from '../validation/StepValidator';
 import { renderCurrentStep } from '../views/StepRenderer';
 import { generateApp } from '../export/OutputGenerator';
+import { pushStepToHistory, guardedLeaveWizard } from './HistoryManager';
 
 const STEP_NAMES = [
   'App Information',
@@ -15,7 +16,7 @@ const STEP_NAMES = [
   'Query Methods',
   'Procedure Methods',
   'App Configuration',
-  'Generate App'
+  'Generate App',
 ];
 
 export function goToNextStep(): void {
@@ -31,9 +32,15 @@ export function goToNextStep(): void {
 
   if (wizardState.currentStep < 7) {
     wizardState.currentStep++;
-    saveWizardState(wizardState);
+    // Only save state when moving to step 2+ (actual wizard content)
+    // Steps 0 and 1 are intro pages - no need to save or restore those
+    if (wizardState.currentStep >= 2) {
+      saveWizardState(wizardState);
+    }
     renderCurrentStep();
+    pushStepToHistory(wizardState.currentStep);
     updateProgressBar();
+    window.scrollTo(0, 0);
   } else {
     // Final step - generate app
     generateApp();
@@ -43,13 +50,32 @@ export function goToNextStep(): void {
 export function goToPreviousStep(): void {
   const wizardState = getWizardState();
 
-  if (wizardState.currentStep > 1) {
+  if (wizardState.currentStep <= 0) return;
+
+  // Step 1 → 0: guard against leaving wizard with unsaved progress
+  if (wizardState.currentStep === 1) {
     collectCurrentStepData();
-    wizardState.currentStep--;
-    saveWizardState(wizardState);
-    renderCurrentStep();
-    updateProgressBar();
+    guardedLeaveWizard(() => {
+      wizardState.currentStep = 0;
+      renderCurrentStep();
+      pushStepToHistory(0);
+      updateProgressBar();
+      window.scrollTo(0, 0);
+    });
+    return;
   }
+
+  collectCurrentStepData();
+  wizardState.currentStep--;
+  // Only save state when on step 2+ (actual wizard content)
+  // Steps 0 and 1 are intro pages - no need to save or restore those
+  if (wizardState.currentStep >= 2) {
+    saveWizardState(wizardState);
+  }
+  renderCurrentStep();
+  pushStepToHistory(wizardState.currentStep);
+  updateProgressBar();
+  window.scrollTo(0, 0);
 }
 
 export function updateProgressBar(): void {
@@ -63,18 +89,23 @@ export function updateProgressBar(): void {
 
   const progressText = document.getElementById('wizard-progress-text');
   if (progressText) {
-    progressText.textContent =
-      `Step ${wizardState.currentStep} of 7: ${STEP_NAMES[wizardState.currentStep - 1]}`;
+    progressText.textContent = `Step ${wizardState.currentStep} of 7: ${
+      STEP_NAMES[wizardState.currentStep - 1]
+    }`;
   }
 
   // Update button states
   const backBtn = document.getElementById('wizard-back') as HTMLButtonElement;
   if (backBtn) {
-    backBtn.disabled = wizardState.currentStep === 1;
+    backBtn.disabled = wizardState.currentStep === 0;
+    backBtn.style.display = wizardState.currentStep > 0 ? '' : 'none';
   }
 
   const nextBtn = document.getElementById('wizard-next');
   if (nextBtn) {
-    nextBtn.textContent = wizardState.currentStep === 7 ? 'Generate App' : 'Next';
+    nextBtn.textContent =
+      wizardState.currentStep === 7 ? 'Generate App' : 'Next';
+    nextBtn.classList.toggle('wizard-solo', wizardState.currentStep === 0);
   }
+
 }

@@ -3,26 +3,46 @@
  */
 
 import { getWizardState } from '../state/WizardState';
-import { renderStep1 } from './Step1AppInfo';
-import { renderStep2, wireStep2Events } from './Step2RecordTypes';
-import { renderStep3, wireStep3Events } from './Step3Fields';
-import { renderStep4, wireStep4Events } from './Step4Queries';
-import { renderStep5, wireStep5Events } from './Step5Procedures';
-import { renderStep6, wireStep6Events } from './Step6Config';
-import { renderStep7, wireStep7Events } from './Step7Generate';
+import { setupTooltips } from '../bootstrap/Initialization';
+import { renderStep0 } from './Step0';
+import { renderStep1 } from './Step1';
+// import { renderStep1 } from './deprecatedStep1AppInfo';
+import { renderStep2 } from './Step2';
+import { renderStep3, wireStep3Events } from './deprecatedStep3Fields';
+import { renderStep4, wireStep4Events } from './deprecatedStep4Queries';
+import { renderStep5, wireStep5Events } from './deprecatedStep5Procedures';
+import { renderStep6, wireStep6Events } from './deprecatedStep6Config';
+import { renderStep7, wireStep7Events } from './deprecatedStep7Generate';
 
 export function renderCurrentStep(): void {
   const wizardState = getWizardState();
   const container = document.getElementById('wizard-step-content');
   if (!container) return;
 
+  // Swap header text based on current step
+  const headerH1 = document.querySelector('header h1');
+  if (headerH1) {
+    headerH1.textContent =
+      wizardState.currentStep === 0 ? 'Reclaim the web' : 'THE APP WIZARD';
+  }
+
+  // Toggle body class for wizard-specific layout
+  document.body.classList.toggle('wizard-active', wizardState.currentStep >= 1);
+  document.body.classList.toggle(
+    'wizard-step-intro',
+    wizardState.currentStep === 1,
+  );
+
   switch (wizardState.currentStep) {
+    case 0:
+      container.innerHTML = renderStep0();
+      setupTooltips();
+      break;
     case 1:
       container.innerHTML = renderStep1();
       break;
     case 2:
       container.innerHTML = renderStep2();
-      wireStep2Events();
       break;
     case 3:
       container.innerHTML = renderStep3();
