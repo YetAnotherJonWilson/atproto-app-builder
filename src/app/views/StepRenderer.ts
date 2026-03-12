@@ -23,7 +23,7 @@ export function renderCurrentStep(): void {
   const headerH1 = document.querySelector('header h1');
   if (headerH1) {
     headerH1.textContent =
-      wizardState.currentStep === 0 ? 'Reclaim the web' : 'THE APP WIZARD';
+      wizardState.currentStep === 0 ? 'the Lex Files' : 'the App Wizard';
   }
 
   // Toggle body class for wizard-specific layout
