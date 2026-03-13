@@ -194,9 +194,19 @@ main {
 .header-title {
   display: flex;
   flex-direction: row;
-  align-items: baseline;
-  gap: 0.5rem;
+  align-items: flex-end;
+  gap: 2rem;
 }
+
+.header-logo {
+  height: 2.5rem;
+  width: auto;
+  flex-shrink: 0;
+  @media (width > 760px) {
+    height: 8rem;
+  }
+}
+
 
 header h1 {
   display: inline-block;
@@ -262,6 +272,13 @@ header h1 {
 
 .wizard-active .header-content .menu-nav {
   display: none;
+}
+
+.wizard-active .header-logo {
+  height: 2rem;
+  @media (width > 760px) {
+    height: 5rem;
+  }
 }
 
 .wizard-active header h1 {
@@ -335,16 +352,6 @@ header h1 {
   margin: 0 auto;
   padding: 3rem 2rem 4rem;
   animation: fade-up 0.9s ease both;
-}
-
-.landing-hero__tagline {
-  font-family: var(--ff-heading);
-  font-size: 3.5rem;
-  color: var(--text-primary);
-  @media screen and (min-width: 760px) {
-    font-size: 4.5rem;
-    margin-bottom: 1rem;
-  }
 }
 
 .landing-hero__lead {
