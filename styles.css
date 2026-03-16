@@ -267,18 +267,18 @@ header h1 {
   background-color: var(--accent-glow);
 }
 
-/* ===== WIZARD-ACTIVE HEADER OVERRIDES ===== */
+/* ===== WIZARD (STATE-WIZARD) HEADER OVERRIDES ===== */
 
-.wizard-active .header-logo {
+.state-wizard .header-logo {
   height: 2.5rem;
 }
 
-.wizard-active header h1 {
+.state-wizard header h1 {
   font-size: 2.25rem;
   animation: none;
 }
 
-.wizard-active .header-title {
+.state-wizard .header-title {
   cursor: pointer;
 }
 
@@ -544,13 +544,13 @@ header h1 {
 
 /* [STEP-LAYOUT] Landing wizard nav CTA button — will be removed in Phase 8 */
 
-body:not(.wizard-active) .wizard-nav {
+body:not(.state-wizard) .wizard-nav {
   max-width: 900px;
   margin: 0 auto;
   padding: 0 2rem 4rem;
 }
 
-body:not(.wizard-active) #wizard-next {
+body:not(.state-wizard) #wizard-next {
   background: linear-gradient(135deg, #00c8dd, var(--accent));
   color: var(--bg-primary);
   border: none;
@@ -564,7 +564,7 @@ body:not(.wizard-active) #wizard-next {
   box-shadow: 0 0 20px var(--accent-glow);
 }
 
-body:not(.wizard-active) #wizard-next:hover:not(:disabled) {
+body:not(.state-wizard) #wizard-next:hover:not(:disabled) {
   background: linear-gradient(135deg, var(--accent), var(--accent-hover));
   transform: translateY(-2px);
   box-shadow: 0 0 35px rgba(0, 229, 255, 0.35);
@@ -1126,6 +1126,10 @@ body:not(.wizard-active) #wizard-next:hover:not(:disabled) {
 }
 
 /* [STEP-LAYOUT] Step navigation bar — will be removed in Phase 8 */
+.state-wizard .wizard-nav {
+  display: none;
+}
+
 .wizard-nav {
   display: flex;
   justify-content: space-between;
@@ -1502,7 +1506,7 @@ details[open] summary {
   z-index: 50;
 }
 
-.wizard-active .sidebar {
+.state-wizard .sidebar {
   transform: translateX(0);
   opacity: 1;
 }
@@ -1668,7 +1672,7 @@ details[open] summary {
   margin-left: var(--sidebar-width);
 }
 
-.wizard-active .workspace {
+.state-wizard .workspace {
   display: flex;
 }
 
@@ -1857,7 +1861,7 @@ details[open] summary {
   display: none;
 }
 
-.wizard-active .back-to-landing {
+.state-wizard .back-to-landing {
   display: block;
 }
 

@@ -22,6 +22,7 @@ import {
   pushStepToHistory,
   guardedLeaveWizard,
 } from '../navigation/HistoryManager';
+import { transitionToLanding } from '../views/WorkspaceLayout';
 
 export let setupTooltips: any;
 
@@ -74,11 +75,30 @@ export function initializeApp(): void {
       const wizardState = getWizardState();
       if (wizardState.currentStep >= 2) {
         guardedLeaveWizard(() => {
-          wizardState.currentStep = 0;
-          renderCurrentStep();
-          updateProgressBar();
-          pushStepToHistory(0);
-          window.scrollTo(0, 0);
+          transitionToLanding(() => {
+            wizardState.currentStep = 0;
+            renderCurrentStep();
+            updateProgressBar();
+            pushStepToHistory(0);
+          });
+        });
+      }
+    });
+  }
+
+  // Wire up back-to-landing button
+  const backToLandingBtn = document.getElementById('back-to-landing');
+  if (backToLandingBtn) {
+    backToLandingBtn.addEventListener('click', () => {
+      const wizardState = getWizardState();
+      if (wizardState.currentStep >= 2) {
+        guardedLeaveWizard(() => {
+          transitionToLanding(() => {
+            wizardState.currentStep = 0;
+            renderCurrentStep();
+            updateProgressBar();
+            pushStepToHistory(0);
+          });
         });
       }
     });

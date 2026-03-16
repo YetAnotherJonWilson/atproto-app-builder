@@ -88,14 +88,14 @@ See `landing-page-header-redesign.md`. Must be completed before starting this mi
 
 ### Phase 1: Scaffold the New Layout
 
-- [ ] Create `src/app/views/WorkspaceLayout.ts` — renders the sidebar + workspace shell
-- [ ] Create `src/app/views/panels/` directory for workspace panel renderers
-- [ ] Create empty panel renderers: `RequirementsPanel.ts`, `DataPanel.ts`, `ComponentsPanel.ts`, `ViewsPanel.ts`
-- [ ] Wire `StepRenderer.ts` to render `WorkspaceLayout` when `currentStep === 2` (replacing the WIP step2.html)
-- [ ] Implement sidebar section switching (click handler updates active panel)
-- [ ] Implement progress track rendering (filled/hollow dots, progress line)
-- [ ] Implement the landing-to-wizard transition animation per `mockups/4-landing-to-wizard-transition.html`: sidebar slides in from the left (CSS transform, 500ms cubic-bezier), content area shifts right via margin-left, header shrinks from landing to wizard-active sizes
-- [ ] Verify build passes; manual test: can navigate to step 2 and see sidebar layout with empty panels
+- [x] Create `src/app/views/WorkspaceLayout.ts` — renders the sidebar + workspace shell
+- [x] Create `src/app/views/panels/` directory for workspace panel renderers
+- [x] Create empty panel renderers: `RequirementsPanel.ts`, `DataPanel.ts`, `ComponentsPanel.ts`, `ViewsPanel.ts`
+- [x] Wire `StepRenderer.ts` to render `WorkspaceLayout` when `currentStep === 2` (replacing the WIP step2.html)
+- [x] Implement sidebar section switching (click handler updates active panel)
+- [x] Implement progress track rendering (filled/hollow dots, progress line)
+- [x] Implement the landing-to-wizard transition animation per `mockups/4-landing-to-wizard-transition.html`: sidebar slides in from the left (CSS transform, 500ms cubic-bezier), content area shifts right via margin-left, header shrinks from landing to state-wizard sizes
+- [x] Verify build passes; manual test: can navigate to step 2 and see sidebar layout with empty panels
 
 ### Phase 2: Data Panel (highest existing code reuse)
 
@@ -185,7 +185,7 @@ See `requirements-panel.md` for full behavioral spec, including empty-state intr
 - `src/app/navigation/HistoryManager.ts` — URL scheme
 - `src/app/bootstrap/Initialization.ts` — event wiring
 - `src/app/state/WizardState.ts` — minor fix for `showSaveConfirmation`
-- `src/types/wizard.ts` — if Requirements/Components/Views need new state fields
+- `src/types/wizard.ts` — added `SectionName` type and `activeSection` field to `WizardState` (Phase 1); may need more fields for Requirements/Components/Views
 - `styles.css` — new sidebar styles, remove old step-specific styles
 
 ### Deleted Files (Phase 8)

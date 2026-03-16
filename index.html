@@ -8,6 +8,9 @@
     <script type="module" src="/src/app.ts" defer></script>
   </head>
   <body>
+    <!-- Transition flash overlay (landing ↔ wizard) -->
+    <div class="transition-overlay" id="transition-overlay"></div>
+
     <header>
       <div class="header-content">
         <div class="header-title">
@@ -407,6 +410,10 @@
         </div>
       </dialog>
     </main>
+
+    <!-- Back to landing button (visible in wizard state) -->
+    <button class="back-to-landing" id="back-to-landing">&larr; Back to intro</button>
+
     <div id="tooltip" class="tooltip"></div>
 
     <!-- SVG filter for rough torn-paper edges.

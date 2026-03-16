@@ -8,6 +8,7 @@ import { validateCurrentStep } from '../validation/StepValidator';
 import { renderCurrentStep } from '../views/StepRenderer';
 import { generateApp } from '../export/OutputGenerator';
 import { pushStepToHistory, guardedLeaveWizard } from './HistoryManager';
+import { transitionToWizard } from '../views/WorkspaceLayout';
 
 const STEP_NAMES = [
   'App Information',
@@ -30,14 +31,20 @@ export function goToNextStep(): void {
 
   collectCurrentStepData();
 
-  if (wizardState.currentStep < 7) {
-    // Skip deleted Step 1 — go directly from landing (0) to wizard (2)
-    if (wizardState.currentStep === 0) {
+  if (wizardState.currentStep === 0) {
+    // Animated transition from landing to wizard
+    transitionToWizard(() => {
       wizardState.currentStep = 2;
-    } else {
-      wizardState.currentStep++;
-    }
-    // Only save state when moving to step 2+ (actual wizard content)
+      saveWizardState(wizardState);
+      renderCurrentStep();
+      pushStepToHistory(wizardState.currentStep);
+      updateProgressBar();
+    });
+    return;
+  }
+
+  if (wizardState.currentStep < 7) {
+    wizardState.currentStep++;
     if (wizardState.currentStep >= 2) {
       saveWizardState(wizardState);
     }

@@ -51,10 +51,13 @@ export interface AppConfig {
   domain?: string;
 }
 
+export type SectionName = 'requirements' | 'data' | 'components' | 'views';
+
 export interface WizardState {
   version: string;
   lastSaved: string;
   currentStep: number;
+  activeSection: SectionName;
   currentRecordTypeIndex: number;
   appInfo: AppInfo;
   recordTypes: RecordType[];

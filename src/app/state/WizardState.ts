@@ -23,6 +23,7 @@ export function initializeWizardState(): WizardState {
     version: "1.0",
     lastSaved: new Date().toISOString(),
     currentStep: 0,
+    activeSection: 'requirements',
     currentRecordTypeIndex: 0,
     appInfo: {
       appName: '',
@@ -42,6 +43,10 @@ export function initializeWizardState(): WizardState {
 }
 
 export function setWizardState(state: WizardState): void {
+  // Migrate: ensure activeSection exists for old saved states
+  if (!state.activeSection) {
+    state.activeSection = 'requirements';
+  }
   wizardState = state;
 }
 

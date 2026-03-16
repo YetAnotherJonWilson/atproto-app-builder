@@ -5,7 +5,7 @@
 import { getWizardState } from '../state/WizardState';
 import { setupTooltips } from '../bootstrap/Initialization';
 import { renderStep0 } from './Step0';
-import { renderStep2 } from './Step2';
+import { renderWorkspaceLayout, wireWorkspaceLayout } from './WorkspaceLayout';
 import { renderStep3, wireStep3Events } from './deprecatedStep3Fields';
 import { renderStep4, wireStep4Events } from './deprecatedStep4Queries';
 import { renderStep5, wireStep5Events } from './deprecatedStep5Procedures';
@@ -25,7 +25,7 @@ export function renderCurrentStep(): void {
   }
 
   // Toggle body class for wizard-specific layout
-  document.body.classList.toggle('wizard-active', wizardState.currentStep >= 2);
+  document.body.classList.toggle('state-wizard', wizardState.currentStep >= 2);
 
   switch (wizardState.currentStep) {
     case 0:
@@ -33,7 +33,8 @@ export function renderCurrentStep(): void {
       setupTooltips();
       break;
     case 2:
-      container.innerHTML = renderStep2();
+      container.innerHTML = renderWorkspaceLayout();
+      wireWorkspaceLayout();
       break;
     case 3:
       container.innerHTML = renderStep3();
