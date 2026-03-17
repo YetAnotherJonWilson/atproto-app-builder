@@ -17,6 +17,7 @@
 
 import { getWizardState, saveWizardState } from '../../state/WizardState';
 import { generateId } from '../../../utils/id';
+import { updateAccordionSummaries } from '../WorkspaceLayout';
 import type { Requirement, RequirementType, NavType } from '../../../types/wizard';
 
 const MAX_REQUIREMENTS = 100;
@@ -595,17 +596,28 @@ function buildRequirementFromForm(type: RequirementType): Requirement | null {
 // ── Re-render ──────────────────────────────────────────────────────────
 
 function rerenderPanel(): void {
-  const bodyEl = document.getElementById('workspace-panel-body');
-  if (bodyEl) {
-    bodyEl.innerHTML = renderRequirementsPanel();
-    wireRequirementsPanel();
+  // Re-render into whichever container is visible (avoid duplicate IDs)
+  const narrow = typeof window.matchMedia === 'function'
+    && window.matchMedia('(max-width: 767px)').matches;
+
+  if (narrow) {
+    const accBody = document.querySelector(
+      '.accordion-section[data-section="requirements"] .accordion-body',
+    );
+    if (accBody) accBody.innerHTML = renderRequirementsPanel();
+  } else {
+    const bodyEl = document.getElementById('workspace-panel-body');
+    if (bodyEl) bodyEl.innerHTML = renderRequirementsPanel();
   }
+
+  wireRequirementsPanel();
   updateSidebar();
+  updateAccordionSummaries();
 }
 
 export function updateSidebar(): void {
   const { requirements } = getWizardState();
-  const section = document.querySelector('[data-section="requirements"]');
+  const section = document.querySelector('.sidebar-section[data-section="requirements"]');
   if (!section) return;
 
   // Update badge

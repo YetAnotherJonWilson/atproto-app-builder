@@ -1,9 +1,14 @@
 /**
- * Workspace layout — sidebar + panel shell (Mockup 3b)
+ * Workspace layout — sidebar + panel shell (Mockup 3b) and accordion (narrow viewports)
  *
- * Renders the sidebar + workspace HTML template, wires sidebar section
- * switching, manages the progress track, and provides transition animations
- * for entering/exiting the wizard.
+ * Renders the sidebar + workspace HTML template (which also includes the accordion),
+ * wires sidebar and accordion section switching, manages the progress track,
+ * and provides transition animations for entering/exiting the wizard.
+ *
+ * Both layout shells exist in the DOM simultaneously. CSS media queries at 768px
+ * control which one is visible. Panel content is rendered into only the visible
+ * container to avoid duplicate element IDs. A matchMedia listener re-renders
+ * when crossing the 768px breakpoint.
  */
 
 import template from './workspace.html?raw';
@@ -27,8 +32,17 @@ const SECTION_CONFIG: Record<
   views: { title: 'Define Views', render: renderViewsPanel },
 };
 
+const narrowQuery = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+  ? window.matchMedia('(max-width: 767px)')
+  : null;
+
+/** Whether the current viewport uses the accordion layout. */
+function isNarrowViewport(): boolean {
+  return narrowQuery?.matches ?? false;
+}
+
 /**
- * Returns the workspace HTML template (sidebar + workspace shell).
+ * Returns the workspace HTML template (sidebar + workspace + accordion shell).
  * Call wireWorkspaceLayout() after inserting into the DOM.
  */
 export function renderWorkspaceLayout(): string {
@@ -36,7 +50,7 @@ export function renderWorkspaceLayout(): string {
 }
 
 /**
- * Wire sidebar click handlers and render the active panel.
+ * Wire sidebar and accordion click handlers and render the active panel.
  * Must be called after renderWorkspaceLayout() HTML is in the DOM.
  */
 export function wireWorkspaceLayout(): void {
@@ -50,6 +64,22 @@ export function wireWorkspaceLayout(): void {
     });
   });
 
+  // Wire accordion section click handlers
+  document.querySelectorAll('.accordion-header').forEach((header) => {
+    header.addEventListener('click', () => {
+      const target = (header as HTMLElement).dataset.target as SectionName;
+      if (target) switchSection(target);
+    });
+  });
+
+  // Re-render into the correct container when crossing the 768px breakpoint
+  if (narrowQuery) {
+    narrowQuery.addEventListener('change', () => {
+      const section = getWizardState().activeSection || 'requirements';
+      switchSection(section);
+    });
+  }
+
   // Render the active panel
   switchSection(wizardState.activeSection || 'requirements');
 
@@ -58,7 +88,8 @@ export function wireWorkspaceLayout(): void {
 }
 
 /**
- * Switch the active sidebar section and render its panel.
+ * Switch the active section in both sidebar and accordion, and render the panel
+ * into the currently visible container only.
  */
 export function switchSection(section: SectionName): void {
   const wizardState = getWizardState();
@@ -70,16 +101,43 @@ export function switchSection(section: SectionName): void {
     .querySelectorAll('.sidebar-section')
     .forEach((s) => s.classList.remove('active'));
   const sidebarSection = document.querySelector(
-    `[data-section="${section}"]`,
+    `.sidebar-section[data-section="${section}"]`,
   );
   if (sidebarSection) sidebarSection.classList.add('active');
 
-  // Render the panel content
+  // Update accordion active state
+  document
+    .querySelectorAll('.accordion-section')
+    .forEach((s) => s.classList.remove('active'));
+  const accordionSection = document.querySelector(
+    `.accordion-section[data-section="${section}"]`,
+  );
+  if (accordionSection) accordionSection.classList.add('active');
+
+  // Render panel content into the visible container only (avoids duplicate IDs)
   const config = SECTION_CONFIG[section];
-  const headerEl = document.getElementById('workspace-panel-header');
-  const bodyEl = document.getElementById('workspace-panel-body');
-  if (headerEl) headerEl.innerHTML = `<h2>${config.title}</h2>`;
-  if (bodyEl) bodyEl.innerHTML = config.render();
+  const narrow = isNarrowViewport();
+
+  if (narrow) {
+    // Clear workspace body to avoid hidden duplicate IDs
+    const bodyEl = document.getElementById('workspace-panel-body');
+    if (bodyEl) bodyEl.innerHTML = '';
+
+    // Render into accordion body
+    const accBody = accordionSection?.querySelector('.accordion-body');
+    if (accBody) accBody.innerHTML = config.render();
+  } else {
+    // Clear all accordion bodies to avoid hidden duplicate IDs
+    document.querySelectorAll('.accordion-body').forEach((b) => {
+      b.innerHTML = '';
+    });
+
+    // Render into workspace body
+    const headerEl = document.getElementById('workspace-panel-header');
+    const bodyEl = document.getElementById('workspace-panel-body');
+    if (headerEl) headerEl.innerHTML = `<h2>${config.title}</h2>`;
+    if (bodyEl) bodyEl.innerHTML = config.render();
+  }
 
   // Wire panel-specific event handlers
   if (section === 'requirements') {
@@ -87,7 +145,87 @@ export function switchSection(section: SectionName): void {
     updateRequirementsSidebar();
   }
 
+  // Scroll accordion section into view on narrow viewports
+  if (narrow && accordionSection?.scrollIntoView) {
+    accordionSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
   updateProgressFill();
+  updateAccordionSummaries();
+}
+
+/**
+ * Update accordion summary text, badges, and has-items state for all sections.
+ */
+export function updateAccordionSummaries(): void {
+  const wizardState = getWizardState();
+
+  // Requirements
+  const reqSection = document.querySelector('.accordion-section[data-section="requirements"]');
+  if (reqSection) {
+    const count = wizardState.requirements.length;
+    const badge = reqSection.querySelector('.accordion-badge');
+    if (badge) badge.textContent = String(count);
+
+    const summary = reqSection.querySelector('.accordion-summary');
+    if (summary) {
+      if (count === 0) {
+        summary.textContent = 'None yet';
+      } else {
+        const texts = wizardState.requirements.map((r) => {
+          if (r.type === 'know') return r.text ?? '';
+          if (r.type === 'do') return `${r.verb ?? ''} ${r.data ?? ''}`.trim();
+          return `${r.fromView ?? '?'} → ${r.toView ?? '?'}`;
+        });
+        summary.textContent = texts.join(' · ');
+      }
+    }
+
+    if (count > 0) {
+      reqSection.classList.add('has-items');
+    } else {
+      reqSection.classList.remove('has-items');
+    }
+  }
+
+  // Data
+  const dataSection = document.querySelector('.accordion-section[data-section="data"]');
+  if (dataSection) {
+    const count = wizardState.recordTypes.length;
+    const badge = dataSection.querySelector('.accordion-badge');
+    if (badge) badge.textContent = String(count);
+
+    const summary = dataSection.querySelector('.accordion-summary');
+    if (summary) {
+      summary.textContent = count === 0
+        ? 'None yet'
+        : wizardState.recordTypes.map((r) => r.name).join(' · ');
+    }
+
+    if (count > 0) {
+      dataSection.classList.add('has-items');
+    } else {
+      dataSection.classList.remove('has-items');
+    }
+  }
+
+  // Components — no components array in WizardState yet, show placeholder
+  const compSection = document.querySelector('.accordion-section[data-section="components"]');
+  if (compSection) {
+    const badge = compSection.querySelector('.accordion-badge');
+    if (badge) badge.textContent = '0';
+    const summary = compSection.querySelector('.accordion-summary');
+    if (summary) summary.textContent = 'None yet';
+  }
+
+  // Views — no views array in WizardState yet, show placeholder
+  const viewsSection = document.querySelector('.accordion-section[data-section="views"]');
+  if (viewsSection) {
+    const badge = viewsSection.querySelector('.accordion-badge');
+    if (badge) badge.textContent = '0';
+    const summary = viewsSection.querySelector('.accordion-summary');
+    if (summary) summary.textContent = 'None yet';
+  }
 }
 
 /**

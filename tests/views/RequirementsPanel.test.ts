@@ -213,7 +213,7 @@ describe('wireRequirementsPanel (DOM)', () => {
   function mountPanel(): void {
     document.body.innerHTML = `
       <div id="workspace-panel-body">${renderRequirementsPanel()}</div>
-      <div data-section="requirements">
+      <div class="sidebar-section" data-section="requirements">
         <span class="badge">0</span>
         <div class="sidebar-items"><div class="sidebar-item-empty">None yet</div></div>
       </div>
