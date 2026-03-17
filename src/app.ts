@@ -1,5 +1,5 @@
 /**
- * Main entry point for the AT Protocol App Builder
+ * Main entry point for the AT Protocol App Wizard
  */
 
 import { initializeApp } from './app/bootstrap/Initialization';

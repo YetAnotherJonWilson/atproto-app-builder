@@ -1,4 +1,4 @@
-# AT Protocol App Builder - Claude Instructions
+# AT Protocol App Wizard - Claude Instructions
 
 ## Project Overview
 

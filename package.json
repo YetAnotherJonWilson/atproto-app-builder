@@ -1,7 +1,7 @@
 {
-  "name": "atproto-app-builder",
+  "name": "atproto-app-wizard",
   "version": "1.0.0",
-  "description": "AT Protocol App Builder - Create decentralized web applications",
+  "description": "AT Protocol App Wizard - Create decentralized web applications",
   "type": "module",
   "scripts": {
     "dev": "vite",

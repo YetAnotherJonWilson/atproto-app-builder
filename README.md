@@ -1,2 +1,3 @@
-# atproto App Builder
-Getting started building decentralized web applications with ATProto
+# atproto App Wizard
+
+Start building decentralized web applications with ATProto
