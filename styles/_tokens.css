@@ -1,0 +1,82 @@
+@layer base {
+  @font-face {
+    font-family: djgross;
+    src: url(../fonts/DJ-Gross/DJGROSS.ttf);
+  }
+  @font-face {
+    font-family: bilbo-swash;
+    src: url(../fonts/bilbo/BilboSwashCaps-Regular.otf);
+  }
+  @font-face {
+    font-family: bilbo-regular;
+    src: url(../fonts/bilbo/Bilbo-Regular.otf);
+  }
+  @font-face {
+    font-family: dirty-ego;
+    src: url(../fonts/DirtyEgo/Truetype/DIRTYEGO.TTF);
+  }
+  @font-face {
+    font-family: fira-sans;
+    src: url(../fonts/FiraSans/FiraSans-Medium.otf);
+  }
+
+  :root {
+    --ff-body: 'fira-sans', sans-serif;
+    --ff-heading: 'dirty-ego', serif;
+    --ff-heading-2: 'fira-sans', sans-serif;
+
+    --fs-400: 1rem;
+    --fs-500: 1.25rem;
+    --fs-700: 1.5rem;
+    --fs-800: 2.25rem;
+    --fs-1000: 3rem;
+
+    /* Dark palette */
+    --bg-primary: #08080f;
+    --bg-surface: #14141f;
+    --bg-surface-2: #1a1a28;
+    --bg-elevated: #22222e;
+
+    --text-primary: #e8e8f0;
+    --text-secondary: #b0b0c0;
+    --text-muted: #8585a0;
+
+    --accent: #00e5ff;
+    --accent-hover: #44f0ff;
+    --accent-glow: rgba(0, 229, 255, 0.15);
+    --accent-red: #ff3355;
+    --accent-red-bg: #cc2244;
+    --text-muted-alt: #8888a0;
+    --accent-dark: #00c8dd;
+
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-accent: rgba(0, 229, 255, 0.2);
+
+    --header-height: 72px;
+    --sidebar-width: 260px;
+    --progress-muted: #2a2a3a;
+
+    @media (width > 760px) {
+      --fs-700: 6rem;
+      --fs-1000: 10rem;
+    }
+  }
+
+  body {
+    font-family: var(--ff-body);
+    font-size: var(--fs-500);
+    background-color: var(--bg-primary);
+    background-image:
+      radial-gradient(
+        ellipse at 15% 30%,
+        rgba(0, 229, 255, 0.04) 0%,
+        transparent 55%
+      ),
+      radial-gradient(
+        ellipse at 85% 60%,
+        rgba(255, 51, 85, 0.035) 0%,
+        transparent 55%
+      );
+    color: var(--text-primary);
+  }
+}

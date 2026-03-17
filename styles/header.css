@@ -1,0 +1,132 @@
+@layer layout {
+  /* ===== HEADER ===== */
+
+  .header-content {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    justify-content: space-between;
+    align-items: flex-end;
+    width: 100%;
+    height: var(--header-height);
+    padding: 0 1.5rem 0.75rem;
+    background-color: rgba(8, 8, 15, 0.88);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    z-index: 10;
+    transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .header-content::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      var(--accent),
+      var(--accent-red),
+      var(--accent)
+    );
+    opacity: 0.55;
+  }
+
+  main {
+    padding-top: var(--header-height);
+  }
+
+  .header-title {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 1rem;
+  }
+
+  .header-logo {
+    height: 2rem;
+    width: auto;
+    flex-shrink: 0;
+    transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @media (width > 480px) {
+    .header-logo {
+      height: 3rem;
+    }
+  }
+
+  header h1 {
+    display: inline-block;
+    color: var(--text-primary);
+    font-family: var(--ff-heading);
+    font-size: 1.8rem;
+    line-height: 0.8;
+    white-space: nowrap;
+    animation: hero-glitch 10s infinite 3s;
+    transition: font-size 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @media (width > 480px) {
+    header h1 {
+      font-size: 3rem;
+    }
+  }
+
+  /* ===== LOGIN BUTTON ===== */
+
+  .menu-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .login-btn {
+    font-family: var(--ff-heading);
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    letter-spacing: 0.08em;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    line-height: 0.8;
+    background: transparent;
+    transition:
+      color 0.2s,
+      border-color 0.2s,
+      background-color 0.2s;
+  }
+
+  @media (width > 480px) {
+    .login-btn {
+      font-size: 1.6rem;
+      padding: 0.3rem 1.1rem;
+      border: 1px solid var(--border-subtle);
+      border-radius: 5px;
+    }
+  }
+
+  .login-btn:hover {
+    color: var(--accent);
+    border-color: var(--border-accent);
+    background-color: var(--accent-glow);
+  }
+
+  /* ===== WIZARD (STATE-WIZARD) HEADER OVERRIDES ===== */
+
+  .state-wizard .header-logo {
+    height: 2.5rem;
+  }
+
+  .state-wizard header h1 {
+    font-size: 2.25rem;
+    animation: none;
+  }
+
+  .state-wizard .header-title {
+    cursor: pointer;
+  }
+}

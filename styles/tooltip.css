@@ -1,0 +1,92 @@
+@layer components {
+  /* ===== TERM HIGHLIGHTS ===== */
+
+  .term {
+    border-bottom: 2px solid var(--accent);
+    color: var(--text-primary);
+    position: relative;
+    cursor: pointer;
+    transition:
+      color 0.2s ease,
+      background-color 0.2s ease;
+  }
+
+  .term:hover {
+    background-color: var(--accent-glow);
+    color: var(--accent);
+  }
+
+  /* ===== TOOLTIPS ===== */
+
+  .tooltip {
+    position: absolute;
+    background-color: var(--bg-surface-2);
+    color: var(--text-secondary);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    line-height: 1.4;
+    max-width: 300px;
+    word-wrap: break-word;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.3s ease,
+      visibility 0.3s ease;
+    pointer-events: none;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  }
+
+  .tooltip.show {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .tooltip::before {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: var(--arrow-left, 50%);
+    transform: translateX(-50%);
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid var(--bg-surface-2);
+  }
+
+  .tooltip::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: var(--arrow-left, 50%);
+    transform: translateX(-50%);
+    border-left: 9px solid transparent;
+    border-right: 9px solid transparent;
+    border-top: 9px solid rgba(255, 255, 255, 0.1);
+    z-index: -1;
+  }
+
+  .tooltip.tooltip-below::before {
+    bottom: auto;
+    top: -8px;
+    left: var(--arrow-left, 50%);
+    border-top: none;
+    border-bottom: 8px solid var(--bg-surface-2);
+  }
+
+  .tooltip.tooltip-below::after {
+    bottom: auto;
+    top: -10px;
+    left: var(--arrow-left, 50%);
+    border-top: none;
+    border-bottom: 9px solid rgba(255, 255, 255, 0.1);
+  }
+
+  @media (width > 760px) {
+    .tooltip {
+      font-size: 1.1rem;
+      max-width: 350px;
+    }
+  }
+}

@@ -1,0 +1,128 @@
+@layer components {
+  /* ===== DIALOGS ===== */
+
+  .wizard-dialog {
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    background-color: var(--bg-surface);
+    padding: 0;
+    max-width: 600px;
+    width: 90%;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+
+  @media (width > 760px) {
+    .wizard-dialog {
+      max-width: 700px;
+      max-height: 90vh;
+    }
+  }
+
+  .wizard-dialog::backdrop {
+    background-color: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(6px);
+  }
+
+  .dialog-content {
+    padding: 2rem;
+  }
+
+  .dialog-content p {
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    font-size: 1.15rem;
+  }
+
+  .wizard-dialog .dialog-content h2 {
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+  }
+
+  @media (width > 760px) {
+    .wizard-dialog .dialog-content h2 {
+      font-size: 1.6rem;
+    }
+  }
+
+  .dialog-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .dialog-button {
+    background-color: rgba(0, 229, 255, 0.12);
+    color: var(--accent);
+    border: 1px solid var(--border-accent);
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .dialog-button:hover {
+    background-color: rgba(0, 229, 255, 0.2);
+    color: var(--accent-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 229, 255, 0.15);
+  }
+
+  .dialog-button:active {
+    transform: translateY(0);
+  }
+
+  .dialog-close {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: transparent;
+    border: none;
+    font-size: 2rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    line-height: 1;
+    transition: color 0.2s ease;
+  }
+
+  .dialog-close:hover {
+    color: var(--accent-red);
+  }
+
+  .dialog-cancel {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1rem;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+    transition: color 0.2s ease;
+  }
+
+  .dialog-cancel:hover {
+    color: var(--text-primary);
+  }
+
+  @media (width > 760px) {
+    .dialog-button {
+      font-size: 1.2rem;
+      padding: 1.25rem 2rem;
+    }
+
+    .dialog-close {
+      font-size: 2.5rem;
+      top: 1rem;
+      right: 1rem;
+    }
+
+    .dialog-cancel {
+      font-size: 1.1rem;
+    }
+  }
+}

@@ -1,0 +1,148 @@
+/* [STEP-LAYOUT] .wizard-columns grid — will be removed in Phase 8 */
+.wizard-columns {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.wizard-column-headers,
+.wizard-column-content {
+  display: contents;
+}
+
+.wizard-column-header {
+  padding: 0.75rem 1rem;
+  margin: 0;
+  font-size: var(--fs-400);
+  color: var(--accent);
+}
+
+.wizard-column-header:nth-child(1) {
+  grid-row: 1;
+}
+.wizard-column-header:nth-child(2) {
+  grid-row: 3;
+}
+.wizard-column-header:nth-child(3) {
+  grid-row: 5;
+}
+.wizard-column-header:nth-child(4) {
+  grid-row: 7;
+}
+
+.wizard-column:nth-child(1) {
+  grid-row: 2;
+}
+.wizard-column:nth-child(2) {
+  grid-row: 4;
+}
+.wizard-column:nth-child(3) {
+  grid-row: 6;
+}
+.wizard-column:nth-child(4) {
+  grid-row: 8;
+}
+
+.wizard-column + .wizard-column {
+  border-top: 1px solid var(--accent);
+}
+
+@media (width >= 1024px) {
+  .wizard-columns {
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: auto 1fr;
+  }
+
+  .wizard-column-header:nth-child(1) {
+    grid-row: 1;
+    grid-column: 1;
+  }
+  .wizard-column-header:nth-child(2) {
+    grid-row: 1;
+    grid-column: 2;
+  }
+  .wizard-column-header:nth-child(3) {
+    grid-row: 1;
+    grid-column: 3;
+  }
+  .wizard-column-header:nth-child(4) {
+    grid-row: 1;
+    grid-column: 4;
+  }
+
+  .wizard-column:nth-child(1) {
+    grid-row: 2;
+    grid-column: 1;
+  }
+  .wizard-column:nth-child(2) {
+    grid-row: 2;
+    grid-column: 2;
+  }
+  .wizard-column:nth-child(3) {
+    grid-row: 2;
+    grid-column: 3;
+  }
+  .wizard-column:nth-child(4) {
+    grid-row: 2;
+    grid-column: 4;
+  }
+
+  .wizard-column + .wizard-column {
+    border-top: none;
+    border-left: 1px solid var(--accent);
+  }
+}
+
+/* [STEP-LAYOUT] Progress bar — will be removed in Phase 8 */
+.wizard-progress {
+  margin-bottom: 2rem;
+}
+
+.wizard-progress-bar {
+  height: 10px;
+  background-color: var(--bg-surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.wizard-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  transition: width 0.3s ease;
+}
+
+.wizard-progress-text {
+  text-align: center;
+  margin-top: 0.75rem;
+  color: var(--text-muted);
+  font-family: var(--ff-body);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+@media (width > 760px) {
+  .wizard-progress-text {
+    font-size: 1.2rem;
+  }
+}
+
+/* [STEP-LAYOUT] Step navigation bar — will be removed in Phase 8 */
+.state-wizard .wizard-nav {
+  display: none;
+}
+
+.wizard-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  max-width: 95%;
+  margin: 0 auto;
+}
+
+.wizard-nav-main {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+}
