@@ -45,3 +45,8 @@ Pick one item from "Up Next" before starting a coding session.
 ## Done
 
 <!-- Move completed items here with date -->
+
+- [x] Environment-aware configuration — see `.specs/done/env-config.md` 3/18/26
+- [x] Login flow (AT Protocol OAuth) — see `.specs/done/login-flow.md` 3/18/26
+- [x] Responsive wizard - see `.specs/done/narrow-accordion-layout.md` 3/17/26
+- [x] Landing page header - see `.specs/done/landing-page-header-redesign.md` 3/16/26

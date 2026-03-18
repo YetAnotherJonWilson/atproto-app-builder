@@ -11,6 +11,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@atproto/api": "^0.19.3",
+    "@atproto/oauth-client-browser": "^0.3.41",
     "jszip": "^3.10.1"
   },
   "devDependencies": {

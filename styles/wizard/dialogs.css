@@ -109,6 +109,38 @@
     color: var(--text-primary);
   }
 
+  /* ===== LOGIN DIALOG ===== */
+
+  .dialog-button-desc {
+    display: block;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-top: 0.35rem;
+    font-weight: 400;
+  }
+
+  .dialog-button:hover .dialog-button-desc {
+    color: var(--text-secondary);
+  }
+
+  .login-error {
+    color: var(--accent-red);
+    font-size: 0.95rem;
+    padding: 0.5rem 0;
+  }
+
+  #login-submit-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  #login-back.disabled {
+    pointer-events: none;
+    opacity: 0.5;
+  }
+
   @media (width > 760px) {
     .dialog-button {
       font-size: 1.2rem;

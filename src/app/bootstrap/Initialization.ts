@@ -23,6 +23,23 @@ import {
   guardedLeaveWizard,
 } from '../navigation/HistoryManager';
 import { transitionToLanding } from '../views/WorkspaceLayout';
+import {
+  initOAuthClient,
+  isOAuthCallback,
+  restoreSession,
+} from '../auth/AuthService';
+import {
+  showSigningIn,
+  showLoggedOut,
+  showError,
+  completeLogin,
+  setOnLoggedOut,
+} from '../auth/HeaderAuth';
+import {
+  renderLoginDialog,
+  setupLoginDialog,
+  setupLoginButton,
+} from '../auth/LoginDialog';
 
 export let setupTooltips: any;
 
@@ -119,7 +136,6 @@ export function initializeApp(): void {
   };
 
   function showTooltip(element: Element, content: string): void {
-    console.log('Showing tooltip for', element, 'with content:', content);
     if (!tooltip) return;
 
     // Get all client rects - there will be multiple if the term wraps to multiple lines
@@ -250,96 +266,43 @@ export function initializeApp(): void {
     }
   });
 
-  // Get Started dialog functionality
-  const getStartedBtn = document.getElementById('get-started-btn');
-  const getStartedDialog = document.getElementById(
-    'get-started-dialog',
-  ) as HTMLDialogElement | null;
-  const continueWithoutLoginBtn = document.getElementById(
-    'continue-without-login',
-  );
-  const loginWithAtprotoBtn = document.getElementById('login-with-atproto');
-  const getAtprotoIdBtn = document.getElementById('get-atproto-id');
-  const dialogCloseBtn = document.getElementById('dialog-close-x');
-  const dialogCancelBtn = document.getElementById('dialog-cancel');
-
-  // Open dialog when Get Started button is clicked
-  if (getStartedBtn && getStartedDialog) {
-    getStartedBtn.addEventListener('click', () => {
-      console.log('Get Started dialog opened');
-      getStartedDialog.showModal();
-      // Move tooltip into dialog so it appears above the modal backdrop
-      if (tooltip) {
-        getStartedDialog.appendChild(tooltip);
-      }
-    });
-  }
-
-  // Close dialog when clicking outside (on backdrop)
-  if (getStartedDialog) {
-    getStartedDialog.addEventListener('click', (e) => {
-      const rect = getStartedDialog.getBoundingClientRect();
-      if (
-        e.clientX < rect.left ||
-        e.clientX > rect.right ||
-        e.clientY < rect.top ||
-        e.clientY > rect.bottom
-      ) {
-        getStartedDialog.close();
-      }
-    });
-  }
-
-  // Handle button clicks
-  if (continueWithoutLoginBtn) {
-    continueWithoutLoginBtn.addEventListener('click', () => {
-      console.log('Continue without logging in');
-      if (getStartedDialog) getStartedDialog.close();
-      // TODO: Add logic to continue without logging in
-    });
-  }
-
-  if (loginWithAtprotoBtn) {
-    loginWithAtprotoBtn.addEventListener('click', () => {
-      console.log('Log in with ATProto ID');
-      if (getStartedDialog) getStartedDialog.close();
-      // TODO: Add login logic
-    });
-  }
-
-  if (getAtprotoIdBtn) {
-    getAtprotoIdBtn.addEventListener('click', () => {
-      console.log('Get ATProto ID');
-      if (getStartedDialog) getStartedDialog.close();
-      // TODO: Add logic to get ATProto ID
-    });
-  }
-
-  // Close dialog with X button
-  if (dialogCloseBtn && getStartedDialog) {
-    dialogCloseBtn.addEventListener('click', () => {
-      getStartedDialog.close();
-    });
-  }
-
-  // Close dialog with Cancel button
-  if (dialogCancelBtn && getStartedDialog) {
-    dialogCancelBtn.addEventListener('click', () => {
-      getStartedDialog.close();
-    });
-  }
-
-  // Move tooltip back to body when dialog closes
-  if (getStartedDialog) {
-    getStartedDialog.addEventListener('close', () => {
-      if (tooltip) {
-        document.body.appendChild(tooltip);
-      }
-      hideTooltip();
-    });
-  }
+  // Auth initialization
+  document.body.insertAdjacentHTML('beforeend', renderLoginDialog());
+  setupLoginDialog();
+  setupLoginButton();
+  setOnLoggedOut(() => setupLoginButton());
+  initAuth();
 
   // Render the initial step
   renderCurrentStep();
   updateProgressBar();
+}
+
+async function initAuth(): Promise<void> {
+  const isCallback = isOAuthCallback();
+
+  try {
+    // Show signing-in state in header if returning from OAuth
+    if (isCallback) {
+      showSigningIn();
+    }
+
+    await initOAuthClient();
+    const restored = await restoreSession();
+
+    if (restored) {
+      await completeLogin();
+    } else if (isCallback) {
+      // Callback detected but session restore failed
+      showError('Login was cancelled or denied');
+      setupLoginButton();
+    }
+    // else: no session, no callback — stay in logged-out state (default)
+  } catch (err: any) {
+    showLoggedOut();
+    setupLoginButton();
+    if (isCallback) {
+      showError('Login failed. Please try again.');
+    }
+  }
 }

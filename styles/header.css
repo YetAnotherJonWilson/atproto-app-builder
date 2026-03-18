@@ -115,6 +115,50 @@
     background-color: var(--accent-glow);
   }
 
+  /* ===== HEADER AUTH STATE ===== */
+
+  .header-auth-status {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    line-height: 0.8;
+  }
+
+  @media (width > 480px) {
+    .header-auth-status {
+      font-size: 1.4rem;
+    }
+  }
+
+  .header-auth-user {
+    color: var(--text-primary);
+    font-family: var(--ff-heading);
+    font-size: 1.2rem;
+    letter-spacing: 0.05em;
+    line-height: 0.8;
+  }
+
+  @media (width > 480px) {
+    .header-auth-user {
+      font-size: 1.4rem;
+    }
+  }
+
+  .header-auth-sep {
+    color: var(--text-muted);
+    margin: 0 0.15rem;
+    line-height: 0.8;
+  }
+
+  .header-auth-error {
+    color: var(--accent-red);
+    font-size: 0.9rem;
+    margin-right: 0.5rem;
+    animation: fade-up 0.3s ease;
+  }
+
   /* ===== WIZARD (STATE-WIZARD) HEADER OVERRIDES ===== */
 
   .state-wizard .header-logo {
