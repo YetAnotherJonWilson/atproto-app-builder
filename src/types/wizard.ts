@@ -15,7 +15,8 @@ export interface Field {
 
 export interface RecordType {
   id: string;
-  name: string;
+  name: string;           // lexicon-compatible identifier; empty string until user sets it (future)
+  displayName: string;    // human-readable label, seeded from requirement's data type selection
   description: string;
   fields: Field[];
 }
@@ -68,6 +69,7 @@ export interface Requirement {
   // 'do' type
   verb?: string;
   data?: string;
+  dataTypeId?: string;
   // 'navigate' type
   navType?: NavType;
   // navigate — direct link

@@ -71,6 +71,7 @@ export function handleRecordFormSubmit(e: Event): void {
     wizardState.recordTypes.push({
       id: generateId(),
       name: name,
+      displayName: name,
       description: description,
       fields: []
     });

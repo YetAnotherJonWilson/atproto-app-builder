@@ -46,6 +46,7 @@ Pick one item from "Up Next" before starting a coding session.
 
 <!-- Move completed items here with date -->
 
+- [x] Requirements data type combobox & seeding — see `.specs/done/requirements-data-type-combobox.md` 3/19/26
 - [x] Environment-aware configuration — see `.specs/done/env-config.md` 3/18/26
 - [x] Login flow (AT Protocol OAuth) — see `.specs/done/login-flow.md` 3/18/26
 - [x] Responsive wizard - see `.specs/done/narrow-accordion-layout.md` 3/17/26

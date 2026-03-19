@@ -1,0 +1,40 @@
+@layer components {
+  /* ===== COMBOBOX (select-or-create dropdown) ===== */
+
+  .combobox {
+    position: relative;
+  }
+
+  .combobox-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-accent);
+    border-radius: 4px;
+    margin-top: 2px;
+    max-height: 10rem;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .combobox-item {
+    padding: 0.5rem 0.625rem;
+    font-size: 0.8125rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background-color 0.1s;
+  }
+
+  .combobox-item:hover {
+    background: var(--accent-glow);
+  }
+
+  .combobox-item.combobox-create {
+    color: var(--accent);
+    border-top: 1px solid var(--border-subtle);
+  }
+}

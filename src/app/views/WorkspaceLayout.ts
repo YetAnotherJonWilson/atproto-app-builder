@@ -14,7 +14,12 @@
 import template from './workspace.html?raw';
 import { getWizardState, saveWizardState } from '../state/WizardState';
 import type { SectionName } from '../../types/wizard';
-import { renderRequirementsPanel, wireRequirementsPanel, updateSidebar as updateRequirementsSidebar } from './panels/RequirementsPanel';
+import {
+  renderRequirementsPanel,
+  wireRequirementsPanel,
+  updateSidebar as updateRequirementsSidebar,
+  updateDataSidebar,
+} from './panels/RequirementsPanel';
 import { renderDataPanel } from './panels/DataPanel';
 import { renderComponentsPanel } from './panels/ComponentsPanel';
 import { renderViewsPanel } from './panels/ViewsPanel';
@@ -32,9 +37,10 @@ const SECTION_CONFIG: Record<
   views: { title: 'Define Views', render: renderViewsPanel },
 };
 
-const narrowQuery = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-  ? window.matchMedia('(max-width: 767px)')
-  : null;
+const narrowQuery =
+  typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    ? window.matchMedia('(max-width: 767px)')
+    : null;
 
 /** Whether the current viewport uses the accordion layout. */
 function isNarrowViewport(): boolean {
@@ -145,6 +151,9 @@ export function switchSection(section: SectionName): void {
     updateRequirementsSidebar();
   }
 
+  // Always keep data sidebar in sync (RecordTypes may be seeded from requirements)
+  updateDataSidebar();
+
   // Scroll accordion section into view on narrow viewports
   if (narrow && accordionSection?.scrollIntoView) {
     accordionSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -161,7 +170,9 @@ export function updateAccordionSummaries(): void {
   const wizardState = getWizardState();
 
   // Requirements
-  const reqSection = document.querySelector('.accordion-section[data-section="requirements"]');
+  const reqSection = document.querySelector(
+    '.accordion-section[data-section="requirements"]',
+  );
   if (reqSection) {
     const count = wizardState.requirements.length;
     const badge = reqSection.querySelector('.accordion-badge');
@@ -189,7 +200,9 @@ export function updateAccordionSummaries(): void {
   }
 
   // Data
-  const dataSection = document.querySelector('.accordion-section[data-section="data"]');
+  const dataSection = document.querySelector(
+    '.accordion-section[data-section="data"]',
+  );
   if (dataSection) {
     const count = wizardState.recordTypes.length;
     const badge = dataSection.querySelector('.accordion-badge');
@@ -197,9 +210,12 @@ export function updateAccordionSummaries(): void {
 
     const summary = dataSection.querySelector('.accordion-summary');
     if (summary) {
-      summary.textContent = count === 0
-        ? 'None yet'
-        : wizardState.recordTypes.map((r) => r.name).join(' · ');
+      summary.textContent =
+        count === 0
+          ? 'None yet'
+          : wizardState.recordTypes
+              .map((r) => r.displayName || r.name)
+              .join(' · ');
     }
 
     if (count > 0) {
@@ -210,7 +226,9 @@ export function updateAccordionSummaries(): void {
   }
 
   // Components — no components array in WizardState yet, show placeholder
-  const compSection = document.querySelector('.accordion-section[data-section="components"]');
+  const compSection = document.querySelector(
+    '.accordion-section[data-section="components"]',
+  );
   if (compSection) {
     const badge = compSection.querySelector('.accordion-badge');
     if (badge) badge.textContent = '0';
@@ -219,7 +237,9 @@ export function updateAccordionSummaries(): void {
   }
 
   // Views — no views array in WizardState yet, show placeholder
-  const viewsSection = document.querySelector('.accordion-section[data-section="views"]');
+  const viewsSection = document.querySelector(
+    '.accordion-section[data-section="views"]',
+  );
   if (viewsSection) {
     const badge = viewsSection.querySelector('.accordion-badge');
     if (badge) badge.textContent = '0';

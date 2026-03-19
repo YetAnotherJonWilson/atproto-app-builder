@@ -4,6 +4,7 @@ import {
   renderRequirementsPanel,
   wireRequirementsPanel,
   updateSidebar,
+  updateDataSidebar,
   getDisplayText,
   getSidebarText,
 } from '../../src/app/views/panels/RequirementsPanel';
@@ -13,7 +14,7 @@ import {
   setWizardState,
   initializeWizardState,
 } from '../../src/app/state/WizardState';
-import type { Requirement } from '../../src/types/wizard';
+import type { Requirement, RecordType } from '../../src/types/wizard';
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
@@ -32,9 +33,9 @@ function setStateWithRequirements(reqs: Requirement[]): void {
 // ── Display text ───────────────────────────────────────────────────────
 
 describe('getDisplayText', () => {
-  it('returns "I need to know [text]" for know type', () => {
+  it('returns text for know type', () => {
     const req = makeRequirement({ type: 'know', text: 'how this app works' });
-    expect(getDisplayText(req)).toBe('I need to know how this app works');
+    expect(getDisplayText(req)).toBe('how this app works');
   });
 
   it('returns "I need to [verb] [data]" for do type', () => {
@@ -74,7 +75,7 @@ describe('getDisplayText', () => {
 
   it('handles missing fields gracefully', () => {
     const req = makeRequirement({ type: 'know' });
-    expect(getDisplayText(req)).toBe('I need to know ');
+    expect(getDisplayText(req)).toBe('');
   });
 });
 
@@ -142,7 +143,7 @@ describe('renderRequirementsPanel', () => {
     expect(html).not.toContain('Build a Decentralized Web App');
     expect(html).toContain('Add Requirement');
     expect(html).toContain('item-grid');
-    expect(html).toContain('I need to know how this works');
+    expect(html).toContain('how this works');
     expect(html).toContain('I need to track sessions');
   });
 
@@ -214,6 +215,10 @@ describe('wireRequirementsPanel (DOM)', () => {
     document.body.innerHTML = `
       <div id="workspace-panel-body">${renderRequirementsPanel()}</div>
       <div class="sidebar-section" data-section="requirements">
+        <span class="badge">0</span>
+        <div class="sidebar-items"><div class="sidebar-item-empty">None yet</div></div>
+      </div>
+      <div class="sidebar-section" data-section="data">
         <span class="badge">0</span>
         <div class="sidebar-items"><div class="sidebar-item-empty">None yet</div></div>
       </div>
@@ -472,7 +477,7 @@ describe('wireRequirementsPanel (DOM)', () => {
     expect(state.requirements[0].type).toBe('know');
     expect(state.requirements[0].text).toBe('how this works');
     expect(state.requirements[0].content).toBe('A quick-start guide');
-    expect(document.body.innerHTML).toContain('I need to know how this works');
+    expect(document.body.innerHTML).toContain('how this works');
   });
 
   it('saving a do requirement adds it to state', () => {
@@ -607,5 +612,391 @@ describe('updateSidebar', () => {
     document.querySelector('[data-section="requirements"]')!.classList.add('has-items');
     updateSidebar();
     expect(document.querySelector('[data-section="requirements"]')!.classList.contains('has-items')).toBe(false);
+  });
+});
+
+// ── Data type combobox & seeding ──────────────────────────────────────
+
+describe('data type combobox and seeding', () => {
+  beforeEach(() => {
+    setWizardState(initializeWizardState());
+    localStorage.clear();
+  });
+
+  function mountPanel(): void {
+    document.body.innerHTML = `
+      <div id="workspace-panel-body">${renderRequirementsPanel()}</div>
+      <div class="sidebar-section" data-section="requirements">
+        <span class="badge">0</span>
+        <div class="sidebar-items"><div class="sidebar-item-empty">None yet</div></div>
+      </div>
+      <div class="sidebar-section" data-section="data">
+        <span class="badge">0</span>
+        <div class="sidebar-items"><div class="sidebar-item-empty">None yet</div></div>
+      </div>
+    `;
+    wireRequirementsPanel();
+  }
+
+  function switchToDo(): void {
+    const typeSelect = document.getElementById('req-type-select') as HTMLSelectElement;
+    typeSelect.value = 'do';
+    typeSelect.dispatchEvent(new Event('change'));
+  }
+
+  function fillDoForm(verb: string, data: string): void {
+    const verbEl = document.getElementById('req-do-verb') as HTMLInputElement;
+    const dataEl = document.getElementById('req-do-data') as HTMLInputElement;
+    verbEl.value = verb;
+    verbEl.dispatchEvent(new Event('input'));
+    dataEl.value = data;
+    dataEl.dispatchEvent(new Event('input'));
+  }
+
+  function saveForm(): void {
+    (document.querySelector('.req-save-btn') as HTMLElement).click();
+  }
+
+  // ── Combobox rendering ──────────────────────────────────────────────
+
+  it('shows combobox with hint text when type is "do"', () => {
+    mountPanel();
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+
+    expect(document.getElementById('req-do-data-combobox')).not.toBeNull();
+    expect(document.getElementById('req-do-data-dropdown')).not.toBeNull();
+    const hint = document.querySelector('#req-type-fields .form-hint:last-child');
+    expect(hint?.textContent).toContain('What kind of thing');
+  });
+
+  it('dropdown does not appear when no record types exist', () => {
+    mountPanel();
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+
+    const input = document.getElementById('req-do-data') as HTMLInputElement;
+    input.dispatchEvent(new Event('focus'));
+    const dropdown = document.getElementById('req-do-data-dropdown')!;
+    expect(dropdown.style.display).toBe('none');
+  });
+
+  // ── Seeding ─────────────────────────────────────────────────────────
+
+  it('saving a "do" requirement with new name seeds a RecordType', () => {
+    mountPanel();
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+    fillDoForm('create', 'book');
+    saveForm();
+
+    const state = getWizardState();
+    expect(state.recordTypes).toHaveLength(1);
+    expect(state.recordTypes[0].displayName).toBe('book');
+    expect(state.recordTypes[0].name).toBe('');
+    expect(state.recordTypes[0].fields).toEqual([]);
+    expect(state.requirements[0].dataTypeId).toBe(state.recordTypes[0].id);
+  });
+
+  it('saving a second "do" requirement with new name seeds another RecordType', () => {
+    mountPanel();
+    // First requirement
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+    fillDoForm('create', 'book');
+    saveForm();
+
+    // Second requirement
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+    fillDoForm('list', 'grocery item');
+    saveForm();
+
+    const state = getWizardState();
+    expect(state.recordTypes).toHaveLength(2);
+    expect(state.recordTypes[0].displayName).toBe('book');
+    expect(state.recordTypes[1].displayName).toBe('grocery item');
+    expect(state.requirements[1].dataTypeId).toBe(state.recordTypes[1].id);
+  });
+
+  it('exact name match reuses existing RecordType (no duplicate)', () => {
+    const state = getWizardState();
+    state.recordTypes = [{
+      id: 'existing-book',
+      name: '',
+      displayName: 'book',
+      description: '',
+      fields: [],
+    }];
+    mountPanel();
+
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+    fillDoForm('update', 'book');
+    saveForm();
+
+    const updated = getWizardState();
+    expect(updated.recordTypes).toHaveLength(1);
+    expect(updated.requirements[0].dataTypeId).toBe('existing-book');
+  });
+
+  it('exact name match is case-insensitive', () => {
+    const state = getWizardState();
+    state.recordTypes = [{
+      id: 'existing-book',
+      name: '',
+      displayName: 'Book',
+      description: '',
+      fields: [],
+    }];
+    mountPanel();
+
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+    fillDoForm('update', 'book');
+    saveForm();
+
+    const updated = getWizardState();
+    expect(updated.recordTypes).toHaveLength(1);
+    expect(updated.requirements[0].dataTypeId).toBe('existing-book');
+  });
+
+  it('editing a "do" requirement and changing data type creates new RecordType', () => {
+    const state = getWizardState();
+    state.recordTypes = [{
+      id: 'rt-book',
+      name: '',
+      displayName: 'book',
+      description: '',
+      fields: [],
+    }];
+    state.requirements = [{
+      id: 'req-1',
+      type: 'do',
+      verb: 'create',
+      data: 'book',
+      dataTypeId: 'rt-book',
+    }];
+    mountPanel();
+
+    // Edit the requirement
+    (document.querySelector('.req-edit-btn') as HTMLElement).click();
+    const dataEl = document.getElementById('req-do-data') as HTMLInputElement;
+    dataEl.value = 'novel';
+    dataEl.dispatchEvent(new Event('input'));
+    saveForm();
+
+    const updated = getWizardState();
+    // Old "book" RecordType is preserved (orphaned)
+    expect(updated.recordTypes).toHaveLength(2);
+    expect(updated.recordTypes[0].displayName).toBe('book');
+    expect(updated.recordTypes[1].displayName).toBe('novel');
+    expect(updated.requirements[0].dataTypeId).toBe(updated.recordTypes[1].id);
+  });
+
+  it('deleting a "do" requirement does not delete its RecordType', () => {
+    const state = getWizardState();
+    state.recordTypes = [{
+      id: 'rt-book',
+      name: '',
+      displayName: 'book',
+      description: '',
+      fields: [],
+    }];
+    state.requirements = [{
+      id: 'req-1',
+      type: 'do',
+      verb: 'create',
+      data: 'book',
+      dataTypeId: 'rt-book',
+    }];
+    mountPanel();
+
+    (document.querySelector('.req-delete-btn') as HTMLElement).click();
+
+    const updated = getWizardState();
+    expect(updated.requirements).toHaveLength(0);
+    expect(updated.recordTypes).toHaveLength(1);
+    expect(updated.recordTypes[0].displayName).toBe('book');
+  });
+
+  // ── Type dropdown locking ───────────────────────────────────────────
+
+  it('type dropdown is disabled when editing an existing requirement', () => {
+    const state = getWizardState();
+    state.requirements = [makeRequirement({ type: 'do', verb: 'create', data: 'book' })];
+    mountPanel();
+
+    (document.querySelector('.req-edit-btn') as HTMLElement).click();
+    const typeSelect = document.getElementById('req-type-select') as HTMLSelectElement;
+    expect(typeSelect.disabled).toBe(true);
+  });
+
+  it('type dropdown is enabled when adding a new requirement', () => {
+    mountPanel();
+    document.getElementById('req-add-btn')!.click();
+    const typeSelect = document.getElementById('req-type-select') as HTMLSelectElement;
+    expect(typeSelect.disabled).toBe(false);
+  });
+
+  // ── Dropdown behavior ──────────────────────────────────────────────
+
+  it('dropdown shows existing record types on focus', () => {
+    const state = getWizardState();
+    state.recordTypes = [
+      { id: 'rt-1', name: '', displayName: 'book', description: '', fields: [] },
+      { id: 'rt-2', name: '', displayName: 'grocery item', description: '', fields: [] },
+    ];
+    mountPanel();
+
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+
+    const input = document.getElementById('req-do-data') as HTMLInputElement;
+    input.dispatchEvent(new Event('focus'));
+
+    const dropdown = document.getElementById('req-do-data-dropdown')!;
+    expect(dropdown.style.display).toBe('block');
+    const items = dropdown.querySelectorAll('.combobox-item');
+    expect(items).toHaveLength(2);
+    expect(items[0].textContent).toBe('book');
+    expect(items[1].textContent).toBe('grocery item');
+  });
+
+  it('dropdown filters items as user types', () => {
+    const state = getWizardState();
+    state.recordTypes = [
+      { id: 'rt-1', name: '', displayName: 'book', description: '', fields: [] },
+      { id: 'rt-2', name: '', displayName: 'grocery item', description: '', fields: [] },
+    ];
+    mountPanel();
+
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+
+    const input = document.getElementById('req-do-data') as HTMLInputElement;
+    input.value = 'boo';
+    input.dispatchEvent(new Event('input'));
+    input.dispatchEvent(new Event('focus'));
+
+    const dropdown = document.getElementById('req-do-data-dropdown')!;
+    const items = dropdown.querySelectorAll('.combobox-item:not(.combobox-create)');
+    expect(items).toHaveLength(1);
+    expect(items[0].textContent).toBe('book');
+
+    // "Create" option should appear since "boo" is not an exact match
+    const createItem = dropdown.querySelector('.combobox-create');
+    expect(createItem).not.toBeNull();
+  });
+
+  it('exact match suppresses "Create" option', () => {
+    const state = getWizardState();
+    state.recordTypes = [
+      { id: 'rt-1', name: '', displayName: 'book', description: '', fields: [] },
+    ];
+    mountPanel();
+
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+
+    const input = document.getElementById('req-do-data') as HTMLInputElement;
+    input.value = 'book';
+    input.dispatchEvent(new Event('input'));
+    input.dispatchEvent(new Event('focus'));
+
+    const dropdown = document.getElementById('req-do-data-dropdown')!;
+    const createItem = dropdown.querySelector('.combobox-create');
+    expect(createItem).toBeNull();
+  });
+
+  it('clicking a dropdown item selects existing RecordType', () => {
+    const state = getWizardState();
+    state.recordTypes = [
+      { id: 'rt-1', name: '', displayName: 'book', description: '', fields: [] },
+    ];
+    mountPanel();
+
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+
+    const input = document.getElementById('req-do-data') as HTMLInputElement;
+    input.dispatchEvent(new Event('focus'));
+
+    const dropdown = document.getElementById('req-do-data-dropdown')!;
+    const item = dropdown.querySelector('.combobox-item') as HTMLElement;
+    item.dispatchEvent(new MouseEvent('mousedown'));
+
+    expect(input.value).toBe('book');
+
+    // Fill verb and save
+    const verb = document.getElementById('req-do-verb') as HTMLInputElement;
+    verb.value = 'update';
+    verb.dispatchEvent(new Event('input'));
+    saveForm();
+
+    const updated = getWizardState();
+    expect(updated.recordTypes).toHaveLength(1);
+    expect(updated.requirements[0].dataTypeId).toBe('rt-1');
+  });
+});
+
+// ── Data sidebar updates ──────────────────────────────────────────────
+
+describe('updateDataSidebar', () => {
+  beforeEach(() => {
+    setWizardState(initializeWizardState());
+  });
+
+  function mountDataSidebar(): void {
+    document.body.innerHTML = `
+      <div class="sidebar-section" data-section="data">
+        <span class="badge">0</span>
+        <div class="sidebar-items"><div class="sidebar-item-empty">None yet</div></div>
+      </div>
+    `;
+  }
+
+  it('shows badge count matching recordTypes length', () => {
+    const state = getWizardState();
+    state.recordTypes = [
+      { id: 'rt-1', name: '', displayName: 'book', description: '', fields: [] },
+      { id: 'rt-2', name: '', displayName: 'grocery item', description: '', fields: [] },
+    ];
+    mountDataSidebar();
+    updateDataSidebar();
+
+    expect(document.querySelector('.badge')!.textContent).toBe('2');
+  });
+
+  it('shows displayName for each RecordType in sidebar items', () => {
+    const state = getWizardState();
+    state.recordTypes = [
+      { id: 'rt-1', name: '', displayName: 'book', description: '', fields: [] },
+    ];
+    mountDataSidebar();
+    updateDataSidebar();
+
+    const items = document.querySelectorAll('.sidebar-item');
+    expect(items).toHaveLength(1);
+    expect(items[0].textContent).toBe('book');
+  });
+
+  it('adds has-items class when recordTypes exist', () => {
+    const state = getWizardState();
+    state.recordTypes = [
+      { id: 'rt-1', name: '', displayName: 'book', description: '', fields: [] },
+    ];
+    mountDataSidebar();
+    updateDataSidebar();
+
+    expect(document.querySelector('[data-section="data"]')!.classList.contains('has-items')).toBe(true);
+  });
+
+  it('shows "None yet" when no recordTypes exist', () => {
+    mountDataSidebar();
+    updateDataSidebar();
+
+    expect(document.querySelector('.badge')!.textContent).toBe('0');
+    expect(document.querySelector('.sidebar-item-empty')).not.toBeNull();
   });
 });

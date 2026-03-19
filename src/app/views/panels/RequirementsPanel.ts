@@ -21,6 +21,7 @@ import { updateAccordionSummaries } from '../WorkspaceLayout';
 import type {
   Requirement,
   RequirementType,
+  RecordType,
   NavType,
 } from '../../../types/wizard';
 
@@ -125,13 +126,14 @@ function renderInlineForm(
   const knowSelected = type === 'know' ? ' selected' : '';
   const doSelected = type === 'do' ? ' selected' : '';
   const navSelected = type === 'navigate' ? ' selected' : '';
+  const typeDisabled = existing ? ' disabled' : '';
 
   return `
     <div class="inline-form open" id="req-form">
       <div class="form-row">
         <div class="form-group">
           <label>Type</label>
-          <select id="req-type-select">
+          <select id="req-type-select"${typeDisabled}>
             <option value="know"${knowSelected}>Information</option>
             <option value="do"${doSelected}>Data Interaction</option>
             <option value="navigate"${navSelected}>Navigation</option>
@@ -215,7 +217,12 @@ function renderTypeFields(
 
   if (type === 'do') {
     const verb = existing?.verb ?? '';
-    const data = existing?.data ?? '';
+    let dataValue = existing?.data ?? '';
+    if (existing?.dataTypeId) {
+      const { recordTypes } = getWizardState();
+      const linked = recordTypes.find((r) => r.id === existing.dataTypeId);
+      if (linked) dataValue = linked.displayName;
+    }
     return `
       <div class="form-hint">As a user of the app, I need to&hellip;</div>
       <div class="form-row">
@@ -224,8 +231,17 @@ function renderTypeFields(
           <input id="req-do-verb" placeholder="search, list, create, update, etc." value="${escapeAttr(verb)}">
         </div>
         <div class="form-group">
-          <label>Data</label>
-          <input id="req-do-data" placeholder="a list of books, an appointment" value="${escapeAttr(data)}">
+          <label>Data Type</label>
+          <div class="combobox" id="req-do-data-combobox">
+            <input id="req-do-data" placeholder="e.g., grocery item, book, appointment"
+                   autocomplete="off" value="${escapeAttr(dataValue)}">
+            <div class="combobox-dropdown" id="req-do-data-dropdown">
+            </div>
+          </div>
+          <div class="form-hint">What kind of thing does this action work with? Select an
+          existing type or enter a new one. Focus on the thing being acted on &mdash; if your
+          action involves two things (like &ldquo;add an item to a list&rdquo;), the item is the
+          data type. The list is a separate type you&rsquo;ll connect later.</div>
         </div>
       </div>
     `;
@@ -366,6 +382,9 @@ function escapeAttr(str: string): string {
 /** The ID of the requirement being edited, or null if adding new. */
 let editingId: string | null = null;
 
+/** Tracks the selected RecordType ID in the current combobox, or null for new type. */
+let selectedDataTypeId: string | null = null;
+
 export function wireRequirementsPanel(): void {
   editingId = null;
 
@@ -411,7 +430,12 @@ function wireNextStepButton(): void {
 // ── Form lifecycle ─────────────────────────────────────────────────────
 
 function showForm(type?: RequirementType, existing?: Requirement): void {
-  if (!existing) editingId = null;
+  if (!existing) {
+    editingId = null;
+    selectedDataTypeId = null;
+  } else {
+    selectedDataTypeId = existing.dataTypeId ?? null;
+  }
   const formType = type ?? existing?.type ?? 'know';
   const area = document.getElementById('req-form-area');
   if (!area) return;
@@ -420,6 +444,9 @@ function showForm(type?: RequirementType, existing?: Requirement): void {
   wireTypeDropdown(existing);
   if (formType === 'navigate') {
     wireNavTypeDropdown(existing);
+  }
+  if (formType === 'do') {
+    wireCombobox();
   }
   wireFormValidation(formType);
   wireFormButtons();
@@ -458,6 +485,10 @@ function wireTypeDropdown(existing?: Requirement): void {
     if (fieldsArea) {
       const prefill = existing?.type === newType ? existing : undefined;
       fieldsArea.innerHTML = renderTypeFields(newType, prefill);
+      if (newType === 'do') {
+        selectedDataTypeId = prefill?.dataTypeId ?? null;
+        wireCombobox();
+      }
     }
 
     wireFormValidation(newType);
@@ -490,6 +521,90 @@ function wireNavTypeDropdown(existing?: Requirement): void {
   });
 }
 
+// ── Combobox ────────────────────────────────────────────────────────────
+
+function wireCombobox(): void {
+  const input = document.getElementById('req-do-data') as HTMLInputElement | null;
+  const dropdown = document.getElementById('req-do-data-dropdown');
+  if (!input || !dropdown) return;
+
+  function updateDropdown(): void {
+    const { recordTypes } = getWizardState();
+    if (recordTypes.length === 0) {
+      dropdown!.style.display = 'none';
+      return;
+    }
+
+    const query = input!.value.trim().toLowerCase();
+    const filtered = query
+      ? recordTypes.filter((rt) =>
+          rt.displayName.toLowerCase().includes(query),
+        )
+      : recordTypes;
+
+    const exactMatch =
+      query &&
+      recordTypes.some((rt) => rt.displayName.toLowerCase() === query);
+
+    let html = filtered
+      .map(
+        (rt) =>
+          `<div class="combobox-item" data-record-id="${rt.id}">${escapeHtml(rt.displayName)}</div>`,
+      )
+      .join('');
+
+    if (query && !exactMatch) {
+      html += `<div class="combobox-item combobox-create">Create &ldquo;${escapeHtml(input!.value.trim())}&rdquo;</div>`;
+    }
+
+    if (!html) {
+      dropdown!.style.display = 'none';
+      return;
+    }
+
+    dropdown!.innerHTML = html;
+    dropdown!.style.display = 'block';
+
+    // Wire click handlers on items
+    dropdown!.querySelectorAll('.combobox-item').forEach((item) => {
+      item.addEventListener('mousedown', (e) => {
+        e.preventDefault(); // Prevent blur before click registers
+        const el = item as HTMLElement;
+        const recordId = el.dataset.recordId;
+        if (recordId) {
+          selectedDataTypeId = recordId;
+          const rt = getWizardState().recordTypes.find(
+            (r) => r.id === recordId,
+          );
+          if (rt) input!.value = rt.displayName;
+        } else {
+          // "Create" option — keep typed text, clear selection
+          selectedDataTypeId = null;
+        }
+        dropdown!.style.display = 'none';
+        validateForm('do');
+      });
+    });
+  }
+
+  input.addEventListener('focus', () => updateDropdown());
+  input.addEventListener('input', () => {
+    selectedDataTypeId = null;
+    updateDropdown();
+    validateForm('do');
+  });
+  input.addEventListener('blur', () => {
+    setTimeout(() => {
+      dropdown.style.display = 'none';
+    }, 150);
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      dropdown.style.display = 'none';
+    }
+  });
+}
+
 function wireFormButtons(): void {
   const area = document.getElementById('req-form-area');
   if (!area) return;
@@ -504,6 +619,7 @@ function wireFormButtons(): void {
 
 function closeForm(): void {
   editingId = null;
+  selectedDataTypeId = null;
   const area = document.getElementById('req-form-area');
   if (area) area.innerHTML = '';
 }
@@ -577,7 +693,7 @@ function saveRequirement(): void {
   const type = typeSelect.value as RequirementType;
 
   const wizardState = getWizardState();
-  const req = buildRequirementFromForm(type);
+  const req = buildRequirementFromForm(type, wizardState);
   if (!req) return;
 
   if (editingId) {
@@ -604,7 +720,10 @@ function deleteRequirement(id: string): void {
   rerenderPanel();
 }
 
-function buildRequirementFromForm(type: RequirementType): Requirement | null {
+function buildRequirementFromForm(
+  type: RequirementType,
+  wizardState: import('../../../types/wizard').WizardState,
+): Requirement | null {
   const base: Requirement = { id: generateId(), type };
 
   if (type === 'know') {
@@ -645,6 +764,10 @@ function buildRequirementFromForm(type: RequirementType): Requirement | null {
     if (!verb || !data) return null;
     base.verb = verb;
     base.data = data;
+
+    // Resolve or create a RecordType for this data type
+    const dataTypeId = resolveOrCreateDataType(data, wizardState);
+    base.dataTypeId = dataTypeId;
   } else {
     // navigate — read navType, currently can't save (all sub-forms disabled)
     const navTypeSelect = document.getElementById(
@@ -655,6 +778,40 @@ function buildRequirementFromForm(type: RequirementType): Requirement | null {
   }
 
   return base;
+}
+
+/**
+ * Resolve the data type to an existing RecordType or create a new one.
+ * Returns the RecordType ID.
+ */
+function resolveOrCreateDataType(
+  displayName: string,
+  wizardState: import('../../../types/wizard').WizardState,
+): string {
+  // 1. If user selected an existing type via the combobox, use it
+  if (selectedDataTypeId) {
+    const existing = wizardState.recordTypes.find(
+      (r) => r.id === selectedDataTypeId,
+    );
+    if (existing) return existing.id;
+  }
+
+  // 2. Check for exact match by displayName (case-insensitive)
+  const exactMatch = wizardState.recordTypes.find(
+    (r) => r.displayName.toLowerCase() === displayName.toLowerCase(),
+  );
+  if (exactMatch) return exactMatch.id;
+
+  // 3. Create a new RecordType
+  const newType: RecordType = {
+    id: generateId(),
+    name: '',
+    displayName: displayName.trim(),
+    description: '',
+    fields: [],
+  };
+  wizardState.recordTypes.push(newType);
+  return newType.id;
 }
 
 // ── Re-render ──────────────────────────────────────────────────────────
@@ -677,6 +834,7 @@ function rerenderPanel(): void {
 
   wireRequirementsPanel();
   updateSidebar();
+  updateDataSidebar();
   updateAccordionSummaries();
 }
 
@@ -709,6 +867,40 @@ export function updateSidebar(): void {
       .map(
         (r) =>
           `<div class="sidebar-item">${escapeHtml(getSidebarText(r))}</div>`,
+      )
+      .join('');
+  }
+}
+
+export function updateDataSidebar(): void {
+  const { recordTypes } = getWizardState();
+  const section = document.querySelector(
+    '.sidebar-section[data-section="data"]',
+  );
+  if (!section) return;
+
+  // Update badge
+  const badge = section.querySelector('.badge');
+  if (badge) badge.textContent = String(recordTypes.length);
+
+  // Update has-items class
+  if (recordTypes.length > 0) {
+    section.classList.add('has-items');
+  } else {
+    section.classList.remove('has-items');
+  }
+
+  // Update sidebar items
+  const itemsContainer = section.querySelector('.sidebar-items');
+  if (!itemsContainer) return;
+
+  if (recordTypes.length === 0) {
+    itemsContainer.innerHTML = '<div class="sidebar-item-empty">None yet</div>';
+  } else {
+    itemsContainer.innerHTML = recordTypes
+      .map(
+        (rt) =>
+          `<div class="sidebar-item">${escapeHtml(rt.displayName || rt.name)}</div>`,
       )
       .join('');
   }

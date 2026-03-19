@@ -18,5 +18,6 @@
 @import './styles/workspace/sidebar.css';
 @import './styles/workspace/workspace.css';
 @import './styles/workspace/inline-form.css';
+@import './styles/workspace/combobox.css';
 @import './styles/workspace/item-card.css';
 @import './styles/workspace/accordion.css';
