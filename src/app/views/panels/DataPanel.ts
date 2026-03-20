@@ -100,8 +100,8 @@ export function wireDataPanel(): void {
 
 export { getCompletionStatus, getStatusBadge };
 
-/** Reset detail view state — for testing. */
-export function _resetDetailState(): void {
+/** Reset detail view state — called when navigating to the Data section, and for testing. */
+export function resetDetailState(): void {
   activeDetailRecordId = null;
   detailMode = 'choice';
   formState = null;
@@ -820,6 +820,11 @@ async function handleSelectResult(nsid: string): Promise<void> {
     selectedSchema = result.schema;
     selectedNsid = nsid;
     rerenderBrowseResults();
+    // Scroll schema preview into view
+    const preview = document.getElementById('dt-schema-preview');
+    if (preview) {
+      preview.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
   } catch {
     selectedSchema = null;
     selectedNsid = null;
@@ -1052,20 +1057,26 @@ function updateSaveButtonState(): void {
 }
 
 function rerenderPanel(): void {
-  // Re-render into whichever container is active
-  const bodyEl = document.getElementById('workspace-panel-body');
-  if (bodyEl) {
-    bodyEl.innerHTML = renderDataPanel();
-    wireDataPanel();
-    return;
-  }
-  // Try accordion body
-  const accBody = document.querySelector(
-    '.accordion-section[data-section="data"] .accordion-body',
-  );
-  if (accBody) {
-    accBody.innerHTML = renderDataPanel();
-    wireDataPanel();
+  // Determine which container is currently visible
+  const narrow =
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(max-width: 767px)').matches;
+
+  if (narrow) {
+    const accBody = document.querySelector(
+      '.accordion-section[data-section="data"] .accordion-body',
+    );
+    if (accBody) {
+      accBody.innerHTML = renderDataPanel();
+      wireDataPanel();
+    }
+  } else {
+    const bodyEl = document.getElementById('workspace-panel-body');
+    if (bodyEl) {
+      bodyEl.innerHTML = renderDataPanel();
+      wireDataPanel();
+    }
   }
 }
 

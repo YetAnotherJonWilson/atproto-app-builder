@@ -521,4 +521,18 @@
     border-color: var(--text-muted);
     color: var(--text-primary);
   }
+
+  /* --- Narrow viewport adjustments --- */
+
+  @media (width < 480px) {
+    .source-choice-cards {
+      grid-template-columns: 1fr;
+    }
+
+    .search-result-item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.125rem;
+    }
+  }
 }

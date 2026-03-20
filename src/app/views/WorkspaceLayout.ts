@@ -20,7 +20,7 @@ import {
   updateSidebar as updateRequirementsSidebar,
   updateDataSidebar,
 } from './panels/RequirementsPanel';
-import { renderDataPanel, wireDataPanel } from './panels/DataPanel';
+import { renderDataPanel, wireDataPanel, resetDetailState } from './panels/DataPanel';
 import { renderComponentsPanel } from './panels/ComponentsPanel';
 import { renderViewsPanel } from './panels/ViewsPanel';
 
@@ -119,6 +119,9 @@ export function switchSection(section: SectionName): void {
     `.accordion-section[data-section="${section}"]`,
   );
   if (accordionSection) accordionSection.classList.add('active');
+
+  // Reset data detail state so navigating back to Data shows the card grid
+  resetDetailState();
 
   // Render panel content into the visible container only (avoids duplicate IDs)
   const config = SECTION_CONFIG[section];

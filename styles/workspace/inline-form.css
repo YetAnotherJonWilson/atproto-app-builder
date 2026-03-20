@@ -82,7 +82,7 @@
 
   /* --- Very narrow: stack form rows --- */
 
-  @media (max-width: 400px) {
+  @media (max-width: 480px) {
     .form-row {
       grid-template-columns: 1fr;
     }

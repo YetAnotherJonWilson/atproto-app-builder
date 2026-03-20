@@ -5,7 +5,7 @@ import {
   wireDataPanel,
   getCompletionStatus,
   getStatusBadge,
-  _resetDetailState,
+  resetDetailState,
 } from '../../src/app/views/panels/DataPanel';
 import {
   getWizardState,
@@ -108,7 +108,7 @@ describe('getStatusBadge', () => {
 describe('renderDataPanel', () => {
   beforeEach(() => {
     setWizardState(initializeWizardState());
-    _resetDetailState();
+    resetDetailState();
   });
 
   it('renders empty state when no record types exist', () => {
@@ -199,7 +199,7 @@ describe('renderDataPanel', () => {
 describe('wireDataPanel (DOM)', () => {
   beforeEach(() => {
     setWizardState(initializeWizardState());
-    _resetDetailState();
+    resetDetailState();
   });
 
   function mountEmptyPanel(): void {
