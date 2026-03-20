@@ -120,7 +120,7 @@
   font-weight: 600;
 }
 
-@media (width > 760px) {
+@media (width > 767px) {
   .wizard-progress-text {
     font-size: 1.2rem;
   }

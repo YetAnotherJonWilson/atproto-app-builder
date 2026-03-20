@@ -83,7 +83,7 @@
     border-bottom: 9px solid rgba(255, 255, 255, 0.1);
   }
 
-  @media (width > 760px) {
+  @media (width > 767px) {
     .tooltip {
       font-size: 1.1rem;
       max-width: 350px;
