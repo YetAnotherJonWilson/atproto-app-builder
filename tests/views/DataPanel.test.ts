@@ -458,6 +458,491 @@ describe('wireDataPanel (DOM)', () => {
   });
 });
 
+// ── Field list rendering ────────────────────────────────────────────────
+
+describe('field list rendering', () => {
+  beforeEach(() => {
+    setWizardState(initializeWizardState());
+    resetDetailState();
+  });
+
+  function openDetailForRecord(rt: Partial<RecordType>): void {
+    const state = getWizardState();
+    state.recordTypes = [makeRecordType({ id: 'rt-test', ...rt })];
+    document.body.innerHTML = `<div id="workspace-panel-body">${renderDataPanel()}</div>`;
+    wireDataPanel();
+    const card = document.querySelector('.item-card[data-record-id="rt-test"]') as HTMLElement;
+    card.click();
+  }
+
+  it('shows empty state with system field for new lexicons', () => {
+    openDetailForRecord({
+      displayName: 'book',
+      name: 'book',
+      namespaceOption: 'thelexfiles',
+      lexUsername: 'alice',
+    });
+
+    expect(document.querySelector('.field-empty-state')).not.toBeNull();
+    expect(document.querySelector('.field-empty-state')!.textContent).toContain('No fields defined yet');
+    // System field should be rendered
+    const systemBadge = document.querySelector('.system-badge');
+    expect(systemBadge).not.toBeNull();
+    expect(systemBadge!.textContent).toBe('System');
+  });
+
+  it('shows "+ Add Field" button when identity is configured', () => {
+    openDetailForRecord({
+      displayName: 'book',
+      name: 'book',
+      namespaceOption: 'thelexfiles',
+      lexUsername: 'alice',
+    });
+
+    expect(document.getElementById('dt-add-field-btn')).not.toBeNull();
+  });
+
+  it('hides "+ Add Field" button when identity is not configured', () => {
+    openDetailForRecord({
+      displayName: 'book',
+      name: '',
+    });
+
+    // Navigate to source choice first, then check
+    expect(document.getElementById('dt-add-field-btn')).toBeNull();
+  });
+
+  it('shows read-only note for adopted lexicons', () => {
+    openDetailForRecord({
+      displayName: 'post',
+      name: 'post',
+      source: 'adopted',
+      adoptedNsid: 'app.bsky.feed.post',
+      adoptedSchema: {
+        lexicon: 1,
+        id: 'app.bsky.feed.post',
+        defs: {
+          main: {
+            type: 'record',
+            description: 'A post',
+            key: 'tid',
+            record: {
+              type: 'object',
+              required: ['text', 'createdAt'],
+              properties: {
+                text: { type: 'string', maxLength: 300 },
+                createdAt: { type: 'string', format: 'datetime' },
+              },
+            },
+          },
+        },
+      },
+      fields: [
+        { id: 'f1', name: 'text', type: 'string', maxLength: 300, required: true },
+        { id: 'f2', name: 'createdAt', type: 'string', format: 'datetime', required: true },
+      ],
+    });
+
+    const note = document.querySelector('.form-note');
+    expect(note).not.toBeNull();
+    expect(note!.textContent).toContain('These fields are defined by the adopted lexicon');
+    expect(note!.textContent).toContain('app.bsky.feed.post');
+
+    // No add button for adopted
+    expect(document.getElementById('dt-add-field-btn')).toBeNull();
+
+    // No edit/delete buttons
+    expect(document.querySelector('.field-edit-btn')).toBeNull();
+    expect(document.querySelector('.field-delete-btn')).toBeNull();
+  });
+
+  it('renders field rows with type badges', () => {
+    openDetailForRecord({
+      displayName: 'book',
+      name: 'book',
+      namespaceOption: 'thelexfiles',
+      lexUsername: 'alice',
+      fields: [
+        { id: 'f1', name: 'title', type: 'string', required: true },
+        { id: 'f2', name: 'pages', type: 'integer', required: false },
+        { id: 'f3', name: 'createdAt', type: 'string', format: 'datetime', required: true, isSystem: true },
+      ],
+    });
+
+    const rows = document.querySelectorAll('.field-row');
+    expect(rows).toHaveLength(3);
+
+    // First row: title (Text, Required)
+    const firstRow = rows[0];
+    expect(firstRow.querySelector('.field-row-name')!.textContent).toBe('title');
+    expect(firstRow.querySelector('.type-badge')!.textContent).toBe('Text');
+    expect(firstRow.querySelector('.required-badge')).not.toBeNull();
+
+    // Last row: createdAt (Date & Time, System)
+    const lastRow = rows[2];
+    expect(lastRow.querySelector('.field-row-name')!.textContent).toBe('createdAt');
+    expect(lastRow.querySelector('.type-badge')!.textContent).toBe('Date & Time');
+    expect(lastRow.querySelector('.system-badge')).not.toBeNull();
+    // System fields have no edit/delete
+    expect(lastRow.querySelector('.field-edit-btn')).toBeNull();
+    expect(lastRow.querySelector('.field-delete-btn')).toBeNull();
+  });
+
+  it('shows edit and delete buttons for user fields', () => {
+    openDetailForRecord({
+      displayName: 'book',
+      name: 'book',
+      namespaceOption: 'thelexfiles',
+      lexUsername: 'alice',
+      fields: [
+        { id: 'f1', name: 'title', type: 'string', required: true },
+        { id: 'f-sys', name: 'createdAt', type: 'string', format: 'datetime', required: true, isSystem: true },
+      ],
+    });
+
+    const userRow = document.querySelector('.field-row[data-field-id="f1"]');
+    expect(userRow!.querySelector('.field-edit-btn')).not.toBeNull();
+    expect(userRow!.querySelector('.field-delete-btn')).not.toBeNull();
+  });
+
+  it('backfills createdAt system field for new records missing it', () => {
+    openDetailForRecord({
+      displayName: 'book',
+      name: 'book',
+      namespaceOption: 'thelexfiles',
+      lexUsername: 'alice',
+      fields: [
+        { id: 'f1', name: 'title', type: 'string', required: true },
+      ],
+    });
+
+    // Should have backfilled createdAt
+    const state = getWizardState();
+    const rt = state.recordTypes.find(r => r.id === 'rt-test')!;
+    const sysField = rt.fields.find(f => f.name === 'createdAt' && f.isSystem);
+    expect(sysField).toBeDefined();
+  });
+});
+
+// ── Field form interaction ────────────────────────────────────────────
+
+describe('field form interaction', () => {
+  beforeEach(() => {
+    setWizardState(initializeWizardState());
+    resetDetailState();
+  });
+
+  function openDetailWithIdentity(): void {
+    const state = getWizardState();
+    state.recordTypes = [makeRecordType({
+      id: 'rt-test',
+      displayName: 'book',
+      name: 'book',
+      namespaceOption: 'thelexfiles',
+      lexUsername: 'alice',
+      fields: [
+        { id: 'f-sys', name: 'createdAt', type: 'string', format: 'datetime', required: true, isSystem: true },
+      ],
+    })];
+    document.body.innerHTML = `<div id="workspace-panel-body">${renderDataPanel()}</div>`;
+    wireDataPanel();
+    const card = document.querySelector('.item-card[data-record-id="rt-test"]') as HTMLElement;
+    card.click();
+  }
+
+  it('clicking "+ Add Field" shows inline form', () => {
+    openDetailWithIdentity();
+    document.getElementById('dt-add-field-btn')!.click();
+
+    expect(document.getElementById('dt-field-form')).not.toBeNull();
+    expect(document.getElementById('dt-field-name')).not.toBeNull();
+    expect(document.getElementById('dt-field-type')).not.toBeNull();
+  });
+
+  it('save button is initially disabled', () => {
+    openDetailWithIdentity();
+    document.getElementById('dt-add-field-btn')!.click();
+
+    const saveBtn = document.querySelector('.field-save-btn') as HTMLButtonElement;
+    expect(saveBtn.disabled).toBe(true);
+  });
+
+  it('cancel closes the form', () => {
+    openDetailWithIdentity();
+    document.getElementById('dt-add-field-btn')!.click();
+    expect(document.getElementById('dt-field-form')).not.toBeNull();
+
+    const cancelBtn = document.querySelector('.field-cancel-btn') as HTMLElement;
+    cancelBtn.click();
+    expect(document.getElementById('dt-field-form')).toBeNull();
+  });
+
+  it('adding a valid field saves to state and re-renders', () => {
+    openDetailWithIdentity();
+    document.getElementById('dt-add-field-btn')!.click();
+
+    const nameInput = document.getElementById('dt-field-name') as HTMLInputElement;
+    const typeSelect = document.getElementById('dt-field-type') as HTMLSelectElement;
+    nameInput.value = 'title';
+    nameInput.dispatchEvent(new Event('input'));
+    typeSelect.value = 'string';
+    typeSelect.dispatchEvent(new Event('change'));
+
+    const saveBtn = document.querySelector('.field-save-btn') as HTMLButtonElement;
+    expect(saveBtn.disabled).toBe(false);
+    saveBtn.click();
+
+    // Field should appear in the list
+    const state = getWizardState();
+    const rt = state.recordTypes.find(r => r.id === 'rt-test')!;
+    const userFields = rt.fields.filter(f => !f.isSystem);
+    expect(userFields).toHaveLength(1);
+    expect(userFields[0].name).toBe('title');
+    expect(userFields[0].type).toBe('string');
+
+    // Field row should be rendered
+    expect(document.querySelector('.field-row-name')).not.toBeNull();
+  });
+
+  it('validates field name: must start with lowercase letter', () => {
+    openDetailWithIdentity();
+    document.getElementById('dt-add-field-btn')!.click();
+
+    const nameInput = document.getElementById('dt-field-name') as HTMLInputElement;
+    const typeSelect = document.getElementById('dt-field-type') as HTMLSelectElement;
+    typeSelect.value = 'string';
+    typeSelect.dispatchEvent(new Event('change'));
+
+    // Leading digit
+    nameInput.value = '1badname';
+    nameInput.dispatchEvent(new Event('input'));
+    expect(document.getElementById('dt-field-name-error')!.textContent).toContain('lowercase letter');
+    expect((document.querySelector('.field-save-btn') as HTMLButtonElement).disabled).toBe(true);
+
+    // Leading uppercase
+    nameInput.value = 'BadName';
+    nameInput.dispatchEvent(new Event('input'));
+    expect(document.getElementById('dt-field-name-error')!.textContent).toContain('lowercase letter');
+    expect((document.querySelector('.field-save-btn') as HTMLButtonElement).disabled).toBe(true);
+
+    // Valid lowerCamelCase
+    nameInput.value = 'goodName';
+    nameInput.dispatchEvent(new Event('input'));
+    expect(document.getElementById('dt-field-name-error')!.textContent).toBe('');
+    expect((document.querySelector('.field-save-btn') as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('validates field name: no special characters', () => {
+    openDetailWithIdentity();
+    document.getElementById('dt-add-field-btn')!.click();
+
+    const nameInput = document.getElementById('dt-field-name') as HTMLInputElement;
+    const typeSelect = document.getElementById('dt-field-type') as HTMLSelectElement;
+    nameInput.value = 'bad-name';
+    nameInput.dispatchEvent(new Event('input'));
+    typeSelect.value = 'string';
+    typeSelect.dispatchEvent(new Event('change'));
+
+    const error = document.getElementById('dt-field-name-error')!;
+    expect(error.textContent).toContain('Only letters and digits');
+    expect((document.querySelector('.field-save-btn') as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('validates field name: no duplicates', () => {
+    // First add a field
+    openDetailWithIdentity();
+    document.getElementById('dt-add-field-btn')!.click();
+    const nameInput = document.getElementById('dt-field-name') as HTMLInputElement;
+    const typeSelect = document.getElementById('dt-field-type') as HTMLSelectElement;
+    nameInput.value = 'title';
+    nameInput.dispatchEvent(new Event('input'));
+    typeSelect.value = 'string';
+    typeSelect.dispatchEvent(new Event('change'));
+    (document.querySelector('.field-save-btn') as HTMLButtonElement).click();
+
+    // Try to add another with the same name
+    document.getElementById('dt-add-field-btn')!.click();
+    const nameInput2 = document.getElementById('dt-field-name') as HTMLInputElement;
+    const typeSelect2 = document.getElementById('dt-field-type') as HTMLSelectElement;
+    nameInput2.value = 'title';
+    nameInput2.dispatchEvent(new Event('input'));
+    typeSelect2.value = 'string';
+    typeSelect2.dispatchEvent(new Event('change'));
+
+    const error = document.getElementById('dt-field-name-error')!;
+    expect(error.textContent).toContain('A field with this name already exists');
+    expect((document.querySelector('.field-save-btn') as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('type change updates constraints area', () => {
+    openDetailWithIdentity();
+    document.getElementById('dt-add-field-btn')!.click();
+
+    const typeSelect = document.getElementById('dt-field-type') as HTMLSelectElement;
+
+    // Select string type
+    typeSelect.value = 'string';
+    typeSelect.dispatchEvent(new Event('change'));
+    expect(document.getElementById('dt-field-maxlength')).not.toBeNull();
+    expect(document.getElementById('dt-field-format')).not.toBeNull();
+
+    // Switch to integer
+    typeSelect.value = 'integer';
+    typeSelect.dispatchEvent(new Event('change'));
+    expect(document.getElementById('dt-field-minimum')).not.toBeNull();
+    expect(document.getElementById('dt-field-maximum')).not.toBeNull();
+    expect(document.getElementById('dt-field-maxlength')).toBeNull();
+
+    // Switch to boolean — no constraints
+    typeSelect.value = 'boolean';
+    typeSelect.dispatchEvent(new Event('change'));
+    expect(document.getElementById('dt-field-constraints')!.innerHTML).toBe('');
+  });
+
+  it('shortcut types set format automatically', () => {
+    openDetailWithIdentity();
+    document.getElementById('dt-add-field-btn')!.click();
+
+    const nameInput = document.getElementById('dt-field-name') as HTMLInputElement;
+    const typeSelect = document.getElementById('dt-field-type') as HTMLSelectElement;
+
+    nameInput.value = 'eventDate';
+    nameInput.dispatchEvent(new Event('input'));
+    typeSelect.value = 'string:datetime';
+    typeSelect.dispatchEvent(new Event('change'));
+
+    (document.querySelector('.field-save-btn') as HTMLButtonElement).click();
+
+    const state = getWizardState();
+    const rt = state.recordTypes.find(r => r.id === 'rt-test')!;
+    const field = rt.fields.find(f => f.name === 'eventDate')!;
+    expect(field.type).toBe('string');
+    expect(field.format).toBe('datetime');
+  });
+});
+
+// ── Field deletion ──────────────────────────────────────────────────
+
+describe('field deletion', () => {
+  beforeEach(() => {
+    setWizardState(initializeWizardState());
+    resetDetailState();
+  });
+
+  it('shows inline delete confirmation', () => {
+    const state = getWizardState();
+    state.recordTypes = [makeRecordType({
+      id: 'rt-test',
+      displayName: 'book',
+      name: 'book',
+      namespaceOption: 'thelexfiles',
+      lexUsername: 'alice',
+      fields: [
+        { id: 'f1', name: 'title', type: 'string', required: true },
+        { id: 'f-sys', name: 'createdAt', type: 'string', format: 'datetime', required: true, isSystem: true },
+      ],
+    })];
+    document.body.innerHTML = `<div id="workspace-panel-body">${renderDataPanel()}</div>`;
+    wireDataPanel();
+    const card = document.querySelector('.item-card[data-record-id="rt-test"]') as HTMLElement;
+    card.click();
+
+    // Click delete on the user field
+    const deleteBtn = document.querySelector('.field-delete-btn[data-field-id="f1"]') as HTMLElement;
+    deleteBtn.click();
+
+    // Should show confirmation
+    expect(document.querySelector('.field-delete-confirm')).not.toBeNull();
+    expect(document.querySelector('.field-confirm-delete-btn')).not.toBeNull();
+    expect(document.querySelector('.field-cancel-delete-btn')).not.toBeNull();
+  });
+
+  it('confirming delete removes the field', () => {
+    const state = getWizardState();
+    state.recordTypes = [makeRecordType({
+      id: 'rt-test',
+      displayName: 'book',
+      name: 'book',
+      namespaceOption: 'thelexfiles',
+      lexUsername: 'alice',
+      fields: [
+        { id: 'f1', name: 'title', type: 'string', required: true },
+        { id: 'f-sys', name: 'createdAt', type: 'string', format: 'datetime', required: true, isSystem: true },
+      ],
+    })];
+    document.body.innerHTML = `<div id="workspace-panel-body">${renderDataPanel()}</div>`;
+    wireDataPanel();
+    const card = document.querySelector('.item-card[data-record-id="rt-test"]') as HTMLElement;
+    card.click();
+
+    const deleteBtn = document.querySelector('.field-delete-btn[data-field-id="f1"]') as HTMLElement;
+    deleteBtn.click();
+
+    const confirmBtn = document.querySelector('.field-confirm-delete-btn') as HTMLElement;
+    confirmBtn.click();
+
+    const updatedState = getWizardState();
+    const rt = updatedState.recordTypes.find(r => r.id === 'rt-test')!;
+    expect(rt.fields.filter(f => !f.isSystem)).toHaveLength(0);
+  });
+
+  it('cancelling delete restores the row', () => {
+    const state = getWizardState();
+    state.recordTypes = [makeRecordType({
+      id: 'rt-test',
+      displayName: 'book',
+      name: 'book',
+      namespaceOption: 'thelexfiles',
+      lexUsername: 'alice',
+      fields: [
+        { id: 'f1', name: 'title', type: 'string', required: true },
+        { id: 'f-sys', name: 'createdAt', type: 'string', format: 'datetime', required: true, isSystem: true },
+      ],
+    })];
+    document.body.innerHTML = `<div id="workspace-panel-body">${renderDataPanel()}</div>`;
+    wireDataPanel();
+    const card = document.querySelector('.item-card[data-record-id="rt-test"]') as HTMLElement;
+    card.click();
+
+    const deleteBtn = document.querySelector('.field-delete-btn[data-field-id="f1"]') as HTMLElement;
+    deleteBtn.click();
+
+    const cancelBtn = document.querySelector('.field-cancel-delete-btn') as HTMLElement;
+    cancelBtn.click();
+
+    // Confirmation gone, field still present
+    expect(document.querySelector('.field-delete-confirm')).toBeNull();
+    const updatedState = getWizardState();
+    const rt = updatedState.recordTypes.find(r => r.id === 'rt-test')!;
+    expect(rt.fields.filter(f => !f.isSystem)).toHaveLength(1);
+  });
+});
+
+// ── Completion status with system fields ──────────────────────────────
+
+describe('completion status with system fields', () => {
+  it('system-only fields count as "Fields needed"', () => {
+    const rt = makeRecordType({
+      name: 'book',
+      fields: [
+        { id: 'f-sys', name: 'createdAt', type: 'string', format: 'datetime', required: true, isSystem: true },
+      ],
+    });
+    expect(getCompletionStatus(rt)).toBe('Fields needed');
+  });
+
+  it('user fields plus system fields shows total count', () => {
+    const rt = makeRecordType({
+      name: 'book',
+      fields: [
+        { id: 'f1', name: 'title', type: 'string', required: true },
+        { id: 'f-sys', name: 'createdAt', type: 'string', format: 'datetime', required: true, isSystem: true },
+      ],
+    });
+    expect(getCompletionStatus(rt)).toBe('2 fields');
+  });
+});
+
 // ── State migration ───────────────────────────────────────────────────
 
 describe('state migration', () => {

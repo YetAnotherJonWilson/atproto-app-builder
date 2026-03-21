@@ -27,7 +27,7 @@ Pick one item from "Up Next" before starting a coding session.
 ### Data Type Specs (sequential — identity first, then fields)
 
 - [x] Data type identity — lexicon config & discovery — see `.specs/active/data-type-identity.md`
-- [ ] Data type fields — see `.specs/active/data-type-fields.md`
+- [x] Data type fields — see `.specs/done/data-type-fields.md`
 
 ### Independent (no blockers)
 

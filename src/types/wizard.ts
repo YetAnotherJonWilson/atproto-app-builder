@@ -5,12 +5,25 @@
 export interface Field {
   id: string;
   name: string;
-  type: string;
-  format?: string;
-  maxLength?: number;
+  type: string;           // 'string' | 'integer' | 'boolean' | 'blob' | 'bytes' |
+                          // 'cid-link' | 'array-string' | 'array-integer' | 'ref' |
+                          // 'union' | 'object' | 'unknown'
+  format?: string;        // for string type: 'datetime' | 'uri' | 'at-uri' | 'did' |
+                          // 'handle' | 'nsid' | 'tid' | 'record-key' | 'language' | 'cid'
+  maxLength?: number;     // string (bytes), bytes, array (items)
+  minLength?: number;     // string (bytes), bytes, array (items)
+  maxGraphemes?: number;  // string
+  minGraphemes?: number;  // string
+  minimum?: number;       // integer
+  maximum?: number;       // integer
+  accept?: string[];      // blob — MIME type patterns
+  maxSize?: number;       // blob — bytes
+  refTarget?: string;     // ref — target NSID or internal RecordType id
+  /** @deprecated Use blob type with accept instead */
   mediaType?: string;
   description?: string;
   required: boolean;
+  isSystem?: boolean;     // true for auto-generated fields like createdAt
 }
 
 export type NamespaceOption = 'thelexfiles' | 'thelexfiles-temp' | 'byo-domain';

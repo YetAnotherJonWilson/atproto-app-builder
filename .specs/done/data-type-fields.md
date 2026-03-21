@@ -1,6 +1,6 @@
 # Spec: Data Type Fields — Field Editing & AT Protocol Type System
 
-**Status:** draft
+**Status:** active
 **Date:** 2026-03-19
 **Depends on:** `.specs/active/data-type-identity.md`
 
@@ -352,27 +352,15 @@ These generator changes should be made alongside the field editing UI to keep th
 - Field-level guidance from data-modeling-guidance spec (Point 3 in that spec — nudge when a field looks like it should be its own type)
 - Bulk field operations (select multiple, delete multiple)
 
-## Ambiguity Warnings
+## Ambiguity Warnings (all resolved)
 
-1. **Reference field target — internal ID vs NSID**
-   When a ref field targets an internal RecordType, should `refTarget` store the RecordType's internal ID (which is stable but not a valid lexicon reference) or the computed NSID (which could change if the user updates the target's identity)?
-   - _Likely assumption:_ Store the internal RecordType ID. At generation time, resolve it to the NSID. This keeps the reference stable even if the target's name/namespace changes. If the target is external, store the full NSID string.
-   - _Please confirm or clarify._
+1. **Reference field target — internal ID vs NSID** — **Resolved:** Store internal RecordType ID. Resolve to NSID at generation time. External refs store the full NSID string.
 
-2. **Shortcut types vs Text + Format**
-   Date & Time, Link (URI), Handle, etc. are shortcuts that produce the same lexicon output as Text with a format. Should the wizard store these as `type: "string", format: "datetime"` (canonical) or as separate types like `type: "datetime"` (wizard-specific)?
-   - _Likely assumption:_ Store canonically as `type: "string"` with the appropriate `format`. The shortcuts are UI-only — the type dropdown shows "Date & Time" but stores `{ type: "string", format: "datetime" }`. This keeps the data model aligned with the lexicon spec.
-   - _Please confirm or clarify._
+2. **Shortcut types vs Text + Format** — **Resolved:** Store canonically as `type: "string"` + `format`. Shortcuts are UI-only labels.
 
-3. **Generator refactoring scope**
-   The existing Lexicon.ts generator handles the old type system (media-url, array-string, array-number). Updating it for the new types is necessary but could be a large change. Should this be done as part of this spec or as a follow-up?
-   - _Likely assumption:_ Update the generator as part of this spec, since the field editing UI is only useful if the generator can produce valid output from the new types. Keep the changes focused on type mapping and constraint output.
-   - _Please confirm or clarify._
+3. **Generator refactoring scope** — **Resolved:** Update the generator as part of this spec.
 
-4. **Inline form vs dialog for field editing**
-   The spec describes an inline form (matching RequirementsPanel). The deprecated Step 3 used a dialog. Should we use inline forms for consistency with the new layout, or are dialogs acceptable?
-   - _Likely assumption:_ Inline forms, consistent with RequirementsPanel. Dialogs are a pattern from the deprecated steps.
-   - _Please confirm or clarify._
+4. **Inline form vs dialog for field editing** — **Resolved:** Inline forms, consistent with RequirementsPanel.
 
 ## Files Likely Affected
 

@@ -694,7 +694,10 @@ describe('data type combobox and seeding', () => {
     expect(state.recordTypes).toHaveLength(1);
     expect(state.recordTypes[0].displayName).toBe('book');
     expect(state.recordTypes[0].name).toBe('');
-    expect(state.recordTypes[0].fields).toEqual([]);
+    // Should have system createdAt field
+    expect(state.recordTypes[0].fields).toHaveLength(1);
+    expect(state.recordTypes[0].fields[0].name).toBe('createdAt');
+    expect(state.recordTypes[0].fields[0].isSystem).toBe(true);
     expect(state.requirements[0].dataTypeId).toBe(state.recordTypes[0].id);
   });
 

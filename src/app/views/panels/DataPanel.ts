@@ -111,6 +111,8 @@ export function resetDetailState(): void {
   searchError = false;
   selectedSchema = null;
   selectedNsid = null;
+  editingFieldId = null;
+  deletingFieldId = null;
 }
 
 // ── Card grid ─────────────────────────────────────────────────────────
@@ -157,12 +159,14 @@ function renderDataTypeCard(rt: RecordType): string {
 
 function getCompletionStatus(rt: RecordType): string {
   const hasName = rt.name.length > 0;
-  const hasFields = rt.fields.length > 0;
+  const userFields = rt.fields.filter(f => !f.isSystem);
+  const hasUserFields = userFields.length > 0;
+  const totalFields = rt.fields.length;
 
-  if (!hasName && !hasFields) return 'Name and fields needed';
+  if (!hasName && !hasUserFields) return 'Name and fields needed';
   if (!hasName) return 'Lexicon name needed';
-  if (!hasFields) return 'Fields needed';
-  return `${rt.fields.length} field${rt.fields.length === 1 ? '' : 's'}`;
+  if (!hasUserFields) return 'Fields needed';
+  return `${totalFields} field${totalFields === 1 ? '' : 's'}`;
 }
 
 // ── Status badge ──────────────────────────────────────────────────────
@@ -268,6 +272,7 @@ async function tryAutoFillUsername(): Promise<void> {
 }
 
 function renderDetailView(rt: RecordType): string {
+  ensureSystemFields(rt);
   const badge = getStatusBadge(rt);
 
   let sourceSection: string;
@@ -297,11 +302,133 @@ function renderDetailView(rt: RecordType): string {
       </div>
 
       <div class="detail-section">
-        <div class="detail-section-heading">Fields</div>
-        <p class="form-note">Field editing coming soon. ${rt.source === 'adopted' && rt.adoptedNsid ? 'Adopted lexicons have read-only fields.' : 'Add fields after configuring the definition above.'}</p>
+        ${renderFieldsSection(rt)}
       </div>
     </div>
   `;
+}
+
+// ── Fields section ─────────────────────────────────────────────────────
+
+/** Module state for inline field editing */
+let editingFieldId: string | null = null;
+let deletingFieldId: string | null = null;
+
+function renderFieldsSection(rt: RecordType): string {
+  const isAdopted = rt.source === 'adopted' && !!rt.adoptedNsid;
+  const hasIdentity = rt.name.length > 0 && (rt.namespaceOption || rt.adoptedNsid);
+
+  const showAddBtn = !isAdopted && hasIdentity;
+  const userFields = rt.fields.filter(f => !f.isSystem);
+
+  return `
+    <div class="fields-section-header">
+      <div class="detail-section-heading">Fields</div>
+      ${showAddBtn ? '<button class="add-btn" id="dt-add-field-btn">+ Add Field</button>' : ''}
+    </div>
+    ${isAdopted ? `<p class="form-note">These fields are defined by the adopted lexicon (${escapeHtml(rt.adoptedNsid ?? '')}). They cannot be modified.</p>` : ''}
+    <div id="dt-field-form-area"></div>
+    ${renderFieldList(rt, isAdopted)}
+  `;
+}
+
+function renderFieldList(rt: RecordType, isAdopted: boolean): string {
+  const userFields = rt.fields.filter(f => !f.isSystem);
+  const systemFields = rt.fields.filter(f => f.isSystem);
+
+  // Empty state for new lexicons with only system fields
+  if (!isAdopted && userFields.length === 0) {
+    return `
+      <div class="field-empty-state">No fields defined yet. Click "+ Add Field" to describe what data this record stores.</div>
+      ${systemFields.map(f => renderFieldRow(f, true, isAdopted)).join('')}
+    `;
+  }
+
+  // Render user fields first, system fields last
+  const rows = [
+    ...userFields.map(f => renderFieldRow(f, false, isAdopted)),
+    ...systemFields.map(f => renderFieldRow(f, true, isAdopted)),
+  ];
+
+  return `<div id="dt-field-list">${rows.join('')}</div>`;
+}
+
+function renderFieldRow(field: Field, isSystem: boolean, isAdopted: boolean): string {
+  const isDeleting = deletingFieldId === field.id;
+
+  if (isDeleting) {
+    return `
+      <div class="field-row field-delete-confirm" data-field-id="${field.id}">
+        <span>Delete field <strong>${escapeHtml(field.name)}</strong>?</span>
+        <div class="field-row-actions">
+          <button class="btn-primary field-confirm-delete-btn" data-field-id="${field.id}">Confirm</button>
+          <button class="btn-ghost field-cancel-delete-btn" data-field-id="${field.id}">Cancel</button>
+        </div>
+      </div>
+    `;
+  }
+
+  const typeLabel = getFieldTypeLabel(field);
+  const showActions = !isSystem && !isAdopted;
+
+  return `
+    <div class="field-row" data-field-id="${field.id}">
+      <div class="field-row-info">
+        <span class="field-row-name">${escapeHtml(field.name)}</span>
+        <span class="type-badge">${escapeHtml(typeLabel)}</span>
+        ${field.required ? '<span class="required-badge">Required</span>' : ''}
+        ${isSystem ? '<span class="system-badge">System</span>' : ''}
+        ${field.type === 'ref' && field.refTarget ? `<span class="ref-target-label">&rarr; ${escapeHtml(resolveRefTargetName(field.refTarget))}</span>` : ''}
+      </div>
+      ${field.description ? `<div class="field-row-desc">${escapeHtml(field.description)}</div>` : ''}
+      ${showActions ? `
+        <div class="field-row-actions">
+          <button class="field-edit-btn" data-field-id="${field.id}" aria-label="Edit field" title="Edit">&#9998;</button>
+          <button class="field-delete-btn" data-field-id="${field.id}" aria-label="Delete field" title="Delete">&#10005;</button>
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function resolveRefTargetName(refTarget: string): string {
+  const { recordTypes } = getWizardState();
+  const rt = recordTypes.find(r => r.id === refTarget);
+  if (rt) return rt.displayName;
+  return refTarget; // external NSID
+}
+
+/** Map internal type+format to user-facing label */
+function getFieldTypeLabel(field: Field): string {
+  if (field.type === 'string') {
+    switch (field.format) {
+      case 'datetime': return 'Date & Time';
+      case 'uri': return 'Link (URI)';
+      case 'at-uri': return 'AT Protocol Link';
+      case 'handle': return 'Handle';
+      case 'did': return 'DID';
+      case 'language': return 'Language';
+      case 'nsid': return 'NSID';
+      case 'tid': return 'TID';
+      case 'record-key': return 'Record Key';
+      case 'cid': return 'CID String';
+      default: return 'Text';
+    }
+  }
+  switch (field.type) {
+    case 'integer': return 'Number';
+    case 'boolean': return 'True/False';
+    case 'blob': return 'File Upload';
+    case 'bytes': return 'Raw Bytes';
+    case 'cid-link': return 'Content Hash';
+    case 'array-string': return 'List of Text';
+    case 'array-integer': return 'List of Numbers';
+    case 'ref': return 'Reference';
+    case 'union': return 'Union (complex)';
+    case 'object': return 'Object (nested)';
+    case 'unknown': return 'Unknown';
+    default: return field.type;
+  }
 }
 
 // ── Source choice ──────────────────────────────────────────────────────
@@ -622,6 +749,8 @@ function wireDetailView(): void {
   } else {
     wireSourceChoice();
   }
+
+  wireFieldsSection(rt);
 }
 
 function wireCreateNewForm(): void {
@@ -750,6 +879,41 @@ function wireAdoptedState(): void {
   }
 }
 
+function wireFieldsSection(rt: RecordType): void {
+  // Add field button
+  const addBtn = document.getElementById('dt-add-field-btn');
+  if (addBtn) {
+    addBtn.addEventListener('click', () => showFieldForm(rt));
+  }
+
+  // Edit/delete buttons via delegation
+  document.querySelectorAll('.field-edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = (btn as HTMLElement).dataset.fieldId!;
+      startFieldEdit(rt, id);
+    });
+  });
+  document.querySelectorAll('.field-delete-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = (btn as HTMLElement).dataset.fieldId!;
+      showDeleteConfirmation(id);
+    });
+  });
+
+  // Delete confirmation buttons
+  document.querySelectorAll('.field-confirm-delete-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = (btn as HTMLElement).dataset.fieldId!;
+      confirmDeleteField(rt, id);
+    });
+  });
+  document.querySelectorAll('.field-cancel-delete-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      cancelDeleteField();
+    });
+  });
+}
+
 // ── Action handlers ───────────────────────────────────────────────────
 
 function handleBackToGrid(): void {
@@ -869,18 +1033,9 @@ function handleAdopt(): void {
 
   // Import fields from schema
   if (mainDef.record?.properties) {
+    const requiredFields = mainDef.record?.required ?? [];
     rt.fields = Object.entries(mainDef.record.properties).map(
-      ([name, schema]) => {
-        const s = schema as Record<string, unknown>;
-        const required = mainDef.record?.required?.includes(name) ?? false;
-        return {
-          id: `field-${name}-${Date.now()}`,
-          name,
-          type: String(s.type ?? s.ref ?? 'unknown'),
-          required,
-          description: String(s.description ?? ''),
-        };
-      },
+      ([name, schema]) => mapSchemaPropertyToField(name, schema as Record<string, unknown>, requiredFields),
     );
   }
 
@@ -913,6 +1068,504 @@ function handleChangeAdopted(): void {
   initFormState(rt);
   detailMode = 'choice';
   rerenderPanel();
+}
+
+// ── Field form lifecycle ──────────────────────────────────────────────
+
+function showFieldForm(rt: RecordType, existing?: Field): void {
+  editingFieldId = existing?.id ?? null;
+  const area = document.getElementById('dt-field-form-area');
+  if (!area) return;
+  area.innerHTML = renderFieldForm(rt, existing);
+  wireFieldForm(rt);
+
+  const form = document.getElementById('dt-field-form');
+  if (form?.scrollIntoView) {
+    form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+function startFieldEdit(rt: RecordType, fieldId: string): void {
+  const field = rt.fields.find(f => f.id === fieldId);
+  if (!field) return;
+  showFieldForm(rt, field);
+}
+
+function closeFieldForm(): void {
+  editingFieldId = null;
+  const area = document.getElementById('dt-field-form-area');
+  if (area) area.innerHTML = '';
+}
+
+function renderFieldForm(rt: RecordType, existing?: Field): string {
+  const saveLabel = existing ? 'Save' : 'Add Field';
+  const typeValue = existing ? toTypeValue(existing) : '';
+  const constraintsHtml = typeValue ? renderFieldConstraints(typeValue, rt, existing) : '';
+
+  return `
+    <div class="inline-form open" id="dt-field-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="dt-field-name">Field name</label>
+          <input type="text" id="dt-field-name" value="${escapeAttr(existing?.name ?? '')}" maxlength="63" autocomplete="off" />
+          <div class="form-hint">Use lowerCamelCase (e.g., firstName, itemCount). This becomes the property name in the schema.</div>
+          <div class="field-error" id="dt-field-name-error"></div>
+        </div>
+        <div class="form-group">
+          <label for="dt-field-type">Type</label>
+          <select id="dt-field-type">
+            <option value="">— Select type —</option>
+            <optgroup label="Common">
+              <option value="string"${typeValue === 'string' ? ' selected' : ''}>Text</option>
+              <option value="integer"${typeValue === 'integer' ? ' selected' : ''}>Number</option>
+              <option value="boolean"${typeValue === 'boolean' ? ' selected' : ''}>True/False</option>
+            </optgroup>
+            <optgroup label="Shortcuts">
+              <option value="string:datetime"${typeValue === 'string:datetime' ? ' selected' : ''}>Date &amp; Time</option>
+              <option value="string:uri"${typeValue === 'string:uri' ? ' selected' : ''}>Link (URI)</option>
+              <option value="string:at-uri"${typeValue === 'string:at-uri' ? ' selected' : ''}>AT Protocol Link</option>
+              <option value="string:handle"${typeValue === 'string:handle' ? ' selected' : ''}>Handle</option>
+              <option value="string:did"${typeValue === 'string:did' ? ' selected' : ''}>DID</option>
+              <option value="string:language"${typeValue === 'string:language' ? ' selected' : ''}>Language</option>
+            </optgroup>
+            <optgroup label="Advanced">
+              <option value="blob"${typeValue === 'blob' ? ' selected' : ''}>File Upload</option>
+              <option value="bytes"${typeValue === 'bytes' ? ' selected' : ''}>Raw Bytes</option>
+              <option value="cid-link"${typeValue === 'cid-link' ? ' selected' : ''}>Content Hash</option>
+              <option value="array-string"${typeValue === 'array-string' ? ' selected' : ''}>List of Text</option>
+              <option value="array-integer"${typeValue === 'array-integer' ? ' selected' : ''}>List of Numbers</option>
+              <option value="ref"${typeValue === 'ref' ? ' selected' : ''}>Reference</option>
+            </optgroup>
+          </select>
+        </div>
+      </div>
+      <div id="dt-field-constraints">
+        ${constraintsHtml}
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="dt-field-required" ${existing?.required ? 'checked' : ''} />
+            Required
+          </label>
+          <div class="form-hint">Required fields must be present in every record.</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="dt-field-description">Description</label>
+        <textarea id="dt-field-description" rows="2">${escapeHtml(existing?.description ?? '')}</textarea>
+        <div class="form-hint">Briefly describe what this field stores. This appears in the lexicon schema.</div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-primary field-save-btn" disabled>${saveLabel}</button>
+        <button class="btn-ghost field-cancel-btn">Cancel</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderFieldConstraints(typeValue: string, rt: RecordType, existing?: Field): string {
+  if (typeValue === 'string') {
+    // Plain text — show format dropdown + length constraints
+    const fmt = existing?.format ?? '';
+    return `
+      <div class="form-group">
+        <label for="dt-field-format">Format</label>
+        <select id="dt-field-format">
+          <option value="">None (plain text)</option>
+          <option value="datetime"${fmt === 'datetime' ? ' selected' : ''}>datetime — ISO 8601</option>
+          <option value="uri"${fmt === 'uri' ? ' selected' : ''}>uri — URL or URI</option>
+          <option value="at-uri"${fmt === 'at-uri' ? ' selected' : ''}>at-uri — AT Protocol URI</option>
+          <option value="did"${fmt === 'did' ? ' selected' : ''}>did — Decentralized Identifier</option>
+          <option value="handle"${fmt === 'handle' ? ' selected' : ''}>handle — AT Protocol handle</option>
+          <option value="nsid"${fmt === 'nsid' ? ' selected' : ''}>nsid — Namespaced Identifier</option>
+          <option value="tid"${fmt === 'tid' ? ' selected' : ''}>tid — Timestamp Identifier</option>
+          <option value="record-key"${fmt === 'record-key' ? ' selected' : ''}>record-key — Valid record key</option>
+          <option value="language"${fmt === 'language' ? ' selected' : ''}>language — BCP-47 tag</option>
+          <option value="cid"${fmt === 'cid' ? ' selected' : ''}>cid — Content Identifier</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="dt-field-maxlength">Max length (bytes)</label>
+          <input type="number" id="dt-field-maxlength" min="0" value="${existing?.maxLength ?? ''}" />
+          <div class="form-hint">Maximum length in UTF-8 bytes</div>
+        </div>
+        <div class="form-group">
+          <label for="dt-field-minlength">Min length (bytes)</label>
+          <input type="number" id="dt-field-minlength" min="0" value="${existing?.minLength ?? ''}" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="dt-field-maxgraphemes">Max graphemes</label>
+          <input type="number" id="dt-field-maxgraphemes" min="0" value="${existing?.maxGraphemes ?? ''}" />
+          <div class="form-hint">Maximum length in visible characters</div>
+        </div>
+        <div class="form-group">
+          <label for="dt-field-mingraphemes">Min graphemes</label>
+          <input type="number" id="dt-field-mingraphemes" min="0" value="${existing?.minGraphemes ?? ''}" />
+        </div>
+      </div>
+    `;
+  }
+
+  if (typeValue === 'string:uri') {
+    return `
+      <div class="form-group">
+        <label for="dt-field-maxlength">Max length</label>
+        <input type="number" id="dt-field-maxlength" min="0" value="${existing?.maxLength ?? ''}" />
+      </div>
+    `;
+  }
+
+  if (typeValue === 'integer') {
+    return `
+      <div class="form-row">
+        <div class="form-group">
+          <label for="dt-field-minimum">Minimum value</label>
+          <input type="number" id="dt-field-minimum" value="${existing?.minimum ?? ''}" />
+        </div>
+        <div class="form-group">
+          <label for="dt-field-maximum">Maximum value</label>
+          <input type="number" id="dt-field-maximum" value="${existing?.maximum ?? ''}" />
+        </div>
+      </div>
+    `;
+  }
+
+  if (typeValue === 'blob') {
+    const acceptStr = existing?.accept?.join(', ') ?? '';
+    // Convert bytes to display value (KB or MB)
+    let sizeValue = '';
+    let sizeUnit = 'MB';
+    if (existing?.maxSize != null) {
+      if (existing.maxSize >= 1048576 && existing.maxSize % 1048576 === 0) {
+        sizeValue = String(existing.maxSize / 1048576);
+        sizeUnit = 'MB';
+      } else if (existing.maxSize >= 1024) {
+        sizeValue = String(existing.maxSize / 1024);
+        sizeUnit = 'KB';
+      } else {
+        sizeValue = String(existing.maxSize / 1024);
+        sizeUnit = 'KB';
+      }
+    }
+    return `
+      <div class="form-group">
+        <label for="dt-field-accept">Accepted file types</label>
+        <input type="text" id="dt-field-accept" placeholder="image/*, video/mp4" value="${escapeAttr(acceptStr)}" />
+        <div class="form-hint">MIME type patterns, comma-separated. Use * for any type.</div>
+      </div>
+      <div class="form-group">
+        <label for="dt-field-maxsize">Max file size</label>
+        <div class="form-row" style="grid-template-columns: 1fr auto;">
+          <input type="number" id="dt-field-maxsize" min="0" value="${escapeAttr(sizeValue)}" />
+          <select id="dt-field-maxsize-unit">
+            <option value="KB"${sizeUnit === 'KB' ? ' selected' : ''}>KB</option>
+            <option value="MB"${sizeUnit === 'MB' ? ' selected' : ''}>MB</option>
+          </select>
+        </div>
+      </div>
+    `;
+  }
+
+  if (typeValue === 'bytes') {
+    return `
+      <div class="form-row">
+        <div class="form-group">
+          <label for="dt-field-minlength">Min length (bytes)</label>
+          <input type="number" id="dt-field-minlength" min="0" value="${existing?.minLength ?? ''}" />
+        </div>
+        <div class="form-group">
+          <label for="dt-field-maxlength">Max length (bytes)</label>
+          <input type="number" id="dt-field-maxlength" min="0" value="${existing?.maxLength ?? ''}" />
+        </div>
+      </div>
+    `;
+  }
+
+  if (typeValue === 'array-string' || typeValue === 'array-integer') {
+    return `
+      <div class="form-row">
+        <div class="form-group">
+          <label for="dt-field-minlength">Minimum items</label>
+          <input type="number" id="dt-field-minlength" min="0" value="${existing?.minLength ?? ''}" />
+        </div>
+        <div class="form-group">
+          <label for="dt-field-maxlength">Maximum items</label>
+          <input type="number" id="dt-field-maxlength" min="0" value="${existing?.maxLength ?? ''}" />
+        </div>
+      </div>
+    `;
+  }
+
+  if (typeValue === 'ref') {
+    return renderRefTargetSelector(rt, existing);
+  }
+
+  // No constraints for boolean, cid-link, shortcut types with pre-set format
+  return '';
+}
+
+function renderRefTargetSelector(rt: RecordType, existing?: Field): string {
+  const { recordTypes } = getWizardState();
+  const otherTypes = recordTypes.filter(r => r.id !== rt.id);
+  const isExternal = existing?.refTarget && !recordTypes.some(r => r.id === existing.refTarget);
+
+  const options = otherTypes.map(r => {
+    const selected = existing?.refTarget === r.id ? ' selected' : '';
+    return `<option value="${r.id}"${selected}>${escapeHtml(r.displayName)}</option>`;
+  }).join('');
+
+  return `
+    <div class="form-group">
+      <label for="dt-field-ref-target">Target type</label>
+      <select id="dt-field-ref-target">
+        <option value="">— Select target —</option>
+        ${options}
+        <option value="__external__"${isExternal ? ' selected' : ''}>Enter external NSID</option>
+      </select>
+    </div>
+    <div class="form-group" id="dt-field-ref-external-group" style="display:${isExternal ? 'block' : 'none'}">
+      <label for="dt-field-ref-external">External NSID</label>
+      <input type="text" id="dt-field-ref-external" placeholder="app.bsky.feed.post" value="${escapeAttr(isExternal ? (existing?.refTarget ?? '') : '')}" autocomplete="off" />
+    </div>
+  `;
+}
+
+/** Convert a Field to its compound type value for the dropdown */
+function toTypeValue(field: Field): string {
+  if (field.type === 'string' && field.format) {
+    // Only return compound for shortcut types
+    const shortcuts = ['datetime', 'uri', 'at-uri', 'handle', 'did', 'language'];
+    if (shortcuts.includes(field.format)) return `string:${field.format}`;
+    // For other formats, user selected "Text" and picked format from format dropdown
+    return 'string';
+  }
+  return field.type;
+}
+
+/** Parse a compound type value from the dropdown into type + format */
+function parseTypeValue(value: string): { type: string; format?: string } {
+  if (value.startsWith('string:')) {
+    return { type: 'string', format: value.slice(7) };
+  }
+  return { type: value };
+}
+
+function wireFieldForm(rt: RecordType): void {
+  // Type dropdown changes
+  const typeSelect = document.getElementById('dt-field-type') as HTMLSelectElement | null;
+  if (typeSelect) {
+    typeSelect.addEventListener('change', () => {
+      const constraintsArea = document.getElementById('dt-field-constraints');
+      if (constraintsArea) {
+        constraintsArea.innerHTML = renderFieldConstraints(typeSelect.value, rt);
+        wireRefTargetEvents();
+      }
+      validateFieldForm(rt);
+    });
+  }
+
+  // Name input validation
+  const nameInput = document.getElementById('dt-field-name') as HTMLInputElement | null;
+  if (nameInput) {
+    nameInput.addEventListener('input', () => validateFieldForm(rt));
+  }
+
+  // Ref target events
+  wireRefTargetEvents();
+
+  // Save/cancel
+  const area = document.getElementById('dt-field-form-area');
+  if (area) {
+    area.querySelectorAll('.field-save-btn').forEach(btn => {
+      btn.addEventListener('click', () => saveField(rt));
+    });
+    area.querySelectorAll('.field-cancel-btn').forEach(btn => {
+      btn.addEventListener('click', () => closeFieldForm());
+    });
+  }
+
+  // Initial validation for edit mode
+  if (editingFieldId) {
+    validateFieldForm(rt);
+  }
+}
+
+function wireRefTargetEvents(): void {
+  const refSelect = document.getElementById('dt-field-ref-target') as HTMLSelectElement | null;
+  if (refSelect) {
+    refSelect.addEventListener('change', () => {
+      const externalGroup = document.getElementById('dt-field-ref-external-group');
+      if (externalGroup) {
+        externalGroup.style.display = refSelect.value === '__external__' ? 'block' : 'none';
+      }
+    });
+  }
+}
+
+function validateFieldForm(rt: RecordType): boolean {
+  const nameInput = document.getElementById('dt-field-name') as HTMLInputElement | null;
+  const typeSelect = document.getElementById('dt-field-type') as HTMLSelectElement | null;
+  const saveBtn = document.querySelector('.field-save-btn') as HTMLButtonElement | null;
+  const errorEl = document.getElementById('dt-field-name-error');
+
+  if (!nameInput || !typeSelect || !saveBtn) return false;
+
+  const name = nameInput.value.trim();
+  let valid = true;
+  let errorMsg = '';
+
+  if (!name) {
+    valid = false;
+  } else if (/^[^a-z]/.test(name)) {
+    errorMsg = 'Field name must start with a lowercase letter (lowerCamelCase).';
+    valid = false;
+  } else if (/[^a-zA-Z0-9]/.test(name)) {
+    errorMsg = 'Only letters and digits are allowed.';
+    valid = false;
+  } else if (name.length > 63) {
+    errorMsg = 'Maximum 63 characters.';
+    valid = false;
+  } else {
+    // Check for duplicate names (excluding current field being edited)
+    const duplicate = rt.fields.some(f => f.name === name && f.id !== editingFieldId);
+    if (duplicate) {
+      errorMsg = 'A field with this name already exists.';
+      valid = false;
+    }
+  }
+
+  if (!typeSelect.value) {
+    valid = false;
+  }
+
+  if (errorEl) errorEl.textContent = errorMsg;
+  saveBtn.disabled = !valid;
+  return valid;
+}
+
+function saveField(rt: RecordType): void {
+  const nameInput = document.getElementById('dt-field-name') as HTMLInputElement | null;
+  const typeSelect = document.getElementById('dt-field-type') as HTMLSelectElement | null;
+  const requiredCheck = document.getElementById('dt-field-required') as HTMLInputElement | null;
+  const descInput = document.getElementById('dt-field-description') as HTMLTextAreaElement | null;
+
+  if (!nameInput || !typeSelect) return;
+
+  const name = nameInput.value.trim();
+  const typeValue = typeSelect.value;
+  if (!name || !typeValue) return;
+
+  const { type, format } = parseTypeValue(typeValue);
+
+  const field: Field = {
+    id: editingFieldId ?? generateId(),
+    name,
+    type,
+    format,
+    required: requiredCheck?.checked ?? false,
+    description: descInput?.value.trim() || undefined,
+  };
+
+  // Read type-specific constraints
+  if (type === 'string' && !format) {
+    // Plain text type — read format from format dropdown
+    const formatSelect = document.getElementById('dt-field-format') as HTMLSelectElement | null;
+    if (formatSelect?.value) field.format = formatSelect.value;
+    field.maxLength = readNumberInput('dt-field-maxlength');
+    field.minLength = readNumberInput('dt-field-minlength');
+    field.maxGraphemes = readNumberInput('dt-field-maxgraphemes');
+    field.minGraphemes = readNumberInput('dt-field-mingraphemes');
+  } else if (typeValue === 'string:uri') {
+    field.maxLength = readNumberInput('dt-field-maxlength');
+  } else if (type === 'integer') {
+    field.minimum = readNumberInput('dt-field-minimum');
+    field.maximum = readNumberInput('dt-field-maximum');
+  } else if (type === 'blob') {
+    const acceptInput = document.getElementById('dt-field-accept') as HTMLInputElement | null;
+    if (acceptInput?.value.trim()) {
+      field.accept = acceptInput.value.split(',').map(s => s.trim()).filter(Boolean);
+    }
+    const sizeVal = readNumberInput('dt-field-maxsize');
+    if (sizeVal != null) {
+      const unitSelect = document.getElementById('dt-field-maxsize-unit') as HTMLSelectElement | null;
+      const unit = unitSelect?.value ?? 'MB';
+      field.maxSize = unit === 'MB' ? sizeVal * 1048576 : sizeVal * 1024;
+    }
+  } else if (type === 'bytes') {
+    field.minLength = readNumberInput('dt-field-minlength');
+    field.maxLength = readNumberInput('dt-field-maxlength');
+  } else if (type === 'array-string' || type === 'array-integer') {
+    field.minLength = readNumberInput('dt-field-minlength');
+    field.maxLength = readNumberInput('dt-field-maxlength');
+  } else if (type === 'ref') {
+    const refSelect = document.getElementById('dt-field-ref-target') as HTMLSelectElement | null;
+    if (refSelect?.value === '__external__') {
+      const extInput = document.getElementById('dt-field-ref-external') as HTMLInputElement | null;
+      field.refTarget = extInput?.value.trim() || undefined;
+    } else if (refSelect?.value) {
+      field.refTarget = refSelect.value;
+    }
+  }
+
+  const state = getWizardState();
+
+  if (editingFieldId) {
+    // Update existing
+    const idx = rt.fields.findIndex(f => f.id === editingFieldId);
+    if (idx !== -1) rt.fields[idx] = field;
+  } else {
+    // Insert before system fields
+    const systemIdx = rt.fields.findIndex(f => f.isSystem);
+    if (systemIdx !== -1) {
+      rt.fields.splice(systemIdx, 0, field);
+    } else {
+      rt.fields.push(field);
+    }
+  }
+
+  saveWizardState(state);
+  closeFieldForm();
+  rerenderFieldsSection(rt);
+}
+
+function readNumberInput(id: string): number | undefined {
+  const input = document.getElementById(id) as HTMLInputElement | null;
+  if (!input || input.value === '') return undefined;
+  const num = Number(input.value);
+  return isNaN(num) ? undefined : num;
+}
+
+// ── Delete confirmation ──────────────────────────────────────────────
+
+function showDeleteConfirmation(fieldId: string): void {
+  deletingFieldId = fieldId;
+  const rt = getActiveRecordType();
+  if (rt) rerenderFieldsSection(rt);
+}
+
+function confirmDeleteField(rt: RecordType, fieldId: string): void {
+  rt.fields = rt.fields.filter(f => f.id !== fieldId);
+  deletingFieldId = null;
+  saveWizardState(getWizardState());
+  rerenderFieldsSection(rt);
+}
+
+function cancelDeleteField(): void {
+  deletingFieldId = null;
+  const rt = getActiveRecordType();
+  if (rt) rerenderFieldsSection(rt);
+}
+
+function rerenderFieldsSection(rt: RecordType): void {
+  const section = document.querySelector('.data-detail .detail-section:last-child');
+  if (section) {
+    section.innerHTML = renderFieldsSection(rt);
+    wireFieldsSection(rt);
+  }
 }
 
 // ── NSID computation ──────────────────────────────────────────────────
@@ -1150,6 +1803,126 @@ function getActiveRecordType(): RecordType | undefined {
   return getWizardState().recordTypes.find(
     (r) => r.id === activeDetailRecordId,
   );
+}
+
+// ── Field mapping ─────────────────────────────────────────────────────
+
+import type { Field } from '../../../types/wizard';
+import { generateId, makeSystemCreatedAtField } from '../../../utils/id';
+
+/** Map a lexicon schema property to our Field model */
+function mapSchemaPropertyToField(
+  name: string,
+  s: Record<string, unknown>,
+  requiredFields: string[],
+): Field {
+  const required = requiredFields.includes(name);
+  const description = s.description ? String(s.description) : undefined;
+  const base = { id: generateId(), name, required, description };
+
+  const type = s.type as string | undefined;
+
+  // Array type
+  if (type === 'array') {
+    const items = s.items as Record<string, unknown> | undefined;
+    const itemType = items?.type as string | undefined;
+    let fieldType = 'array-string';
+    if (itemType === 'integer') fieldType = 'array-integer';
+    else if (itemType !== 'string') fieldType = 'array-string'; // fallback
+    return {
+      ...base,
+      type: fieldType,
+      maxLength: s.maxLength != null ? Number(s.maxLength) : undefined,
+      minLength: s.minLength != null ? Number(s.minLength) : undefined,
+    };
+  }
+
+  // Ref type
+  if (type === 'ref') {
+    return { ...base, type: 'ref', refTarget: s.ref ? String(s.ref) : undefined };
+  }
+
+  // Union type (unsupported — display only)
+  if (type === 'union') {
+    return { ...base, type: 'union' };
+  }
+
+  // Nested object (unsupported — display only)
+  if (type === 'object') {
+    return { ...base, type: 'object' };
+  }
+
+  // Unknown type
+  if (type === 'unknown') {
+    return { ...base, type: 'unknown' };
+  }
+
+  // Blob type
+  if (type === 'blob') {
+    const accept = Array.isArray(s.accept) ? (s.accept as string[]) : undefined;
+    return {
+      ...base,
+      type: 'blob',
+      accept,
+      maxSize: s.maxSize != null ? Number(s.maxSize) : undefined,
+    };
+  }
+
+  // Bytes type
+  if (type === 'bytes') {
+    return {
+      ...base,
+      type: 'bytes',
+      minLength: s.minLength != null ? Number(s.minLength) : undefined,
+      maxLength: s.maxLength != null ? Number(s.maxLength) : undefined,
+    };
+  }
+
+  // CID-link type
+  if (type === 'cid-link') {
+    return { ...base, type: 'cid-link' };
+  }
+
+  // Integer type
+  if (type === 'integer') {
+    return {
+      ...base,
+      type: 'integer',
+      minimum: s.minimum != null ? Number(s.minimum) : undefined,
+      maximum: s.maximum != null ? Number(s.maximum) : undefined,
+    };
+  }
+
+  // Boolean type
+  if (type === 'boolean') {
+    return { ...base, type: 'boolean' };
+  }
+
+  // String type (with optional format and constraints)
+  if (type === 'string' || !type) {
+    return {
+      ...base,
+      type: 'string',
+      format: s.format ? String(s.format) : undefined,
+      maxLength: s.maxLength != null ? Number(s.maxLength) : undefined,
+      minLength: s.minLength != null ? Number(s.minLength) : undefined,
+      maxGraphemes: s.maxGraphemes != null ? Number(s.maxGraphemes) : undefined,
+      minGraphemes: s.minGraphemes != null ? Number(s.minGraphemes) : undefined,
+    };
+  }
+
+  // Fallback
+  return { ...base, type: type ?? 'unknown' };
+}
+
+/** Ensure source:'new' RecordTypes have the createdAt system field */
+function ensureSystemFields(rt: RecordType): void {
+  if (rt.source !== 'new') return;
+  const hasCreatedAt = rt.fields.some(f => f.name === 'createdAt' && f.isSystem);
+  if (!hasCreatedAt) {
+    rt.fields.push(makeSystemCreatedAtField());
+    saveWizardState(getWizardState());
+  }
 }
 
 // ── HTML helpers ──────────────────────────────────────────────────────

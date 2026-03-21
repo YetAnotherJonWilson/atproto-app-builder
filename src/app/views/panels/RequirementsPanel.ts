@@ -16,7 +16,7 @@
  */
 
 import { getWizardState, saveWizardState } from '../../state/WizardState';
-import { generateId } from '../../../utils/id';
+import { generateId, makeSystemCreatedAtField } from '../../../utils/id';
 import { updateAccordionSummaries } from '../WorkspaceLayout';
 import type {
   Requirement,
@@ -808,7 +808,7 @@ function resolveOrCreateDataType(
     name: '',
     displayName: displayName.trim(),
     description: '',
-    fields: [],
+    fields: [makeSystemCreatedAtField()],
     source: 'new',
   };
   wizardState.recordTypes.push(newType);

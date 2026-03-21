@@ -4,7 +4,7 @@
 
 import type { WizardState, AppConfig } from '../types/wizard';
 import type { FileOutput } from '../types/generation';
-import { generateNSID } from '../utils';
+
 
 // Config generators
 import { generatePackageJson } from './config/PackageJson';
@@ -32,7 +32,7 @@ import { generateFormViewTs } from './views/FormView';
 
 // Other generators
 import { generateAppTs } from './AppEntry';
-import { generateRecordLexicon } from './Lexicon';
+import { generateRecordLexicon, computeRecordTypeNsid } from './Lexicon';
 import { generateReadme } from './Readme';
 
 export function generateAllFiles(wizardState: WizardState, appConfig: AppConfig): FileOutput {
@@ -65,8 +65,8 @@ export function generateAllFiles(wizardState: WizardState, appConfig: AppConfig)
 
   // Lexicons
   recordTypes.forEach(record => {
-    const nsid = generateNSID(domain, record.name);
-    const lexicon = generateRecordLexicon(record, domain);
+    const nsid = computeRecordTypeNsid(record, domain);
+    const lexicon = generateRecordLexicon(record, domain, recordTypes);
     files[`lexicons/${nsid.replace(/\./g, '/')}.json`] = JSON.stringify(lexicon, null, 2);
   });
 
@@ -77,4 +77,4 @@ export function generateAllFiles(wizardState: WizardState, appConfig: AppConfig)
 }
 
 // Re-export for use in views
-export { generateRecordLexicon } from './Lexicon';
+export { generateRecordLexicon, computeRecordTypeNsid } from './Lexicon';
