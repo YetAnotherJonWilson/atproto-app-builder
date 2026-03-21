@@ -14,7 +14,7 @@ import {
   setWizardState,
   initializeWizardState,
 } from '../../src/app/state/WizardState';
-import type { Requirement, RecordType } from '../../src/types/wizard';
+import type { Requirement, RecordType, NonDataElement } from '../../src/types/wizard';
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
@@ -77,6 +77,30 @@ describe('getDisplayText', () => {
     const req = makeRequirement({ type: 'know' });
     expect(getDisplayText(req)).toBe('');
   });
+
+  it('returns "I need to [verb] the [element]" for do/element type', () => {
+    const state = getWizardState();
+    state.nonDataElements = [{ id: 'el-1', name: 'Timer' }];
+    const req = makeRequirement({
+      type: 'do',
+      interactionTarget: 'element',
+      verb: 'set',
+      data: 'Timer',
+      elementId: 'el-1',
+    });
+    expect(getDisplayText(req)).toBe('I need to set the Timer');
+  });
+
+  it('falls back to data field for do/element when element not found', () => {
+    const req = makeRequirement({
+      type: 'do',
+      interactionTarget: 'element',
+      verb: 'set',
+      data: 'Timer',
+      elementId: 'missing-id',
+    });
+    expect(getDisplayText(req)).toBe('I need to set the Timer');
+  });
 });
 
 describe('getSidebarText', () => {
@@ -113,6 +137,19 @@ describe('getSidebarText', () => {
     const result = getSidebarText(req);
     expect(result.length).toBeLessThanOrEqual(36); // "Know: " (6) + 30
     expect(result).toContain('…');
+  });
+
+  it('returns "Do: [verb] [element]" for do/element type', () => {
+    const state = getWizardState();
+    state.nonDataElements = [{ id: 'el-1', name: 'Timer' }];
+    const req = makeRequirement({
+      type: 'do',
+      interactionTarget: 'element',
+      verb: 'set',
+      data: 'Timer',
+      elementId: 'el-1',
+    });
+    expect(getSidebarText(req)).toBe('Do: set Timer');
   });
 });
 
@@ -171,7 +208,7 @@ describe('renderRequirementsPanel', () => {
     ];
     const html = renderRequirementsPanel();
     expect(html).toContain('Information');
-    expect(html).toContain('Data Interaction');
+    expect(html).toContain('Interaction');
     expect(html).toContain('Direct Link');
   });
 
@@ -1002,5 +1039,444 @@ describe('updateDataSidebar', () => {
 
     expect(document.querySelector('.badge')!.textContent).toBe('0');
     expect(document.querySelector('.sidebar-item-empty')).not.toBeNull();
+  });
+});
+
+// ── Non-data element interactions ──────────────────────────────────────
+
+describe('non-data element interactions', () => {
+  beforeEach(() => {
+    setWizardState(initializeWizardState());
+    localStorage.clear();
+  });
+
+  function mountPanel(): void {
+    document.body.innerHTML = `
+      <div id="workspace-panel-body">${renderRequirementsPanel()}</div>
+      <div class="sidebar-section" data-section="requirements">
+        <span class="badge">0</span>
+        <div class="sidebar-items"><div class="sidebar-item-empty">None yet</div></div>
+      </div>
+      <div class="sidebar-section" data-section="data">
+        <span class="badge">0</span>
+        <div class="sidebar-items"><div class="sidebar-item-empty">None yet</div></div>
+      </div>
+    `;
+    wireRequirementsPanel();
+  }
+
+  function switchToDo(): void {
+    const typeSelect = document.getElementById('req-type-select') as HTMLSelectElement;
+    typeSelect.value = 'do';
+    typeSelect.dispatchEvent(new Event('change'));
+  }
+
+  function switchToElement(): void {
+    const targetSelect = document.getElementById('req-do-target-select') as HTMLSelectElement;
+    targetSelect.value = 'element';
+    targetSelect.dispatchEvent(new Event('change'));
+  }
+
+  function switchToDataTarget(): void {
+    const targetSelect = document.getElementById('req-do-target-select') as HTMLSelectElement;
+    targetSelect.value = 'data';
+    targetSelect.dispatchEvent(new Event('change'));
+  }
+
+  function saveForm(): void {
+    (document.querySelector('.req-save-btn') as HTMLElement).click();
+  }
+
+  // ── Target selector rendering ───────────────────────────────────────
+
+  it('shows Target dropdown when type is "do"', () => {
+    mountPanel();
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+    expect(document.getElementById('req-do-target-select')).not.toBeNull();
+  });
+
+  it('Target dropdown defaults to "Data Type"', () => {
+    mountPanel();
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+    const targetSelect = document.getElementById('req-do-target-select') as HTMLSelectElement;
+    expect(targetSelect.value).toBe('data');
+  });
+
+  it('does not show Target dropdown for "know" type', () => {
+    mountPanel();
+    document.getElementById('req-add-btn')!.click();
+    expect(document.getElementById('req-do-target-select')).toBeNull();
+  });
+
+  // ── Switching targets ───────────────────────────────────────────────
+
+  it('switching to "Non-data Element" shows element form fields', () => {
+    mountPanel();
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+    switchToElement();
+    expect(document.getElementById('req-do-element')).not.toBeNull();
+    expect(document.getElementById('req-uses-data')).not.toBeNull();
+    expect(document.getElementById('req-do-data')).toBeNull();
+  });
+
+  it('switching back to "Data Type" shows data form fields', () => {
+    mountPanel();
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+    switchToElement();
+    switchToDataTarget();
+    expect(document.getElementById('req-do-data')).not.toBeNull();
+    expect(document.getElementById('req-do-element')).toBeNull();
+    expect(document.getElementById('req-uses-data')).toBeNull();
+  });
+
+  it('verb is preserved when switching targets', () => {
+    mountPanel();
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+    const verb = document.getElementById('req-do-verb') as HTMLInputElement;
+    verb.value = 'configure';
+    verb.dispatchEvent(new Event('input'));
+    switchToElement();
+    const newVerb = document.getElementById('req-do-verb') as HTMLInputElement;
+    expect(newVerb.value).toBe('configure');
+  });
+
+  // ── Element form validation ─────────────────────────────────────────
+
+  it('save button is disabled when element name is empty', () => {
+    mountPanel();
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+    switchToElement();
+    const verb = document.getElementById('req-do-verb') as HTMLInputElement;
+    verb.value = 'set';
+    verb.dispatchEvent(new Event('input'));
+    const saveBtn = document.querySelector('.req-save-btn') as HTMLButtonElement;
+    expect(saveBtn.disabled).toBe(true);
+  });
+
+  it('save button enables when both verb and element name are filled', () => {
+    mountPanel();
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+    switchToElement();
+    const verb = document.getElementById('req-do-verb') as HTMLInputElement;
+    const element = document.getElementById('req-do-element') as HTMLInputElement;
+    verb.value = 'set';
+    verb.dispatchEvent(new Event('input'));
+    element.value = 'Timer';
+    element.dispatchEvent(new Event('input'));
+    const saveBtn = document.querySelector('.req-save-btn') as HTMLButtonElement;
+    expect(saveBtn.disabled).toBe(false);
+  });
+
+  it('"uses data from" being empty does not block saving', () => {
+    mountPanel();
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+    switchToElement();
+    const verb = document.getElementById('req-do-verb') as HTMLInputElement;
+    const element = document.getElementById('req-do-element') as HTMLInputElement;
+    verb.value = 'start';
+    verb.dispatchEvent(new Event('input'));
+    element.value = 'Timer';
+    element.dispatchEvent(new Event('input'));
+    const saveBtn = document.querySelector('.req-save-btn') as HTMLButtonElement;
+    expect(saveBtn.disabled).toBe(false);
+  });
+
+  // ── Saving element requirements ─────────────────────────────────────
+
+  it('saving creates a NonDataElement and links the requirement', () => {
+    mountPanel();
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+    switchToElement();
+    const verb = document.getElementById('req-do-verb') as HTMLInputElement;
+    const element = document.getElementById('req-do-element') as HTMLInputElement;
+    verb.value = 'set';
+    verb.dispatchEvent(new Event('input'));
+    element.value = 'Timer';
+    element.dispatchEvent(new Event('input'));
+    saveForm();
+
+    const state = getWizardState();
+    expect(state.nonDataElements).toHaveLength(1);
+    expect(state.nonDataElements[0].name).toBe('Timer');
+    expect(state.requirements).toHaveLength(1);
+    expect(state.requirements[0].interactionTarget).toBe('element');
+    expect(state.requirements[0].elementId).toBe(state.nonDataElements[0].id);
+    expect(state.requirements[0].verb).toBe('set');
+    // No RecordType should be created
+    expect(state.recordTypes).toHaveLength(0);
+  });
+
+  it('saving does not create a RecordType for element interactions', () => {
+    mountPanel();
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+    switchToElement();
+    const verb = document.getElementById('req-do-verb') as HTMLInputElement;
+    const element = document.getElementById('req-do-element') as HTMLInputElement;
+    verb.value = 'start';
+    verb.dispatchEvent(new Event('input'));
+    element.value = 'Timer';
+    element.dispatchEvent(new Event('input'));
+    saveForm();
+
+    expect(getWizardState().recordTypes).toHaveLength(0);
+  });
+
+  it('reuses existing NonDataElement on second requirement', () => {
+    const state = getWizardState();
+    state.nonDataElements = [{ id: 'el-timer', name: 'Timer' }];
+
+    mountPanel();
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+    switchToElement();
+    const verb = document.getElementById('req-do-verb') as HTMLInputElement;
+    const element = document.getElementById('req-do-element') as HTMLInputElement;
+    verb.value = 'start';
+    verb.dispatchEvent(new Event('input'));
+    element.value = 'Timer';
+    element.dispatchEvent(new Event('input'));
+    saveForm();
+
+    const updated = getWizardState();
+    expect(updated.nonDataElements).toHaveLength(1);
+    expect(updated.requirements[0].elementId).toBe('el-timer');
+  });
+
+  it('"uses data from" seeds a RecordType when new name entered', () => {
+    mountPanel();
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+    switchToElement();
+    const verb = document.getElementById('req-do-verb') as HTMLInputElement;
+    const element = document.getElementById('req-do-element') as HTMLInputElement;
+    const usesData = document.getElementById('req-uses-data') as HTMLInputElement;
+    verb.value = 'set';
+    verb.dispatchEvent(new Event('input'));
+    element.value = 'Timer';
+    element.dispatchEvent(new Event('input'));
+    usesData.value = 'Preferences';
+    usesData.dispatchEvent(new Event('input'));
+    saveForm();
+
+    const state = getWizardState();
+    expect(state.nonDataElements).toHaveLength(1);
+    expect(state.recordTypes).toHaveLength(1);
+    expect(state.recordTypes[0].displayName).toBe('Preferences');
+    expect(state.requirements[0].usesDataTypeId).toBe(state.recordTypes[0].id);
+  });
+
+  it('"uses data from" reuses existing RecordType', () => {
+    const state = getWizardState();
+    state.recordTypes = [{
+      id: 'rt-settings',
+      name: '',
+      displayName: 'Settings',
+      description: '',
+      fields: [],
+      source: 'new',
+    }];
+
+    mountPanel();
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+    switchToElement();
+    const verb = document.getElementById('req-do-verb') as HTMLInputElement;
+    const element = document.getElementById('req-do-element') as HTMLInputElement;
+    const usesData = document.getElementById('req-uses-data') as HTMLInputElement;
+    verb.value = 'configure';
+    verb.dispatchEvent(new Event('input'));
+    element.value = 'Timer';
+    element.dispatchEvent(new Event('input'));
+    usesData.value = 'Settings';
+    usesData.dispatchEvent(new Event('input'));
+    saveForm();
+
+    const updated = getWizardState();
+    expect(updated.recordTypes).toHaveLength(1);
+    expect(updated.requirements[0].usesDataTypeId).toBe('rt-settings');
+  });
+
+  // ── Editing element requirements ────────────────────────────────────
+
+  it('target select is disabled when editing an element requirement', () => {
+    const state = getWizardState();
+    state.nonDataElements = [{ id: 'el-1', name: 'Timer' }];
+    state.requirements = [{
+      id: 'req-1',
+      type: 'do',
+      interactionTarget: 'element',
+      verb: 'set',
+      data: 'Timer',
+      elementId: 'el-1',
+    }];
+    mountPanel();
+
+    (document.querySelector('.req-edit-btn') as HTMLElement).click();
+    const targetSelect = document.getElementById('req-do-target-select') as HTMLSelectElement;
+    expect(targetSelect.disabled).toBe(true);
+    expect(targetSelect.value).toBe('element');
+  });
+
+  it('editing pre-fills element form fields', () => {
+    const state = getWizardState();
+    state.nonDataElements = [{ id: 'el-1', name: 'Timer' }];
+    state.recordTypes = [{
+      id: 'rt-1',
+      name: '',
+      displayName: 'Settings',
+      description: '',
+      fields: [],
+      source: 'new',
+    }];
+    state.requirements = [{
+      id: 'req-1',
+      type: 'do',
+      interactionTarget: 'element',
+      verb: 'set',
+      data: 'Timer',
+      elementId: 'el-1',
+      usesDataTypeId: 'rt-1',
+    }];
+    mountPanel();
+
+    (document.querySelector('.req-edit-btn') as HTMLElement).click();
+    expect((document.getElementById('req-do-verb') as HTMLInputElement).value).toBe('set');
+    expect((document.getElementById('req-do-element') as HTMLInputElement).value).toBe('Timer');
+    expect((document.getElementById('req-uses-data') as HTMLInputElement).value).toBe('Settings');
+  });
+
+  // ── Deleting element requirements ───────────────────────────────────
+
+  it('deleting an element requirement preserves the NonDataElement', () => {
+    const state = getWizardState();
+    state.nonDataElements = [{ id: 'el-1', name: 'Timer' }];
+    state.requirements = [{
+      id: 'req-1',
+      type: 'do',
+      interactionTarget: 'element',
+      verb: 'set',
+      data: 'Timer',
+      elementId: 'el-1',
+    }];
+    mountPanel();
+
+    (document.querySelector('.req-delete-btn') as HTMLElement).click();
+    const updated = getWizardState();
+    expect(updated.requirements).toHaveLength(0);
+    expect(updated.nonDataElements).toHaveLength(1);
+    expect(updated.nonDataElements[0].name).toBe('Timer');
+  });
+
+  // ── Element combobox dropdown ───────────────────────────────────────
+
+  it('element dropdown shows existing elements on focus', () => {
+    const state = getWizardState();
+    state.nonDataElements = [
+      { id: 'el-1', name: 'Timer' },
+      { id: 'el-2', name: 'Canvas' },
+    ];
+    mountPanel();
+
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+    switchToElement();
+
+    const input = document.getElementById('req-do-element') as HTMLInputElement;
+    input.dispatchEvent(new Event('focus'));
+
+    const dropdown = document.getElementById('req-do-element-dropdown')!;
+    expect(dropdown.style.display).toBe('block');
+    const items = dropdown.querySelectorAll('.combobox-item');
+    expect(items).toHaveLength(2);
+    expect(items[0].textContent).toBe('Timer');
+    expect(items[1].textContent).toBe('Canvas');
+  });
+
+  it('element dropdown does not appear when no elements exist', () => {
+    mountPanel();
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+    switchToElement();
+
+    const input = document.getElementById('req-do-element') as HTMLInputElement;
+    input.dispatchEvent(new Event('focus'));
+    const dropdown = document.getElementById('req-do-element-dropdown')!;
+    expect(dropdown.style.display).toBe('none');
+  });
+
+  it('exact element name match suppresses "Create" option', () => {
+    const state = getWizardState();
+    state.nonDataElements = [{ id: 'el-1', name: 'Timer' }];
+    mountPanel();
+
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+    switchToElement();
+
+    const input = document.getElementById('req-do-element') as HTMLInputElement;
+    input.value = 'timer';
+    input.dispatchEvent(new Event('input'));
+    input.dispatchEvent(new Event('focus'));
+
+    const dropdown = document.getElementById('req-do-element-dropdown')!;
+    const createItem = dropdown.querySelector('.combobox-create');
+    expect(createItem).toBeNull();
+  });
+
+  it('clicking an element dropdown item selects it', () => {
+    const state = getWizardState();
+    state.nonDataElements = [{ id: 'el-1', name: 'Timer' }];
+    mountPanel();
+
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+    switchToElement();
+
+    const input = document.getElementById('req-do-element') as HTMLInputElement;
+    input.dispatchEvent(new Event('focus'));
+
+    const dropdown = document.getElementById('req-do-element-dropdown')!;
+    const item = dropdown.querySelector('.combobox-item') as HTMLElement;
+    item.dispatchEvent(new MouseEvent('mousedown'));
+
+    expect(input.value).toBe('Timer');
+
+    // Fill verb and save
+    const verb = document.getElementById('req-do-verb') as HTMLInputElement;
+    verb.value = 'start';
+    verb.dispatchEvent(new Event('input'));
+    saveForm();
+
+    const updated = getWizardState();
+    expect(updated.nonDataElements).toHaveLength(1);
+    expect(updated.requirements[0].elementId).toBe('el-1');
+  });
+
+  // ── Display ─────────────────────────────────────────────────────────
+
+  it('renders element requirement with correct display text and type label', () => {
+    const state = getWizardState();
+    state.nonDataElements = [{ id: 'el-1', name: 'Timer' }];
+    state.requirements = [{
+      id: 'req-1',
+      type: 'do',
+      interactionTarget: 'element',
+      verb: 'set',
+      data: 'Timer',
+      elementId: 'el-1',
+    }];
+    const html = renderRequirementsPanel();
+    expect(html).toContain('I need to set the Timer');
+    expect(html).toContain('Interaction');
   });
 });

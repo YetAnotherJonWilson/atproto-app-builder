@@ -99,12 +99,12 @@ See `landing-page-header-redesign.md`. Must be completed before starting this mi
 
 ### Phase 2: Data Panel (highest existing code reuse)
 
-- [ ] Migrate record type list rendering from `deprecatedStep2RecordTypes.ts` into `DataPanel.ts`
-- [ ] Migrate field editing from `deprecatedStep3Fields.ts` into `DataPanel.ts` (as sub-view or tab)
-- [ ] Wire existing dialog operations (RecordTypeOps, FieldOps) — these should work unchanged
-- [ ] Update sidebar summary to show record type names and count
-- [ ] Add tests for DataPanel rendering
-- [ ] Verify: can add/edit/delete record types and fields in the new layout
+- [x] Migrate record type list rendering from `deprecatedStep2RecordTypes.ts` into `DataPanel.ts`
+- [x] Migrate field editing from `deprecatedStep3Fields.ts` into `DataPanel.ts` (as sub-view or tab)
+- [x] Wire existing dialog operations (RecordTypeOps, FieldOps) — these should work unchanged
+- [x] Update sidebar summary to show record type names and count
+- [x] Add tests for DataPanel rendering
+- [x] Verify: can add/edit/delete record types and fields in the new layout
 
 ### Phase 3: Requirements Panel (new functionality)
 

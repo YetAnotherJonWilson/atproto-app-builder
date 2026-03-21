@@ -90,6 +90,13 @@ export type SectionName = 'requirements' | 'data' | 'components' | 'views';
 
 export type RequirementType = 'know' | 'do' | 'navigate';
 
+export type InteractionTarget = 'data' | 'element';
+
+export interface NonDataElement {
+  id: string;
+  name: string; // human-readable label, e.g. "Timer"
+}
+
 export type NavType = 'direct' | 'menu' | 'forward-back';
 
 export type NavControlType = 'arrows' | 'buttons';
@@ -104,6 +111,9 @@ export interface Requirement {
   verb?: string;
   data?: string;
   dataTypeId?: string;
+  interactionTarget?: InteractionTarget; // default 'data' for backward compat
+  elementId?: string;                    // link to NonDataElement (when target is 'element')
+  usesDataTypeId?: string;              // optional data source for element interactions
   // 'navigate' type
   navType?: NavType;
   // navigate — direct link
@@ -133,6 +143,7 @@ export interface WizardState {
   procedureMethods: ProcedureMethod[];
   appConfig: AppConfig;
   requirements: Requirement[];
+  nonDataElements: NonDataElement[];
 }
 
 export interface LoadedState {
