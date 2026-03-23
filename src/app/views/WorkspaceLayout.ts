@@ -21,7 +21,7 @@ import {
   updateDataSidebar,
 } from './panels/RequirementsPanel';
 import { renderDataPanel, wireDataPanel, resetDetailState } from './panels/DataPanel';
-import { renderComponentsPanel } from './panels/ComponentsPanel';
+import { renderBlocksPanel, wireBlocksPanel, updateBlocksSidebar } from './panels/BlocksPanel';
 import { renderViewsPanel } from './panels/ViewsPanel';
 
 const SECTION_CONFIG: Record<
@@ -33,7 +33,7 @@ const SECTION_CONFIG: Record<
     render: renderRequirementsPanel,
   },
   data: { title: 'Define Data', render: renderDataPanel },
-  components: { title: 'Define Components', render: renderComponentsPanel },
+  components: { title: 'Blocks', render: renderBlocksPanel },
   views: { title: 'Define Views', render: renderViewsPanel },
 };
 
@@ -154,6 +154,9 @@ export function switchSection(section: SectionName): void {
     updateRequirementsSidebar();
   } else if (section === 'data') {
     wireDataPanel();
+  } else if (section === 'components') {
+    wireBlocksPanel();
+    updateBlocksSidebar();
   }
 
   // Always keep data sidebar in sync (RecordTypes may be seeded from requirements)
@@ -230,15 +233,28 @@ export function updateAccordionSummaries(): void {
     }
   }
 
-  // Components — no components array in WizardState yet, show placeholder
+  // Blocks (components section)
   const compSection = document.querySelector(
     '.accordion-section[data-section="components"]',
   );
   if (compSection) {
+    const blockCount = wizardState.blocks.length;
     const badge = compSection.querySelector('.accordion-badge');
-    if (badge) badge.textContent = '0';
+    if (badge) badge.textContent = String(blockCount);
+
     const summary = compSection.querySelector('.accordion-summary');
-    if (summary) summary.textContent = 'None yet';
+    if (summary) {
+      summary.textContent =
+        blockCount === 0
+          ? 'None yet'
+          : wizardState.blocks.map((b) => b.name).join(' · ');
+    }
+
+    if (blockCount > 0) {
+      compSection.classList.add('has-items');
+    } else {
+      compSection.classList.remove('has-items');
+    }
   }
 
   // Views — no views array in WizardState yet, show placeholder

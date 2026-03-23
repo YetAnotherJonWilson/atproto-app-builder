@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup 6: Views Panel — Block Assignment &amp; Multi-View Layout</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; }
+
+  :root {
+    --bg-primary: #08080f;
+    --bg-surface: #14141f;
+    --bg-surface-2: #1a1a28;
+    --bg-elevated: #22222e;
+    --text-primary: #e8e8f0;
+    --text-secondary: #b0b0c0;
+    --text-muted: #8585a0;
+    --accent: #00e5ff;
+    --accent-hover: #44f0ff;
+    --accent-glow: rgba(0, 229, 255, 0.15);
+    --accent-red: #ff3355;
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-accent: rgba(0, 229, 255, 0.2);
+    --progress-muted: #2a2a3a;
+    --chip-bg: rgba(0, 229, 255, 0.12);
+    --chip-border: rgba(0, 229, 255, 0.3);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 1.5rem;
+    line-height: 1.5;
+    font-size: 0.9375rem;
+  }
+
+  .mockup-label {
+    text-align: center;
+    color: var(--accent);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 1.5rem;
+    opacity: 0.7;
+  }
+
+  .mockup-notes {
+    max-width: 700px;
+    margin: 0 auto 2rem;
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+  .mockup-notes h3 {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+  }
+  .mockup-notes ul {
+    padding-left: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .mockup-notes li { margin-bottom: 0.25rem; }
+
+  .scene-label {
+    text-align: center;
+    color: var(--accent);
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin: 2.5rem 0 1rem;
+    opacity: 0.5;
+  }
+
+  /* ===== Layout ===== */
+  .layout {
+    display: flex;
+    gap: 0;
+    min-height: 75vh;
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+  }
+
+  /* ===== Sidebar ===== */
+  .sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    background: var(--bg-surface-2);
+    border-right: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .sidebar-nav {
+    padding: 0.5rem 0;
+    position: relative;
+  }
+
+  .sidebar-nav::before {
+    content: '';
+    position: absolute;
+    left: 20px;
+    top: 24px;
+    bottom: 24px;
+    width: 2px;
+    background: var(--progress-muted);
+    z-index: 0;
+  }
+
+  .progress-fill {
+    position: absolute;
+    left: 20px;
+    top: 24px;
+    width: 2px;
+    background: var(--accent);
+    z-index: 1;
+    transition: height 0.4s ease;
+  }
+
+  .sidebar-section {
+    position: relative;
+    z-index: 2;
+  }
+
+  .sidebar-header {
+    padding: 0.625rem 0.875rem 0.625rem 2.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+    position: relative;
+  }
+  .sidebar-header:hover { background: var(--bg-elevated); }
+  .sidebar-section.active .sidebar-header {
+    background: var(--accent-glow);
+  }
+
+  .sidebar-header::before {
+    content: '';
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--progress-muted);
+    background: var(--bg-surface-2);
+    transition: border-color 0.3s, background 0.3s, box-shadow 0.3s;
+    z-index: 3;
+  }
+
+  .sidebar-section.has-items .sidebar-header::before {
+    border-color: var(--accent);
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent-glow);
+  }
+
+  .sidebar-section.active .sidebar-header::before {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow), 0 0 8px var(--accent-glow);
+  }
+  .sidebar-section.active.has-items .sidebar-header::before {
+    background: var(--accent);
+  }
+  .sidebar-section.active:not(.has-items) .sidebar-header::before {
+    background: var(--bg-surface-2);
+  }
+
+  .sidebar-header h4 {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .sidebar-section.active .sidebar-header h4 {
+    color: var(--accent);
+  }
+
+  .sidebar-header .badge {
+    background: var(--accent-glow);
+    color: var(--accent);
+    font-size: 0.625rem;
+    padding: 0.0625rem 0.375rem;
+    border-radius: 99px;
+    font-weight: 600;
+  }
+  .sidebar-section:not(.has-items) .sidebar-header .badge {
+    background: var(--progress-muted);
+    color: var(--text-muted);
+  }
+
+  .sidebar-items {
+    padding: 0 0.625rem 0.5rem 2.75rem;
+  }
+
+  .sidebar-item {
+    padding: 0.3125rem 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    transition: background 0.1s;
+  }
+  .sidebar-item:hover {
+    background: var(--bg-elevated);
+    color: var(--text-secondary);
+  }
+  .sidebar-item .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0.5;
+    flex-shrink: 0;
+  }
+  .sidebar-item-empty {
+    padding: 0.3125rem 0.5rem;
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    font-style: italic;
+    opacity: 0.5;
+  }
+
+  .step-number {
+    font-size: 0.5625rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.25rem 0.875rem 0 2.75rem;
+    opacity: 0.6;
+  }
+
+  /* ===== Workspace ===== */
+  .workspace {
+    flex: 1;
+    background: var(--bg-surface);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .workspace-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--bg-surface);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .workspace-header h2 {
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+
+  .workspace-body {
+    flex: 1;
+    padding: 1.5rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .workspace-desc {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+    line-height: 1.7;
+    max-width: 65ch;
+  }
+
+  /* ===== View cards grid ===== */
+  .view-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .view-card {
+    background: var(--bg-surface-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 0.875rem 1rem;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .view-card:hover {
+    border-color: var(--border-accent);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .view-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.625rem;
+  }
+  .view-card-name {
+    font-weight: 500;
+    font-size: 0.9375rem;
+  }
+  .view-card-actions {
+    display: flex;
+    gap: 0.375rem;
+    flex-shrink: 0;
+  }
+  .view-card-actions button {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.8125rem;
+    padding: 0.125rem 0.25rem;
+  }
+  .view-card-actions button:hover { color: var(--accent); }
+
+  .view-card-blocks {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .view-card-block {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    padding: 0.25rem 0;
+  }
+  .view-card-block .block-order {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--bg-elevated);
+    color: var(--text-muted);
+    font-size: 0.5625rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-weight: 600;
+  }
+
+  .view-card-empty {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-style: italic;
+    opacity: 0.6;
+  }
+
+  /* Reorder buttons on view card */
+  .view-card-block .reorder-btns {
+    margin-left: auto;
+    display: flex;
+    gap: 0.125rem;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .view-card:hover .view-card-block .reorder-btns {
+    opacity: 1;
+  }
+  .reorder-btns button {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.625rem;
+    padding: 0.125rem;
+    line-height: 1;
+  }
+  .reorder-btns button:hover { color: var(--accent); }
+
+  /* ===== Add button ===== */
+  .add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    background: transparent;
+    border: 1px dashed var(--border-accent);
+    color: var(--accent);
+    padding: 0.5rem 0.875rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8125rem;
+    transition: background 0.2s;
+  }
+  .add-btn:hover { background: var(--accent-glow); }
+
+  /* ===== Inline form ===== */
+  .inline-form {
+    background: var(--bg-surface-2);
+    border: 1px solid var(--border-accent);
+    border-radius: 6px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .form-group {
+    margin-bottom: 0.75rem;
+  }
+  .form-group:last-child { margin-bottom: 0; }
+
+  .form-group label {
+    display: block;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.3125rem;
+  }
+
+  .form-group input[type="text"] {
+    width: 100%;
+    max-width: 320px;
+    padding: 0.5rem 0.625rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 0.8125rem;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .form-group input[type="text"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  .form-hint {
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+  }
+
+  .form-validation-error {
+    font-size: 0.6875rem;
+    color: var(--accent-red);
+    margin-top: 0.25rem;
+  }
+
+  /* ===== Selected chips area ===== */
+  .selected-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    min-height: 2rem;
+    padding: 0.5rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+  }
+
+  .chips-placeholder {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-style: italic;
+    opacity: 0.6;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: var(--chip-bg);
+    border: 1px solid var(--chip-border);
+    color: var(--accent);
+    padding: 0.1875rem 0.5rem;
+    border-radius: 99px;
+    font-size: 0.6875rem;
+    white-space: nowrap;
+    animation: chipIn 0.15s ease-out;
+  }
+  @keyframes chipIn {
+    from { opacity: 0; transform: scale(0.85); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .chip .chip-order {
+    font-weight: 700;
+    font-size: 0.5625rem;
+    opacity: 0.7;
+    margin-right: 0.125rem;
+  }
+
+  .chip .chip-remove {
+    background: none;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 0.75rem;
+    padding: 0;
+    margin-left: 0.125rem;
+    line-height: 1;
+    opacity: 0.6;
+    transition: opacity 0.1s;
+  }
+  .chip .chip-remove:hover { opacity: 1; }
+
+  /* ===== Available list ===== */
+  .available-list-label {
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.375rem;
+    font-weight: 600;
+  }
+
+  .available-list {
+    list-style: none;
+    padding: 0;
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    overflow: hidden;
+    max-height: 240px;
+    overflow-y: auto;
+  }
+
+  .available-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.1s;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .available-item:last-child { border-bottom: none; }
+  .available-item:hover {
+    background: var(--accent-glow);
+    color: var(--text-primary);
+  }
+
+  .available-item.selected {
+    background: var(--chip-bg);
+    color: var(--accent);
+  }
+  .available-item.selected .avail-check {
+    color: var(--accent);
+  }
+  .available-item.selected .avail-check::after {
+    content: '\2713';
+    color: var(--accent);
+  }
+
+  .avail-check {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.625rem;
+  }
+  .available-item.selected .avail-check {
+    border-color: var(--accent);
+    background: rgba(0, 229, 255, 0.1);
+  }
+
+  .avail-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .available-list-empty {
+    padding: 0.75rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-style: italic;
+    text-align: center;
+    opacity: 0.7;
+  }
+
+  /* ===== Unassigned section ===== */
+  .unassigned-section {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .unassigned-count {
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: normal;
+    opacity: 0.7;
+  }
+
+  /* ===== Form footer ===== */
+  .form-footer {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .btn-primary {
+    padding: 0.4375rem 1rem;
+    background: var(--accent);
+    color: var(--bg-primary);
+    border: none;
+    border-radius: 4px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .btn-ghost {
+    padding: 0.4375rem 1rem;
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-ghost:hover { background: var(--bg-elevated); }
+
+  /* ===== Responsive: Narrow accordion ===== */
+  .accordion { display: none; }
+
+  @media (max-width: 767px) {
+    .layout { display: none; }
+    .accordion { display: block; }
+
+    .accordion-container {
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      overflow: hidden;
+      min-height: 75vh;
+    }
+
+    .accordion-section { border-bottom: 1px solid var(--border-subtle); }
+    .accordion-section:last-child { border-bottom: none; }
+
+    .accordion-header {
+      padding: 0.875rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+      background: var(--bg-surface-2);
+      transition: background 0.15s;
+    }
+    .accordion-header:hover { background: var(--bg-elevated); }
+    .accordion-section.active .accordion-header {
+      background: var(--accent-glow);
+    }
+
+    .accordion-header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+    }
+
+    .accordion-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 2px solid var(--progress-muted);
+      flex-shrink: 0;
+    }
+    .accordion-section.has-items .accordion-dot {
+      border-color: var(--accent);
+      background: var(--accent);
+    }
+    .accordion-section.active .accordion-dot {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .accordion-header h4 {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    .accordion-section.active .accordion-header h4 {
+      color: var(--accent);
+    }
+
+    .accordion-badge {
+      background: var(--accent-glow);
+      color: var(--accent);
+      font-size: 0.625rem;
+      padding: 0.0625rem 0.375rem;
+      border-radius: 99px;
+      font-weight: 600;
+    }
+
+    .accordion-chevron {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      transition: transform 0.2s;
+    }
+    .accordion-section.active .accordion-chevron {
+      transform: rotate(180deg);
+    }
+
+    .accordion-summary {
+      padding: 0 1rem 0.5rem 2.25rem;
+      font-size: 0.6875rem;
+      color: var(--text-muted);
+      background: var(--bg-surface-2);
+    }
+    .accordion-section.active .accordion-summary { display: none; }
+
+    .accordion-body {
+      display: none;
+      padding: 1rem;
+      background: var(--bg-surface);
+    }
+    .accordion-section.active .accordion-body { display: block; }
+
+    /* Form adjustments for narrow */
+    .form-group input[type="text"] { max-width: 100%; }
+    .view-grid {
+      grid-template-columns: 1fr;
+    }
+
+    /* Always show reorder buttons on touch viewports */
+    .view-card-block .reorder-btns {
+      opacity: 1;
+    }
+  }
+
+  /* ===== Scene separator ===== */
+  .scene-divider {
+    border: none;
+    border-top: 1px dashed var(--border-subtle);
+    margin: 2rem 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="mockup-label">Mockup 6: Views Panel — Block Assignment &amp; Multi-View Layout</div>
+
+<div class="mockup-notes">
+  <h3>What this mockup shows</h3>
+  <ul>
+    <li><strong>Scene A:</strong> Views panel with existing views (desktop) — view cards at top with block lists and reorder controls, unassigned blocks section below. Delete button hidden when only 1 view exists. A block can appear in multiple views.</li>
+    <li><strong>Scene B:</strong> "New View" form open — name field + chip-based block selector. Blocks are optional (unlike requirements in the Blocks panel). Shows duplicate name validation message.</li>
+    <li><strong>Scene C:</strong> Narrow/mobile accordion view — same panel content inside an accordion section, with always-visible reorder buttons.</li>
+  </ul>
+</div>
+
+<!-- =============================================
+     SCENE A: Views panel with existing views
+     ============================================= -->
+<div class="scene-label">Scene A — Views panel with existing views (2 views, 1 unassigned block)</div>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-nav">
+      <div class="progress-fill" style="height: 85%;"></div>
+
+      <div class="step-number">Step 1</div>
+      <div class="sidebar-section has-items">
+        <div class="sidebar-header">
+          <h4>Requirements</h4>
+          <span class="badge">6</span>
+        </div>
+      </div>
+
+      <div class="step-number">Step 2</div>
+      <div class="sidebar-section has-items">
+        <div class="sidebar-header">
+          <h4>Data</h4>
+          <span class="badge">1</span>
+        </div>
+      </div>
+
+      <div class="step-number">Step 3</div>
+      <div class="sidebar-section has-items">
+        <div class="sidebar-header">
+          <h4>Blocks</h4>
+          <span class="badge">4</span>
+        </div>
+        <div class="sidebar-items">
+          <div class="sidebar-item"><span class="dot"></span> About Section</div>
+          <div class="sidebar-item"><span class="dot"></span> Post Feed</div>
+          <div class="sidebar-item"><span class="dot"></span> Nav Menu</div>
+          <div class="sidebar-item"><span class="dot"></span> Timer Widget</div>
+        </div>
+      </div>
+
+      <div class="step-number">Step 4</div>
+      <div class="sidebar-section active has-items">
+        <div class="sidebar-header">
+          <h4>Views</h4>
+          <span class="badge">2</span>
+        </div>
+        <div class="sidebar-items">
+          <div class="sidebar-item"><span class="dot"></span> Home</div>
+          <div class="sidebar-item"><span class="dot"></span> Profile</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Workspace -->
+  <div class="workspace">
+    <div class="workspace-header">
+      <h2>Views</h2>
+      <button class="add-btn">+ New View</button>
+    </div>
+
+    <div class="workspace-body">
+      <div class="workspace-desc">
+        Views are the pages of your app. Assign blocks to each view to define what content appears on each screen.
+      </div>
+
+      <div class="view-grid">
+        <!-- View card: Home (3 blocks — reorder buttons visible) -->
+        <div class="view-card">
+          <div class="view-card-header">
+            <div class="view-card-name">Home</div>
+            <div class="view-card-actions">
+              <button title="Edit">&#9998;</button>
+              <button title="Delete">&#10005;</button>
+            </div>
+          </div>
+          <ul class="view-card-blocks">
+            <li class="view-card-block">
+              <span class="block-order">1</span>
+              <span>Nav Menu</span>
+              <span class="reorder-btns">
+                <button title="Move up" style="opacity:0.3; pointer-events:none;">&#9650;</button>
+                <button title="Move down">&#9660;</button>
+              </span>
+            </li>
+            <li class="view-card-block">
+              <span class="block-order">2</span>
+              <span>Post Feed</span>
+              <span class="reorder-btns">
+                <button title="Move up">&#9650;</button>
+                <button title="Move down">&#9660;</button>
+              </span>
+            </li>
+            <li class="view-card-block">
+              <span class="block-order">3</span>
+              <span>About Section</span>
+              <span class="reorder-btns">
+                <button title="Move up">&#9650;</button>
+                <button title="Move down" style="opacity:0.3; pointer-events:none;">&#9660;</button>
+              </span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- View card: Profile (1 block — no reorder) -->
+        <div class="view-card">
+          <div class="view-card-header">
+            <div class="view-card-name">Profile</div>
+            <div class="view-card-actions">
+              <button title="Edit">&#9998;</button>
+              <button title="Delete">&#10005;</button>
+            </div>
+          </div>
+          <ul class="view-card-blocks">
+            <li class="view-card-block">
+              <span class="block-order">1</span>
+              <span>Post Feed</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Unassigned blocks -->
+      <div class="unassigned-section">
+        <div class="available-list-label">
+          Unassigned Blocks
+          <span class="unassigned-count"> &mdash; 1 remaining</span>
+        </div>
+        <div class="form-hint" style="margin-bottom: 0.5rem;">
+          These blocks haven't been placed on any view yet.
+          Use "+ New View" above or edit an existing view to assign them.
+        </div>
+        <ul class="available-list" style="max-height: none;">
+          <li class="available-item" style="cursor: default;">
+            <span class="avail-text">Timer Widget</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- =============================================
+     SCENE B: New View form with chip selection + duplicate name validation
+     ============================================= -->
+<div class="scene-label">Scene B — "New View" form with chip-based block selection (+ duplicate name validation)</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-nav">
+      <div class="progress-fill" style="height: 85%;"></div>
+      <div class="step-number">Step 1</div>
+      <div class="sidebar-section has-items">
+        <div class="sidebar-header"><h4>Requirements</h4><span class="badge">6</span></div>
+      </div>
+      <div class="step-number">Step 2</div>
+      <div class="sidebar-section has-items">
+        <div class="sidebar-header"><h4>Data</h4><span class="badge">1</span></div>
+      </div>
+      <div class="step-number">Step 3</div>
+      <div class="sidebar-section has-items">
+        <div class="sidebar-header"><h4>Blocks</h4><span class="badge">4</span></div>
+      </div>
+      <div class="step-number">Step 4</div>
+      <div class="sidebar-section active has-items">
+        <div class="sidebar-header"><h4>Views</h4><span class="badge">2</span></div>
+        <div class="sidebar-items">
+          <div class="sidebar-item"><span class="dot"></span> Home</div>
+          <div class="sidebar-item"><span class="dot"></span> Profile</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="workspace">
+    <div class="workspace-header">
+      <h2>Views</h2>
+      <!-- Add button hidden while form is open -->
+    </div>
+
+    <div class="workspace-body">
+      <div class="workspace-desc">
+        Views are the pages of your app. Assign blocks to each view to define what content appears on each screen.
+      </div>
+
+      <!-- Inline form: New View (showing duplicate name error) -->
+      <div class="inline-form" style="display: block;">
+        <div class="form-group">
+          <label>View Name</label>
+          <input type="text" placeholder="e.g., Home, Profile, Settings" value="Home" style="border-color: var(--accent-red); box-shadow: 0 0 0 3px rgba(255, 51, 85, 0.15);">
+          <div class="form-validation-error">A view with this name already exists. Each view needs a unique name.</div>
+        </div>
+
+        <div class="form-group">
+          <label>Blocks</label>
+
+          <!-- Selected chips -->
+          <div class="selected-chips">
+            <span class="chip">
+              <span class="chip-order">1</span>
+              Timer Widget
+              <button class="chip-remove">&#10005;</button>
+            </span>
+            <span class="chip">
+              <span class="chip-order">2</span>
+              Nav Menu
+              <button class="chip-remove">&#10005;</button>
+            </span>
+          </div>
+
+          <div class="form-hint" style="margin-bottom: 0.5rem;">
+            Selected blocks will appear on the view in the order shown. Click &#10005; to remove.
+          </div>
+
+          <!-- Available blocks list -->
+          <div class="available-list-label">Available Blocks</div>
+          <ul class="available-list">
+            <li class="available-item">
+              <span class="avail-check"></span>
+              <span class="avail-text">About Section</span>
+            </li>
+            <li class="available-item">
+              <span class="avail-check"></span>
+              <span class="avail-text">Post Feed</span>
+            </li>
+            <li class="available-item selected">
+              <span class="avail-check"></span>
+              <span class="avail-text">Nav Menu</span>
+            </li>
+            <li class="available-item selected">
+              <span class="avail-check"></span>
+              <span class="avail-text">Timer Widget</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="form-footer">
+          <button class="btn-primary" disabled>Save View</button>
+          <button class="btn-ghost">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Existing view cards below the form -->
+      <div class="view-grid" style="margin-top: 1rem;">
+        <div class="view-card">
+          <div class="view-card-header">
+            <div class="view-card-name">Home</div>
+            <div class="view-card-actions">
+              <button title="Edit">&#9998;</button>
+              <button title="Delete">&#10005;</button>
+            </div>
+          </div>
+          <ul class="view-card-blocks">
+            <li class="view-card-block">
+              <span class="block-order">1</span>
+              <span>Nav Menu</span>
+            </li>
+            <li class="view-card-block">
+              <span class="block-order">2</span>
+              <span>Post Feed</span>
+            </li>
+            <li class="view-card-block">
+              <span class="block-order">3</span>
+              <span>About Section</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="view-card">
+          <div class="view-card-header">
+            <div class="view-card-name">Profile</div>
+            <div class="view-card-actions">
+              <button title="Edit">&#9998;</button>
+              <button title="Delete">&#10005;</button>
+            </div>
+          </div>
+          <ul class="view-card-blocks">
+            <li class="view-card-block">
+              <span class="block-order">1</span>
+              <span>Post Feed</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- =============================================
+     SCENE C: Narrow/mobile accordion view
+     ============================================= -->
+<div class="scene-label">Scene C — Narrow / mobile accordion view (resize browser below 767px to see live swap)</div>
+
+<div class="accordion" style="display: block; max-width: 420px; margin: 0 auto;">
+  <div class="accordion-container">
+    <div class="accordion-section has-items">
+      <div class="accordion-header">
+        <div class="accordion-header-left">
+          <span class="accordion-dot"></span>
+          <h4>Requirements</h4>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span class="accordion-badge">6</span>
+          <span class="accordion-chevron">&#9660;</span>
+        </div>
+      </div>
+      <div class="accordion-summary">App description &middot; create Post &middot; search Post &middot; +3 more</div>
+    </div>
+
+    <div class="accordion-section has-items">
+      <div class="accordion-header">
+        <div class="accordion-header-left">
+          <span class="accordion-dot"></span>
+          <h4>Data</h4>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span class="accordion-badge">1</span>
+          <span class="accordion-chevron">&#9660;</span>
+        </div>
+      </div>
+      <div class="accordion-summary">Post</div>
+    </div>
+
+    <div class="accordion-section has-items">
+      <div class="accordion-header">
+        <div class="accordion-header-left">
+          <span class="accordion-dot"></span>
+          <h4>Blocks</h4>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span class="accordion-badge">4</span>
+          <span class="accordion-chevron">&#9660;</span>
+        </div>
+      </div>
+      <div class="accordion-summary">About Section &middot; Post Feed &middot; Nav Menu &middot; Timer Widget</div>
+    </div>
+
+    <div class="accordion-section active has-items">
+      <div class="accordion-header">
+        <div class="accordion-header-left">
+          <span class="accordion-dot"></span>
+          <h4>Views</h4>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span class="accordion-badge">2</span>
+          <span class="accordion-chevron">&#9660;</span>
+        </div>
+      </div>
+      <div class="accordion-body" style="display: block;">
+        <div class="workspace-desc" style="margin-bottom: 1rem;">
+          Views are the pages of your app. Assign blocks to each view to define what content appears on each screen.
+        </div>
+
+        <button class="add-btn" style="margin-bottom: 1rem;">+ New View</button>
+
+        <!-- View cards in accordion (single column, reorder always visible) -->
+        <div class="view-grid">
+          <div class="view-card">
+            <div class="view-card-header">
+              <div class="view-card-name">Home</div>
+              <div class="view-card-actions">
+                <button>&#9998;</button>
+                <button>&#10005;</button>
+              </div>
+            </div>
+            <ul class="view-card-blocks">
+              <li class="view-card-block">
+                <span class="block-order">1</span>
+                <span>Nav Menu</span>
+                <span class="reorder-btns" style="opacity: 1;">
+                  <button title="Move up" style="opacity:0.3; pointer-events:none;">&#9650;</button>
+                  <button title="Move down">&#9660;</button>
+                </span>
+              </li>
+              <li class="view-card-block">
+                <span class="block-order">2</span>
+                <span>Post Feed</span>
+                <span class="reorder-btns" style="opacity: 1;">
+                  <button title="Move up">&#9650;</button>
+                  <button title="Move down">&#9660;</button>
+                </span>
+              </li>
+              <li class="view-card-block">
+                <span class="block-order">3</span>
+                <span>About Section</span>
+                <span class="reorder-btns" style="opacity: 1;">
+                  <button title="Move up">&#9650;</button>
+                  <button title="Move down" style="opacity:0.3; pointer-events:none;">&#9660;</button>
+                </span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="view-card">
+            <div class="view-card-header">
+              <div class="view-card-name">Profile</div>
+              <div class="view-card-actions">
+                <button>&#9998;</button>
+                <button>&#10005;</button>
+              </div>
+            </div>
+            <ul class="view-card-blocks">
+              <li class="view-card-block">
+                <span class="block-order">1</span>
+                <span>Post Feed</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Unassigned blocks in accordion -->
+        <div class="unassigned-section" style="margin-top: 1rem; padding-top: 0.75rem;">
+          <div class="available-list-label">
+            Unassigned Blocks
+            <span class="unassigned-count"> &mdash; 1 remaining</span>
+          </div>
+          <div class="form-hint" style="margin-bottom: 0.5rem;">
+            These blocks haven't been placed on any view yet.
+            Use "+ New View" above or edit an existing view to assign them.
+          </div>
+          <ul class="available-list" style="max-height: none;">
+            <li class="available-item" style="cursor: default;">
+              <span class="avail-text">Timer Widget</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

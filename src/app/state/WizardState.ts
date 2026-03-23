@@ -40,7 +40,8 @@ export function initializeWizardState(): WizardState {
       outputMethod: 'zip'
     },
     requirements: [],
-    nonDataElements: []
+    nonDataElements: [],
+    blocks: []
   };
 }
 
@@ -56,6 +57,10 @@ export function setWizardState(state: WizardState): void {
   // Migrate: ensure nonDataElements array exists for old saved states
   if (!state.nonDataElements) {
     state.nonDataElements = [];
+  }
+  // Migrate: ensure blocks array exists for old saved states
+  if (!state.blocks) {
+    state.blocks = [];
   }
   // Migrate: ensure recordTypes have displayName and identity fields for old saved states
   if (state.recordTypes) {

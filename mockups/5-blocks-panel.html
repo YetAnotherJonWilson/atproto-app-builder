@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup 5: Blocks Panel — Chip-based Requirement Selection</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; }
+
+  :root {
+    --bg-primary: #08080f;
+    --bg-surface: #14141f;
+    --bg-surface-2: #1a1a28;
+    --bg-elevated: #22222e;
+    --text-primary: #e8e8f0;
+    --text-secondary: #b0b0c0;
+    --text-muted: #8585a0;
+    --accent: #00e5ff;
+    --accent-hover: #44f0ff;
+    --accent-glow: rgba(0, 229, 255, 0.15);
+    --accent-red: #ff3355;
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-accent: rgba(0, 229, 255, 0.2);
+    --progress-muted: #2a2a3a;
+    --chip-bg: rgba(0, 229, 255, 0.12);
+    --chip-border: rgba(0, 229, 255, 0.3);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 1.5rem;
+    line-height: 1.5;
+    font-size: 0.9375rem;
+  }
+
+  .mockup-label {
+    text-align: center;
+    color: var(--accent);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 1.5rem;
+    opacity: 0.7;
+  }
+
+  .mockup-notes {
+    max-width: 700px;
+    margin: 0 auto 2rem;
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+  .mockup-notes h3 {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+  }
+  .mockup-notes ul {
+    padding-left: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .mockup-notes li { margin-bottom: 0.25rem; }
+
+  .scene-label {
+    text-align: center;
+    color: var(--accent);
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin: 2.5rem 0 1rem;
+    opacity: 0.5;
+  }
+
+  /* ===== Layout ===== */
+  .layout {
+    display: flex;
+    gap: 0;
+    min-height: 75vh;
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+  }
+
+  /* ===== Sidebar ===== */
+  .sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    background: var(--bg-surface-2);
+    border-right: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .sidebar-nav {
+    padding: 0.5rem 0;
+    position: relative;
+  }
+
+  .sidebar-nav::before {
+    content: '';
+    position: absolute;
+    left: 20px;
+    top: 24px;
+    bottom: 24px;
+    width: 2px;
+    background: var(--progress-muted);
+    z-index: 0;
+  }
+
+  .progress-fill {
+    position: absolute;
+    left: 20px;
+    top: 24px;
+    width: 2px;
+    background: var(--accent);
+    z-index: 1;
+    transition: height 0.4s ease;
+  }
+
+  .sidebar-section {
+    position: relative;
+    z-index: 2;
+  }
+
+  .sidebar-header {
+    padding: 0.625rem 0.875rem 0.625rem 2.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+    position: relative;
+  }
+  .sidebar-header:hover { background: var(--bg-elevated); }
+  .sidebar-section.active .sidebar-header {
+    background: var(--accent-glow);
+  }
+
+  .sidebar-header::before {
+    content: '';
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--progress-muted);
+    background: var(--bg-surface-2);
+    transition: border-color 0.3s, background 0.3s, box-shadow 0.3s;
+    z-index: 3;
+  }
+
+  .sidebar-section.has-items .sidebar-header::before {
+    border-color: var(--accent);
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent-glow);
+  }
+
+  .sidebar-section.active .sidebar-header::before {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow), 0 0 8px var(--accent-glow);
+  }
+  .sidebar-section.active.has-items .sidebar-header::before {
+    background: var(--accent);
+  }
+  .sidebar-section.active:not(.has-items) .sidebar-header::before {
+    background: var(--bg-surface-2);
+  }
+
+  .sidebar-header h4 {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .sidebar-section.active .sidebar-header h4 {
+    color: var(--accent);
+  }
+
+  .sidebar-header .badge {
+    background: var(--accent-glow);
+    color: var(--accent);
+    font-size: 0.625rem;
+    padding: 0.0625rem 0.375rem;
+    border-radius: 99px;
+    font-weight: 600;
+  }
+  .sidebar-section:not(.has-items) .sidebar-header .badge {
+    background: var(--progress-muted);
+    color: var(--text-muted);
+  }
+
+  .sidebar-items {
+    padding: 0 0.625rem 0.5rem 2.75rem;
+  }
+
+  .sidebar-item {
+    padding: 0.3125rem 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    transition: background 0.1s;
+  }
+  .sidebar-item:hover {
+    background: var(--bg-elevated);
+    color: var(--text-secondary);
+  }
+  .sidebar-item .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0.5;
+    flex-shrink: 0;
+  }
+  .sidebar-item-empty {
+    padding: 0.3125rem 0.5rem;
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    font-style: italic;
+    opacity: 0.5;
+  }
+
+  .step-number {
+    font-size: 0.5625rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.25rem 0.875rem 0 2.75rem;
+    opacity: 0.6;
+  }
+
+  /* ===== Workspace ===== */
+  .workspace {
+    flex: 1;
+    background: var(--bg-surface);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .workspace-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--bg-surface);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .workspace-header h2 {
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+
+  .workspace-body {
+    flex: 1;
+    padding: 1.5rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .workspace-desc {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+    line-height: 1.7;
+    max-width: 65ch;
+  }
+
+  /* ===== Unassigned indicator ===== */
+  .unassigned-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    background: var(--bg-surface-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: 99px;
+    padding: 0.25rem 0.75rem;
+    margin-bottom: 1rem;
+  }
+  .unassigned-indicator .count {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* ===== Block cards grid ===== */
+  .block-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .block-card {
+    background: var(--bg-surface-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 0.875rem 1rem;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .block-card:hover {
+    border-color: var(--border-accent);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .block-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.625rem;
+  }
+  .block-card-name {
+    font-weight: 500;
+    font-size: 0.9375rem;
+  }
+  .block-card-actions {
+    display: flex;
+    gap: 0.375rem;
+    flex-shrink: 0;
+  }
+  .block-card-actions button {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.8125rem;
+    padding: 0.125rem 0.25rem;
+  }
+  .block-card-actions button:hover { color: var(--accent); }
+
+  .block-card-requirements {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .block-card-req {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    padding: 0.25rem 0;
+  }
+  .block-card-req .req-order {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--bg-elevated);
+    color: var(--text-muted);
+    font-size: 0.5625rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-weight: 600;
+  }
+  .block-card-req .req-type-badge {
+    font-size: 0.5625rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    background: var(--bg-primary);
+    padding: 0.0625rem 0.375rem;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  /* Reorder buttons on block card */
+  .block-card-req .reorder-btns {
+    margin-left: auto;
+    display: flex;
+    gap: 0.125rem;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .block-card:hover .block-card-req .reorder-btns {
+    opacity: 1;
+  }
+  .reorder-btns button {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.625rem;
+    padding: 0.125rem;
+    line-height: 1;
+  }
+  .reorder-btns button:hover { color: var(--accent); }
+
+  /* ===== Add / Quick-create button ===== */
+  .add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    background: transparent;
+    border: 1px dashed var(--border-accent);
+    color: var(--accent);
+    padding: 0.5rem 0.875rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8125rem;
+    transition: background 0.2s;
+  }
+  .add-btn:hover { background: var(--accent-glow); }
+
+  /* ===== Quick-create dropdown ===== */
+  .quick-create-wrapper {
+    position: relative;
+    display: inline-block;
+  }
+  .quick-create-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 0.25rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 0.25rem;
+    min-width: 140px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    z-index: 10;
+    display: none;
+  }
+  .quick-create-dropdown.open { display: block; }
+  .quick-create-option {
+    display: block;
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    padding: 0.375rem 0.625rem;
+    font-size: 0.75rem;
+    text-align: left;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .quick-create-option:hover {
+    background: var(--accent-glow);
+    color: var(--accent);
+  }
+
+  /* ===== Inline form (block creation/editing) ===== */
+  .inline-form {
+    background: var(--bg-surface-2);
+    border: 1px solid var(--border-accent);
+    border-radius: 6px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .form-group {
+    margin-bottom: 0.75rem;
+  }
+  .form-group:last-child { margin-bottom: 0; }
+
+  .form-group label {
+    display: block;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.3125rem;
+  }
+
+  .form-group input[type="text"] {
+    width: 100%;
+    max-width: 320px;
+    padding: 0.5rem 0.625rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 0.8125rem;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .form-group input[type="text"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  .form-hint {
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+  }
+
+  /* ===== Selected chips area ===== */
+  .selected-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    min-height: 2rem;
+    padding: 0.5rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+  }
+  .selected-chips:empty::after {
+    content: 'Click requirements below to add them';
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-style: italic;
+    opacity: 0.6;
+  }
+  .selected-chips.has-chips:empty::after {
+    display: none;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: var(--chip-bg);
+    border: 1px solid var(--chip-border);
+    color: var(--accent);
+    padding: 0.1875rem 0.5rem;
+    border-radius: 99px;
+    font-size: 0.6875rem;
+    white-space: nowrap;
+    animation: chipIn 0.15s ease-out;
+  }
+  @keyframes chipIn {
+    from { opacity: 0; transform: scale(0.85); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .chip .chip-order {
+    font-weight: 700;
+    font-size: 0.5625rem;
+    opacity: 0.7;
+    margin-right: 0.125rem;
+  }
+
+  .chip .chip-remove {
+    background: none;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 0.75rem;
+    padding: 0;
+    margin-left: 0.125rem;
+    line-height: 1;
+    opacity: 0.6;
+    transition: opacity 0.1s;
+  }
+  .chip .chip-remove:hover { opacity: 1; }
+
+  /* ===== Available requirements list ===== */
+  .available-list-label {
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.375rem;
+    font-weight: 600;
+  }
+
+  .available-list {
+    list-style: none;
+    padding: 0;
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    overflow: hidden;
+    max-height: 240px;
+    overflow-y: auto;
+  }
+
+  .available-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.1s;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .available-item:last-child { border-bottom: none; }
+  .available-item:hover {
+    background: var(--accent-glow);
+    color: var(--text-primary);
+  }
+
+  .available-item.selected {
+    background: var(--chip-bg);
+    color: var(--accent);
+  }
+  .available-item.selected .avail-check {
+    color: var(--accent);
+  }
+  .available-item.selected .avail-check::after {
+    content: '✓';
+  }
+
+  .avail-check {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.625rem;
+  }
+  .available-item.selected .avail-check {
+    border-color: var(--accent);
+    background: rgba(0, 229, 255, 0.1);
+  }
+
+  .avail-type {
+    font-size: 0.5625rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    background: var(--bg-primary);
+    padding: 0.0625rem 0.375rem;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  .avail-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Quick-create shortcut inside available list */
+  .available-item .quick-btn {
+    margin-left: auto;
+    background: none;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.5625rem;
+    padding: 0.125rem 0.375rem;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s, border-color 0.15s;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .available-item:hover .quick-btn { opacity: 1; }
+  .available-item .quick-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  /* ===== Form footer ===== */
+  .form-footer {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .btn-primary {
+    padding: 0.4375rem 1rem;
+    background: var(--accent);
+    color: var(--bg-primary);
+    border: none;
+    border-radius: 4px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .btn-ghost {
+    padding: 0.4375rem 1rem;
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-ghost:hover { background: var(--bg-elevated); }
+
+  /* ===== Next step prompt ===== */
+  .next-step {
+    margin-top: auto;
+    padding-top: 1.5rem;
+  }
+  .next-step-card {
+    background: var(--bg-surface-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .next-step-card:hover { border-color: var(--border-accent); }
+  .next-step-label {
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.25rem;
+  }
+  .next-step-title {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+  }
+  .next-step-arrow {
+    color: var(--accent);
+    font-size: 1.25rem;
+    opacity: 0.6;
+  }
+
+  /* ===== Responsive: Narrow accordion ===== */
+  .accordion { display: none; }
+
+  @media (max-width: 767px) {
+    .layout { display: none; }
+    .accordion { display: block; }
+
+    .accordion-container {
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      overflow: hidden;
+      min-height: 75vh;
+    }
+
+    .accordion-section { border-bottom: 1px solid var(--border-subtle); }
+    .accordion-section:last-child { border-bottom: none; }
+
+    .accordion-header {
+      padding: 0.875rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+      background: var(--bg-surface-2);
+      transition: background 0.15s;
+    }
+    .accordion-header:hover { background: var(--bg-elevated); }
+    .accordion-section.active .accordion-header {
+      background: var(--accent-glow);
+    }
+
+    .accordion-header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+    }
+
+    .accordion-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 2px solid var(--progress-muted);
+      flex-shrink: 0;
+    }
+    .accordion-section.has-items .accordion-dot {
+      border-color: var(--accent);
+      background: var(--accent);
+    }
+    .accordion-section.active .accordion-dot {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .accordion-header h4 {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    .accordion-section.active .accordion-header h4 {
+      color: var(--accent);
+    }
+
+    .accordion-badge {
+      background: var(--accent-glow);
+      color: var(--accent);
+      font-size: 0.625rem;
+      padding: 0.0625rem 0.375rem;
+      border-radius: 99px;
+      font-weight: 600;
+    }
+
+    .accordion-chevron {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      transition: transform 0.2s;
+    }
+    .accordion-section.active .accordion-chevron {
+      transform: rotate(180deg);
+    }
+
+    .accordion-summary {
+      padding: 0 1rem 0.5rem 2.25rem;
+      font-size: 0.6875rem;
+      color: var(--text-muted);
+      background: var(--bg-surface-2);
+    }
+    .accordion-section.active .accordion-summary { display: none; }
+
+    .accordion-body {
+      display: none;
+      padding: 1rem;
+      background: var(--bg-surface);
+    }
+    .accordion-section.active .accordion-body { display: block; }
+
+    /* Form adjustments for narrow */
+    .form-group input[type="text"] { max-width: 100%; }
+    .block-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 400px) {
+    body { padding: 0.75rem; }
+    .accordion-body { padding: 0.75rem; }
+    .inline-form { padding: 0.75rem; }
+  }
+
+  /* ===== Scene separator ===== */
+  .scene-divider {
+    border: none;
+    border-top: 1px dashed var(--border-subtle);
+    margin: 2rem 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="mockup-label">Mockup 5: Blocks Panel — Chip-based Requirement Selection</div>
+
+<div class="mockup-notes">
+  <h3>What this mockup shows</h3>
+  <ul>
+    <li><strong>Scene A:</strong> Blocks panel with existing blocks (desktop) — block cards at top, unassigned requirements list below with quick-create shortcuts (hover to reveal "+ Block" button with name dropdown). Unassigned section disappears when all requirements are assigned.</li>
+    <li><strong>Scene B:</strong> "New Block" form open — name field + chip-based requirement selector. Selected requirements appear as numbered chips above the available list.</li>
+    <li><strong>Scene C:</strong> Narrow/mobile accordion view — same blocks panel content inside an accordion section</li>
+  </ul>
+</div>
+
+<!-- =============================================
+     SCENE A: Blocks panel with existing blocks
+     ============================================= -->
+<div class="scene-label">Scene A — Blocks panel with existing blocks</div>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-nav">
+      <div class="progress-fill" style="height: 66%;"></div>
+
+      <div class="step-number">Step 1</div>
+      <div class="sidebar-section has-items">
+        <div class="sidebar-header">
+          <h4>Requirements</h4>
+          <span class="badge">6</span>
+        </div>
+        <div class="sidebar-items">
+          <div class="sidebar-item"><span class="dot"></span> Know: app description</div>
+          <div class="sidebar-item"><span class="dot"></span> Do: create Post</div>
+          <div class="sidebar-item"><span class="dot"></span> Do: search Post</div>
+          <div class="sidebar-item"><span class="dot"></span> Do: view Post</div>
+          <div class="sidebar-item"><span class="dot"></span> Do: set Timer</div>
+          <div class="sidebar-item"><span class="dot"></span> Nav: go to Profile</div>
+        </div>
+      </div>
+
+      <div class="step-number">Step 2</div>
+      <div class="sidebar-section has-items">
+        <div class="sidebar-header">
+          <h4>Data</h4>
+          <span class="badge">1</span>
+        </div>
+        <div class="sidebar-items">
+          <div class="sidebar-item"><span class="dot"></span> Post</div>
+        </div>
+      </div>
+
+      <div class="step-number">Step 3</div>
+      <div class="sidebar-section active has-items">
+        <div class="sidebar-header">
+          <h4>Blocks</h4>
+          <span class="badge">3</span>
+        </div>
+        <div class="sidebar-items">
+          <div class="sidebar-item"><span class="dot"></span> About Section</div>
+          <div class="sidebar-item"><span class="dot"></span> Post Feed</div>
+          <div class="sidebar-item"><span class="dot"></span> Profile Link</div>
+        </div>
+      </div>
+
+      <div class="step-number">Step 4</div>
+      <div class="sidebar-section">
+        <div class="sidebar-header">
+          <h4>Views</h4>
+          <span class="badge">0</span>
+        </div>
+        <div class="sidebar-items">
+          <div class="sidebar-item-empty">None yet</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Workspace -->
+  <div class="workspace">
+    <div class="workspace-header">
+      <h2>Blocks</h2>
+      <button class="add-btn">+ New Block</button>
+    </div>
+
+    <div class="workspace-body">
+      <div class="workspace-desc">
+        Turn your requirements into buildable pieces. Create a block from one requirement for simple elements, or combine multiple requirements into a composite component.
+      </div>
+
+      <div class="block-grid">
+        <!-- Block card: About Section (single requirement) -->
+        <div class="block-card">
+          <div class="block-card-header">
+            <div class="block-card-name">About Section</div>
+            <div class="block-card-actions">
+              <button title="Edit">✎</button>
+              <button title="Delete">✕</button>
+            </div>
+          </div>
+          <ul class="block-card-requirements">
+            <li class="block-card-req">
+              <span class="req-order">1</span>
+              <span class="req-type-badge">know</span>
+              <span>App description paragraph</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Block card: Post Feed (composite — 3 requirements) -->
+        <div class="block-card">
+          <div class="block-card-header">
+            <div class="block-card-name">Post Feed</div>
+            <div class="block-card-actions">
+              <button title="Edit">✎</button>
+              <button title="Delete">✕</button>
+            </div>
+          </div>
+          <ul class="block-card-requirements">
+            <li class="block-card-req">
+              <span class="req-order">1</span>
+              <span class="req-type-badge">do</span>
+              <span>Search Post</span>
+              <span class="reorder-btns">
+                <button title="Move up" style="opacity:0.3; pointer-events:none;">▲</button>
+                <button title="Move down">▼</button>
+              </span>
+            </li>
+            <li class="block-card-req">
+              <span class="req-order">2</span>
+              <span class="req-type-badge">do</span>
+              <span>View Post</span>
+              <span class="reorder-btns">
+                <button title="Move up">▲</button>
+                <button title="Move down">▼</button>
+              </span>
+            </li>
+            <li class="block-card-req">
+              <span class="req-order">3</span>
+              <span class="req-type-badge">do</span>
+              <span>Create Post</span>
+              <span class="reorder-btns">
+                <button title="Move up">▲</button>
+                <button title="Move down" style="opacity:0.3; pointer-events:none;">▼</button>
+              </span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Block card: Profile Link (single requirement) -->
+        <div class="block-card">
+          <div class="block-card-header">
+            <div class="block-card-name">Profile Link</div>
+            <div class="block-card-actions">
+              <button title="Edit">✎</button>
+              <button title="Delete">✕</button>
+            </div>
+          </div>
+          <ul class="block-card-requirements">
+            <li class="block-card-req">
+              <span class="req-order">1</span>
+              <span class="req-type-badge">nav</span>
+              <span>Go to Profile</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Unassigned requirements with quick-create -->
+      <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-subtle);">
+        <div class="available-list-label" style="margin-bottom: 0.25rem;">
+          Unassigned Requirements
+          <span style="font-weight: 400; text-transform: none; letter-spacing: normal; opacity: 0.7;"> — 2 remaining</span>
+        </div>
+        <div class="form-hint" style="margin-bottom: 0.5rem;">
+          Click "+ Block" on any requirement to quickly create a single-requirement block, or use "+ New Block" above to combine multiple requirements.
+        </div>
+        <ul class="available-list" style="max-height: none;">
+          <li class="available-item">
+            <span class="avail-type">do</span>
+            <span class="avail-text">Set Timer</span>
+            <button class="quick-btn" style="opacity: 1;">+ Block</button>
+          </li>
+          <li class="available-item" style="background: var(--accent-glow); position: relative;">
+            <span class="avail-type">nav</span>
+            <span class="avail-text">Go to Profile (2)</span>
+            <div class="quick-create-wrapper">
+              <button class="quick-btn" style="opacity: 1; color: var(--accent); border-color: var(--accent);">+ Block</button>
+              <div class="quick-create-dropdown open">
+                <button class="quick-create-option">Link</button>
+                <button class="quick-create-option">Button</button>
+                <button class="quick-create-option">Menu Item</button>
+                <button class="quick-create-option">Tab</button>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Next step -->
+      <div class="next-step">
+        <div class="next-step-card">
+          <div>
+            <div class="next-step-label">Next step</div>
+            <div class="next-step-title">Arrange blocks into Views</div>
+          </div>
+          <div class="next-step-arrow">→</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- =============================================
+     SCENE B: New Block form with chip selection
+     ============================================= -->
+<div class="scene-label">Scene B — "New Block" form with chip-based requirement selection</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-nav">
+      <div class="progress-fill" style="height: 66%;"></div>
+      <div class="step-number">Step 1</div>
+      <div class="sidebar-section has-items">
+        <div class="sidebar-header"><h4>Requirements</h4><span class="badge">6</span></div>
+      </div>
+      <div class="step-number">Step 2</div>
+      <div class="sidebar-section has-items">
+        <div class="sidebar-header"><h4>Data</h4><span class="badge">1</span></div>
+      </div>
+      <div class="step-number">Step 3</div>
+      <div class="sidebar-section active has-items">
+        <div class="sidebar-header"><h4>Blocks</h4><span class="badge">1</span></div>
+        <div class="sidebar-items">
+          <div class="sidebar-item"><span class="dot"></span> About Section</div>
+        </div>
+      </div>
+      <div class="step-number">Step 4</div>
+      <div class="sidebar-section">
+        <div class="sidebar-header"><h4>Views</h4><span class="badge">0</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="workspace">
+    <div class="workspace-header">
+      <h2>Blocks</h2>
+    </div>
+
+    <div class="workspace-body">
+      <div class="workspace-desc">
+        Turn your requirements into buildable pieces. Create a block from one requirement for simple elements, or combine multiple requirements into a composite component.
+      </div>
+
+      <!-- Inline form: New Block -->
+      <div class="inline-form" style="display: block;">
+        <div class="form-group">
+          <label>Block Name</label>
+          <input type="text" placeholder="e.g., Post Feed, Search Bar, Nav Menu" value="Post Feed">
+        </div>
+
+        <div class="form-group">
+          <label>Requirements</label>
+
+          <!-- Selected chips -->
+          <div class="selected-chips">
+            <span class="chip">
+              <span class="chip-order">1</span>
+              Search Post
+              <button class="chip-remove">✕</button>
+            </span>
+            <span class="chip">
+              <span class="chip-order">2</span>
+              View Post
+              <button class="chip-remove">✕</button>
+            </span>
+          </div>
+
+          <div class="form-hint" style="margin-bottom: 0.5rem;">
+            Selected requirements will be combined in the order shown. Click ✕ to remove.
+          </div>
+
+          <!-- Available requirements -->
+          <div class="available-list-label">Available Requirements</div>
+          <ul class="available-list">
+            <li class="available-item">
+              <span class="avail-check"></span>
+              <span class="avail-type">know</span>
+              <span class="avail-text">App description paragraph</span>
+            </li>
+            <li class="available-item">
+              <span class="avail-check"></span>
+              <span class="avail-type">do</span>
+              <span class="avail-text">Create Post</span>
+            </li>
+            <li class="available-item selected">
+              <span class="avail-check"></span>
+              <span class="avail-type">do</span>
+              <span class="avail-text">Search Post</span>
+            </li>
+            <li class="available-item selected">
+              <span class="avail-check"></span>
+              <span class="avail-type">do</span>
+              <span class="avail-text">View Post</span>
+            </li>
+            <li class="available-item">
+              <span class="avail-check"></span>
+              <span class="avail-type">do</span>
+              <span class="avail-text">Set Timer</span>
+            </li>
+            <li class="available-item">
+              <span class="avail-check"></span>
+              <span class="avail-type">nav</span>
+              <span class="avail-text">Go to Profile</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="form-footer">
+          <button class="btn-primary">Save Block</button>
+          <button class="btn-ghost">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Existing block card below the form -->
+      <div class="block-grid" style="margin-top: 1rem;">
+        <div class="block-card">
+          <div class="block-card-header">
+            <div class="block-card-name">About Section</div>
+            <div class="block-card-actions">
+              <button title="Edit">✎</button>
+              <button title="Delete">✕</button>
+            </div>
+          </div>
+          <ul class="block-card-requirements">
+            <li class="block-card-req">
+              <span class="req-order">1</span>
+              <span class="req-type-badge">know</span>
+              <span>App description paragraph</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- =============================================
+     SCENE C: Narrow/mobile accordion view
+     ============================================= -->
+<div class="scene-label">Scene C — Narrow / mobile accordion view (resize browser below 767px to see live swap)</div>
+
+<div class="accordion" style="display: block; max-width: 420px; margin: 0 auto;">
+  <div class="accordion-container">
+    <div class="accordion-section has-items">
+      <div class="accordion-header">
+        <div class="accordion-header-left">
+          <span class="accordion-dot"></span>
+          <h4>Requirements</h4>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span class="accordion-badge">6</span>
+          <span class="accordion-chevron">▼</span>
+        </div>
+      </div>
+      <div class="accordion-summary">App description · create Post · search Post · +3 more</div>
+    </div>
+
+    <div class="accordion-section has-items">
+      <div class="accordion-header">
+        <div class="accordion-header-left">
+          <span class="accordion-dot"></span>
+          <h4>Data</h4>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span class="accordion-badge">1</span>
+          <span class="accordion-chevron">▼</span>
+        </div>
+      </div>
+      <div class="accordion-summary">Post</div>
+    </div>
+
+    <div class="accordion-section active has-items">
+      <div class="accordion-header">
+        <div class="accordion-header-left">
+          <span class="accordion-dot"></span>
+          <h4>Blocks</h4>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span class="accordion-badge">2</span>
+          <span class="accordion-chevron">▼</span>
+        </div>
+      </div>
+      <div class="accordion-body" style="display: block;">
+        <!-- Inline form inside accordion -->
+        <div class="inline-form" style="display: block; margin-bottom: 0.75rem;">
+          <div class="form-group">
+            <label>Block Name</label>
+            <input type="text" placeholder="e.g., Post Feed, Search Bar" value="Timer Widget">
+          </div>
+
+          <div class="form-group">
+            <label>Requirements</label>
+
+            <div class="selected-chips">
+              <span class="chip">
+                <span class="chip-order">1</span>
+                Set Timer
+                <button class="chip-remove">✕</button>
+              </span>
+            </div>
+
+            <div class="available-list-label" style="margin-top: 0.5rem;">Available Requirements</div>
+            <ul class="available-list">
+              <li class="available-item">
+                <span class="avail-check"></span>
+                <span class="avail-type">know</span>
+                <span class="avail-text">App description</span>
+              </li>
+              <li class="available-item">
+                <span class="avail-check"></span>
+                <span class="avail-type">do</span>
+                <span class="avail-text">Create Post</span>
+              </li>
+              <li class="available-item">
+                <span class="avail-check"></span>
+                <span class="avail-type">do</span>
+                <span class="avail-text">Search Post</span>
+              </li>
+              <li class="available-item selected">
+                <span class="avail-check"></span>
+                <span class="avail-type">do</span>
+                <span class="avail-text">Set Timer</span>
+              </li>
+              <li class="available-item">
+                <span class="avail-check"></span>
+                <span class="avail-type">nav</span>
+                <span class="avail-text">Go to Profile</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="form-footer">
+            <button class="btn-primary">Save Block</button>
+            <button class="btn-ghost">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Existing blocks in accordion -->
+        <div class="block-grid">
+          <div class="block-card">
+            <div class="block-card-header">
+              <div class="block-card-name">Post Feed</div>
+              <div class="block-card-actions">
+                <button>✎</button>
+                <button>✕</button>
+              </div>
+            </div>
+            <ul class="block-card-requirements">
+              <li class="block-card-req">
+                <span class="req-order">1</span>
+                <span class="req-type-badge">do</span>
+                <span>Search Post</span>
+              </li>
+              <li class="block-card-req">
+                <span class="req-order">2</span>
+                <span class="req-type-badge">do</span>
+                <span>View Post</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="block-card">
+            <div class="block-card-header">
+              <div class="block-card-name">Profile Link</div>
+              <div class="block-card-actions">
+                <button>✎</button>
+                <button>✕</button>
+              </div>
+            </div>
+            <ul class="block-card-requirements">
+              <li class="block-card-req">
+                <span class="req-order">1</span>
+                <span class="req-type-badge">nav</span>
+                <span>Go to Profile</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Unassigned requirements in accordion -->
+        <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-subtle);">
+          <div class="available-list-label" style="margin-bottom: 0.25rem;">
+            Unassigned Requirements
+            <span style="font-weight: 400; text-transform: none; letter-spacing: normal; opacity: 0.7;"> — 3 remaining</span>
+          </div>
+          <div class="form-hint" style="margin-bottom: 0.5rem;">
+            Click "+ Block" to quickly create a single-requirement block, or use "+ New Block" above to combine multiple.
+          </div>
+          <ul class="available-list" style="max-height: none;">
+            <li class="available-item">
+              <span class="avail-type">know</span>
+              <span class="avail-text">App description</span>
+              <button class="quick-btn" style="opacity: 1;">+ Block</button>
+            </li>
+            <li class="available-item">
+              <span class="avail-type">do</span>
+              <span class="avail-text">Create Post</span>
+              <button class="quick-btn" style="opacity: 1;">+ Block</button>
+            </li>
+            <li class="available-item">
+              <span class="avail-type">nav</span>
+              <span class="avail-text">Go to Profile</span>
+              <button class="quick-btn" style="opacity: 1;">+ Block</button>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-section">
+      <div class="accordion-header">
+        <div class="accordion-header-left">
+          <span class="accordion-dot"></span>
+          <h4>Views</h4>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span class="accordion-badge">0</span>
+          <span class="accordion-chevron">▼</span>
+        </div>
+      </div>
+      <div class="accordion-summary">None yet</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

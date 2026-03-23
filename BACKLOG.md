@@ -13,9 +13,9 @@ Pick one item from "Up Next" before starting a coding session.
 - [x] Phase 1: Scaffold sidebar + workspace layout
 - [x] Phase 2: Data Panel (read-only cards) — see `.specs/done/data-panel-cards.md`
 - [x] Phase 3: Requirements Panel + delete Step 1 — see `.specs/active/requirements-panel.md`
-- [ ] Phase 4: Components Panel
+- [x] Phase 4: Blocks Panel — see `.specs/active/blocks-panel.md`
 - [ ] Phase 5: Views Panel
-- [ ] Phase 6: Generate Flow
+- [ ] Phase 6: Generate Flow (also: add next-step card to Views panel pointing to generate)
 - [ ] Phase 7: Navigation and History Rework
 - [ ] Phase 8: Cleanup (delete deprecated files, remove old CSS)
       Full spec: `.specs/active/layout-migration-sidebar-workspace.md`
@@ -34,6 +34,11 @@ Pick one item from "Up Next" before starting a coding session.
 - [ ] Clean up unused assets (fonts, SVG filters) — see `.specs/active/cleanup-unused-assets.md`
 - [ ] Add Vitest unit tests for generator output — see `.specs/active/001-example-add-tests-for-generators.md`
 - [ ] Add Vitest unit tests for utility functions (text, id, html, nsid)
+
+### Post-Views Panel (depends on Phase 5)
+
+- [ ] Requirements navigation wiring — see `.specs/active/requirements-navigation-wiring.md`
+- [ ] App config placement — see `.specs/active/app-config-placement.md`
 
 ### Post-Migration Features
 

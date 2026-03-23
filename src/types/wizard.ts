@@ -97,6 +97,12 @@ export interface NonDataElement {
   name: string; // human-readable label, e.g. "Timer"
 }
 
+export interface Block {
+  id: string;
+  name: string;                // user-given name, e.g. "Post Feed", "About Section"
+  requirementIds: string[];    // ordered list of Requirement ids
+}
+
 export type NavType = 'direct' | 'menu' | 'forward-back';
 
 export type NavControlType = 'arrows' | 'buttons';
@@ -144,6 +150,7 @@ export interface WizardState {
   appConfig: AppConfig;
   requirements: Requirement[];
   nonDataElements: NonDataElement[];
+  blocks: Block[];
 }
 
 export interface LoadedState {
