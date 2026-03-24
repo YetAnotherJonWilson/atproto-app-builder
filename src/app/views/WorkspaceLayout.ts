@@ -93,6 +93,42 @@ export function wireWorkspaceLayout(): void {
 
   // Keep progress fill in sync on resize
   window.addEventListener('resize', updateProgressFill);
+
+  // Show welcome dialog on first visit
+  if (!wizardState.hasSeenWelcome) {
+    showWelcomeDialog();
+  }
+}
+
+function showWelcomeDialog(): void {
+  const dialog = document.createElement('dialog');
+  dialog.className = 'wizard-dialog';
+  dialog.innerHTML = `<div class="dialog-content">
+  <h2>Welcome to the AT Protocol App Builder</h2>
+  <p>A few things to know before you start:</p>
+  <p>This tool is experimental. The apps it generates are scaffolded starting points, with placeholders for content that cannot yet be generated automatically.</p>
+  <p>Your data schemas (lexicons) will be published under a <code>.temp</code> namespace, signaling that they are experimental and may change. This is the right choice while you\u2019re prototyping.</p>
+  <p>Data stored in AT Protocol Personal Data Servers is not yet private. Don\u2019t use these apps to store anything sensitive \u2014 treat them as experiments.</p>
+  <div class="dialog-buttons">
+    <button type="button" class="dialog-button" id="welcome-dismiss">Got it, let\u2019s go</button>
+  </div>
+</div>`;
+
+  document.body.appendChild(dialog);
+
+  const dismissBtn = dialog.querySelector('#welcome-dismiss') as HTMLButtonElement;
+  dismissBtn.addEventListener('click', () => {
+    const state = getWizardState();
+    state.hasSeenWelcome = true;
+    saveWizardState(state);
+    dialog.close();
+    dialog.remove();
+  });
+
+  // No backdrop close, no X button — user must click the dismiss button
+  dialog.addEventListener('cancel', (e) => e.preventDefault());
+
+  dialog.showModal();
 }
 
 /**

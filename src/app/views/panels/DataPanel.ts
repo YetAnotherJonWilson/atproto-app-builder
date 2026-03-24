@@ -237,7 +237,7 @@ function openDetailView(recordId: string): void {
 function initFormState(rt: RecordType): void {
   const state = getWizardState();
   const cachedUsername = state.appInfo.lexUsername ?? '';
-  const cachedNamespace = state.appInfo.lastNamespaceOption ?? 'thelexfiles';
+  const cachedNamespace = state.appInfo.lastNamespaceOption ?? 'thelexfiles-temp';
 
   // Auto-suggest name from displayName if not yet set
   const suggestedName = rt.name || toCamelCase(rt.displayName);
@@ -592,27 +592,21 @@ function renderCreateNewForm(rt: RecordType): string {
       <div class="form-group">
         <div class="namespace-radio-group" id="dt-namespace-group">
           ${renderNamespaceOption(
-            'thelexfiles',
-            'theLexFiles.com',
-            'Published under your username at theLexFiles.com. This is a stable definition \u2014 other apps can build against it.',
-            fs.namespaceOption,
-            true,
-          )}
-          ${renderNamespaceOption(
             'thelexfiles-temp',
             'theLexFiles.com \u2014 experimental',
-            "Uses the .temp. namespace to signal that this definition is experimental and may change. Choose this if you're prototyping.",
-            fs.namespaceOption,
-            false,
+            "Published under your username at theLexFiles.com with a .temp. namespace, signaling that this definition is experimental and may change. Your lexicon will be published automatically when you generate your app.",
+            fs.namespaceOption === 'thelexfiles' ? 'thelexfiles-temp' : fs.namespaceOption,
+            true,
           )}
           ${renderNamespaceOption(
             'byo-domain',
             'My own domain',
             "Use a domain you control. You'll need to configure DNS records and handle publishing yourself.",
-            fs.namespaceOption,
+            fs.namespaceOption === 'thelexfiles' ? 'thelexfiles-temp' : fs.namespaceOption,
             false,
           )}
         </div>
+        <div class="form-hint">Stable namespace publishing is not yet available.</div>
       </div>
 
       ${fs.namespaceOption === 'byo-domain' ? renderDomainWarning() : ''}

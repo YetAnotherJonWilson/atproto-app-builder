@@ -69,6 +69,10 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/lexicon-garden/, ''),
       },
+      '/api': {
+        target: 'https://thelexfiles.com',
+        changeOrigin: true,
+      },
     },
   },
   build: {

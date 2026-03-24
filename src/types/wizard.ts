@@ -161,6 +161,7 @@ export interface WizardState {
   blocks: Block[];
   views: View[];
   hasGenerated: boolean;
+  hasSeenWelcome: boolean;
 }
 
 export interface LoadedState {

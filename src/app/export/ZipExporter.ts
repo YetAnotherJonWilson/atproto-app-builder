@@ -31,8 +31,7 @@ export async function generateZipDownload(files: FileOutput): Promise<void> {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
-    // Show success message
-    alert(`Success! Your app "${wizardState.appInfo.appName}" has been downloaded.\n\nTo get started:\n1. Extract the ZIP file\n2. Run: npm install\n3. Run: npm run dev\n4. Open http://localhost:8080`);
+    // Success messaging is handled by the caller (GeneratePanel confirmation dialog)
 
   } catch (error) {
     console.error('Failed to generate ZIP:', error);

@@ -399,7 +399,7 @@ describe('wireDataPanel (DOM)', () => {
     expect(document.querySelector('.source-choice')).toBeNull();
   });
 
-  it('detail view shows three namespace radio options', () => {
+  it('detail view shows two namespace radio options (temp and byo-domain)', () => {
     mountPanelWithCards();
     const card = document.querySelector('.item-card[data-record-id="rt-1"]') as HTMLElement;
     card.click();
@@ -408,7 +408,11 @@ describe('wireDataPanel (DOM)', () => {
     document.getElementById('dt-choice-create')!.click();
 
     const radios = document.querySelectorAll('input[name="dt-namespace"]');
-    expect(radios).toHaveLength(3);
+    expect(radios).toHaveLength(2);
+    const values = [...radios].map((r) => (r as HTMLInputElement).value);
+    expect(values).toContain('thelexfiles-temp');
+    expect(values).toContain('byo-domain');
+    expect(values).not.toContain('thelexfiles');
   });
 
   it('back link returns to card grid', () => {
@@ -423,7 +427,7 @@ describe('wireDataPanel (DOM)', () => {
     expect(document.querySelector('.item-grid')).not.toBeNull();
   });
 
-  it('namespace defaults to theLexFiles.com (recommended)', () => {
+  it('namespace defaults to theLexFiles.com experimental (recommended)', () => {
     mountPanelWithCards();
     const card = document.querySelector('.item-card[data-record-id="rt-1"]') as HTMLElement;
     card.click();
@@ -434,7 +438,7 @@ describe('wireDataPanel (DOM)', () => {
     const checked = document.querySelector(
       'input[name="dt-namespace"]:checked',
     ) as HTMLInputElement;
-    expect(checked.value).toBe('thelexfiles');
+    expect(checked.value).toBe('thelexfiles-temp');
   });
 
   it('detail view shows intro text in source choice', () => {

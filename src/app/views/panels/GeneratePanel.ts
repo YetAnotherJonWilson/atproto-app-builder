@@ -10,6 +10,9 @@ import { getWizardState, saveWizardState } from '../../state/WizardState';
 import { updateAccordionSummaries, isNarrowViewport } from '../WorkspaceLayout';
 import { generateApp } from '../../export/OutputGenerator';
 import { computeRecordTypeNsid, generateRecordLexicon } from '../../../generator/Lexicon';
+import { publishLexicons } from '../../services/LexiconPublisher';
+import type { RecordType } from '../../../types/wizard';
+import type { PublishResult } from '../../services/LexiconPublisher';
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
@@ -220,12 +223,138 @@ export function wireGeneratePanel(): void {
   downloadBtn?.addEventListener('click', handleDownload);
 }
 
-async function handleDownload(): Promise<void> {
-  const btn = document.getElementById('gen-download-btn') as HTMLButtonElement | null;
-  if (!btn) return;
+/**
+ * Returns record types eligible for publishing:
+ * source === 'new', namespaceOption === 'thelexfiles-temp',
+ * and both lexUsername and name are non-empty.
+ */
+function getPublishableRecordTypes(): RecordType[] {
+  const { recordTypes } = getWizardState();
+  return recordTypes.filter(
+    (rt) =>
+      rt.source === 'new' &&
+      rt.namespaceOption === 'thelexfiles-temp' &&
+      rt.lexUsername?.trim() &&
+      rt.name?.trim(),
+  );
+}
 
-  btn.disabled = true;
-  btn.textContent = 'Generating...';
+function handleDownload(): void {
+  showConfirmationDialog();
+}
+
+// ── Confirmation dialog ──────────────────────────────────────────────
+
+function showConfirmationDialog(): void {
+  const publishable = getPublishableRecordTypes();
+  const hasPublishable = publishable.length > 0;
+  const { appInfo } = getWizardState();
+  const domain = appInfo.domain;
+
+  // Build NSID list
+  const nsidListHtml = hasPublishable
+    ? `<li>Publish your lexicons as experimental (.temp) versions via the AT Protocol:
+        <ul class="dialog-nsid-list">
+          ${publishable.map((rt) => `<li><code>${escapeHtml(computeRecordTypeNsid(rt, domain))}</code></li>`).join('')}
+        </ul>
+      </li>`
+    : '';
+
+  const confirmLabel = hasPublishable ? 'Generate &amp; Publish' : 'Download ZIP';
+
+  const dialog = document.createElement('dialog');
+  dialog.className = 'wizard-dialog';
+  dialog.innerHTML = `<div class="dialog-content">
+  <button type="button" class="dialog-close" id="gen-confirm-close-x">&times;</button>
+  <h2>${hasPublishable ? 'Generate &amp; Publish' : 'Download ZIP'}</h2>
+  <p>This will:</p>
+  <ul class="dialog-action-list">
+    <li>Download a scaffolded version of your app, with placeholders for content that cannot be generated</li>
+    ${nsidListHtml}
+  </ul>
+  <div class="dialog-warning">
+    <strong>&#9888;</strong> Data stored in AT Protocol Personal Data Servers is not yet private. Use these apps for experimentation, not for storing private data.
+  </div>
+  <div id="gen-confirm-status"></div>
+  <div class="dialog-buttons">
+    <button type="button" class="dialog-button" id="gen-confirm-btn">${confirmLabel}</button>
+    <button type="button" class="dialog-cancel" id="gen-confirm-cancel">Cancel</button>
+  </div>
+</div>`;
+
+  document.body.appendChild(dialog);
+
+  const confirmBtn = dialog.querySelector('#gen-confirm-btn') as HTMLButtonElement;
+  const cancelBtn = dialog.querySelector('#gen-confirm-cancel') as HTMLButtonElement;
+  const closeX = dialog.querySelector('#gen-confirm-close-x') as HTMLButtonElement;
+  const statusDiv = dialog.querySelector('#gen-confirm-status') as HTMLDivElement;
+
+  const close = () => {
+    dialog.close();
+    dialog.remove();
+  };
+
+  cancelBtn.addEventListener('click', close);
+  closeX.addEventListener('click', close);
+  dialog.addEventListener('click', (e) => {
+    if (e.target === dialog) close();
+  });
+
+  confirmBtn.onclick = () => {
+    executePublishAndGenerate(dialog, confirmBtn, cancelBtn, statusDiv, publishable, hasPublishable);
+  };
+
+  dialog.showModal();
+}
+
+async function executePublishAndGenerate(
+  dialog: HTMLDialogElement,
+  confirmBtn: HTMLButtonElement,
+  cancelBtn: HTMLButtonElement,
+  statusDiv: HTMLDivElement,
+  publishable: RecordType[],
+  hasPublishable: boolean,
+): Promise<void> {
+  confirmBtn.disabled = true;
+  cancelBtn.style.display = 'none';
+
+  // Phase 1: Publish lexicons
+  let publishResult: PublishResult | null = null;
+  if (hasPublishable) {
+    confirmBtn.textContent = 'Publishing...';
+
+    const { appInfo, recordTypes } = getWizardState();
+    const entries = publishable.map((rt) => ({
+      nsid: computeRecordTypeNsid(rt, appInfo.domain),
+      schema: generateRecordLexicon(rt, appInfo.domain || '', recordTypes),
+    }));
+
+    try {
+      publishResult = await publishLexicons(entries);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      statusDiv.innerHTML = `<div class="dialog-error">Failed to publish lexicons: ${escapeHtml(message)}</div>`;
+      showFailureActions(dialog, confirmBtn, cancelBtn);
+      return;
+    }
+
+    // Check for partial failures
+    if (publishResult.failed.length > 0) {
+      const failedList = publishResult.failed
+        .map((f) => `<li><code>${escapeHtml(f.nsid)}</code>: ${escapeHtml(f.error)}</li>`)
+        .join('');
+      const successCount = publishResult.published.length;
+      statusDiv.innerHTML = `<div class="dialog-error">
+        ${successCount > 0 ? `${successCount} lexicon${successCount > 1 ? 's' : ''} published. ` : ''}
+        ${publishResult.failed.length} failed:<ul>${failedList}</ul>
+      </div>`;
+      showFailureActions(dialog, confirmBtn, cancelBtn);
+      return;
+    }
+  }
+
+  // Phase 2: Generate ZIP
+  confirmBtn.textContent = 'Generating...';
 
   try {
     const state = getWizardState();
@@ -240,15 +369,75 @@ async function handleDownload(): Promise<void> {
     saveWizardState(updatedState);
     updateGenerateSidebar();
     updateAccordionSummaries();
+
+    // Show success
+    const pubCount = publishResult?.published.length ?? 0;
+    const pubMsg = pubCount > 0 ? ` and ${pubCount} lexicon${pubCount > 1 ? 's' : ''} published` : '';
+    statusDiv.innerHTML = `<div class="dialog-success">Your app has been downloaded${pubMsg}.</div>`;
+    confirmBtn.textContent = 'OK';
+    confirmBtn.disabled = false;
+    confirmBtn.onclick = () => {
+      dialog.close();
+      dialog.remove();
+    };
   } catch {
-    // ZipExporter handles its own error alert
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = 'Download ZIP';
-      updateDownloadButtonState();
-    }
+    statusDiv.innerHTML = `<div class="dialog-error">ZIP generation failed.</div>`;
+    confirmBtn.textContent = 'OK';
+    confirmBtn.disabled = false;
+    confirmBtn.onclick = () => {
+      dialog.close();
+      dialog.remove();
+    };
   }
+}
+
+function showFailureActions(
+  dialog: HTMLDialogElement,
+  confirmBtn: HTMLButtonElement,
+  cancelBtn: HTMLButtonElement,
+): void {
+  confirmBtn.textContent = 'Download ZIP Anyway';
+  confirmBtn.disabled = false;
+  cancelBtn.style.display = '';
+  cancelBtn.textContent = 'Cancel';
+
+  // Replace the confirm handler to skip publishing
+  confirmBtn.onclick = async () => {
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Generating...';
+    cancelBtn.style.display = 'none';
+    const statusDiv = dialog.querySelector('#gen-confirm-status') as HTMLDivElement;
+
+    try {
+      const state = getWizardState();
+      state.appConfig.outputMethod = 'zip';
+      saveWizardState(state);
+
+      await generateApp();
+
+      const updatedState = getWizardState();
+      updatedState.hasGenerated = true;
+      saveWizardState(updatedState);
+      updateGenerateSidebar();
+      updateAccordionSummaries();
+
+      statusDiv.innerHTML = `<div class="dialog-success">Your app has been downloaded.</div>`;
+      confirmBtn.textContent = 'OK';
+      confirmBtn.disabled = false;
+      confirmBtn.onclick = () => {
+        dialog.close();
+        dialog.remove();
+      };
+    } catch {
+      statusDiv.innerHTML = `<div class="dialog-error">ZIP generation failed.</div>`;
+      confirmBtn.textContent = 'OK';
+      confirmBtn.disabled = false;
+      confirmBtn.onclick = () => {
+        dialog.close();
+        dialog.remove();
+      };
+    }
+  };
 }
 
 // ── Sidebar ──────────────────────────────────────────────────────────
