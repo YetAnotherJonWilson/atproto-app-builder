@@ -55,7 +55,11 @@ function wizardFallback(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [rawHtmlReload(), wizardFallback(), cloudflare()],
+  plugins: [
+    rawHtmlReload(),
+    wizardFallback(),
+    ...(!process.env.VITEST ? [cloudflare()] : []),
+  ],
   server: {
     port: 8080,
     host: '0.0.0.0',
@@ -69,11 +73,6 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    rollupOptions: {
-      input: {
-        main: resolve(__dirname, 'index.html'),
-      },
-    },
   },
   publicDir: 'public',
 });
