@@ -5,16 +5,39 @@
     max-width: 640px;
   }
 
+  .data-detail-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
   .data-detail-back {
     display: inline-block;
     font-size: 0.8125rem;
     color: var(--accent);
     text-decoration: none;
-    margin-bottom: 1rem;
   }
 
   .data-detail-back:hover {
     text-decoration: underline;
+  }
+
+  .delete-link {
+    background: none;
+    border: none;
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+    font-family: inherit;
+  }
+
+  .delete-link:hover {
+    color: var(--accent-red);
+    background: rgba(255, 51, 85, 0.08);
   }
 
   .data-detail-header {

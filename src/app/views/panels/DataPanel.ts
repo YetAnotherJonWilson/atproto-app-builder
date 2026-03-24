@@ -20,6 +20,7 @@ import type { AutocompleteResult } from '../../services/LexiconDiscovery';
 import { toCamelCase } from '../../../utils/text';
 import type { RecordType, NamespaceOption } from '../../../types/wizard';
 import type { LexiconSchema } from '../../../types/generation';
+import { deleteRecordType } from '../../operations/RecordTypeOps';
 
 // ── Module-level state ────────────────────────────────────────────────
 
@@ -314,7 +315,11 @@ function renderDetailView(rt: RecordType): string {
 
   return `
     <div class="data-detail">
-      ${detailMode !== 'browse' ? '<a href="#" class="data-detail-back" id="dt-back-link">&larr; Back to Data Types</a>' : ''}
+      ${detailMode !== 'browse' ? `
+      <div class="data-detail-topbar">
+        <a href="#" class="data-detail-back" id="dt-back-link">&larr; Back to Data Types</a>
+        <button class="delete-link" id="dt-delete-record-btn">Delete</button>
+      </div>` : ''}
 
       <div class="data-detail-header">
         <h3 class="data-detail-title">${escapeHtml(rt.displayName)}</h3>
@@ -839,6 +844,15 @@ function wireDetailView(): void {
     backLink.addEventListener('click', (e) => {
       e.preventDefault();
       handleBackToGrid();
+    });
+  }
+
+  // Delete button
+  const deleteBtn = document.getElementById('dt-delete-record-btn');
+  if (deleteBtn && activeDetailRecordId) {
+    const recordId = activeDetailRecordId;
+    deleteBtn.addEventListener('click', () => {
+      deleteRecordType(recordId);
     });
   }
 

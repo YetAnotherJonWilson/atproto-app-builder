@@ -109,6 +109,30 @@
     color: var(--text-primary);
   }
 
+  /* ===== DANGER BUTTON VARIANT ===== */
+
+  .dialog-button--danger {
+    background-color: rgba(255, 51, 85, 0.12);
+    color: var(--accent-red);
+    border-color: rgba(255, 51, 85, 0.3);
+  }
+
+  .dialog-button--danger:hover {
+    background-color: rgba(255, 51, 85, 0.25);
+    color: var(--accent-red);
+    box-shadow: 0 4px 20px rgba(255, 51, 85, 0.15);
+  }
+
+  /* ===== CANNOT-DELETE DIALOG ===== */
+
+  .cannot-delete-ref-list {
+    margin: 0 0 1.5rem;
+    padding: 0 0 0 1.25rem;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    line-height: 1.8;
+  }
+
   /* ===== LOGIN DIALOG ===== */
 
   .dialog-button-desc {

@@ -37,6 +37,7 @@ Pick one item from "Up Next" before starting a coding session.
 
 ### Post-Migration Features
 
+- [ ] Block-to-component rendering (real list/form/detail/etc.) — see `.specs/active/block-component-rendering.md`
 - [ ] Wizard walkthrough / guided tour — see `.specs/active/wizard-walkthrough.md`
 - [ ] Wireframe / mockup preview view — see `.specs/active/wireframe-preview-view.md`
 - [ ] Generated code view — see `.specs/active/generated-code-view.md`
@@ -51,6 +52,7 @@ Pick one item from "Up Next" before starting a coding session.
 
 <!-- Move completed items here with date -->
 
+- [x] Generator view-driven pages + block types + nav menu — see `.specs/done/generator-view-driven-pages.md` 3/23/26
 - [x] Navigation subtypes — see `.specs/done/navigation-subtypes.md` 3/17/26
 - [x] Data type identity — lexicon config & discovery — see `.specs/done/data-type-identity.md` 3/20/26
 - [x] Data type fields — see `.specs/done/data-type-fields.md` 3/20/26
