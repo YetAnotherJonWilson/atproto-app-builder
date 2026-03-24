@@ -4,6 +4,8 @@ import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { readFileSync, watch } from 'fs';
 
+import { cloudflare } from "@cloudflare/vite-plugin";
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /** Always read ?raw HTML imports from disk and reload on change */
@@ -53,7 +55,7 @@ function wizardFallback(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [rawHtmlReload(), wizardFallback()],
+  plugins: [rawHtmlReload(), wizardFallback(), cloudflare()],
   server: {
     port: 8080,
     host: '0.0.0.0',
