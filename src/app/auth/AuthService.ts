@@ -113,3 +113,12 @@ export async function getUserProfile(): Promise<UserProfile> {
 export function getSession() {
   return session;
 }
+
+/**
+ * Get an authenticated Agent for making XRPC calls.
+ * Returns null if no session is active.
+ */
+export function getAgent(): Agent | null {
+  if (!session) return null;
+  return new Agent(session as any);
+}

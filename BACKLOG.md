@@ -37,12 +37,18 @@ Pick one item from "Up Next" before starting a coding session.
 
 ### Post-Migration Features
 
+- [ ] PDS state persistence (multi-project save/load) — see `.specs/active/pds-state-persistence.md`
 - [ ] Block-to-component rendering (real list/form/detail/etc.) — see `.specs/active/block-component-rendering.md`
 - [ ] Wizard walkthrough / guided tour — see `.specs/active/wizard-walkthrough.md`
 - [ ] Wireframe / mockup preview view — see `.specs/active/wireframe-preview-view.md`
 - [ ] Generated code view — see `.specs/active/generated-code-view.md`
 - [ ] AI implementation specs output — see `.specs/active/ai-implementation-specs-output.md`
 - [ ] Add Playwright e2e test for basic wizard flow
+
+### UX Improvements
+
+- [ ] Field length guidance (graphemes + bytes auto-conversion) — see `.specs/active/field-length-guidance.md`
+- [ ] Data modeling hints (AT Protocol guidance for users) — see `.specs/active/data-modeling-hints.md`
 
 ## Ideas / Unrefined
 
@@ -56,6 +62,7 @@ Pick one item from "Up Next" before starting a coding session.
 - [x] Navigation subtypes — see `.specs/done/navigation-subtypes.md` 3/17/26
 - [x] Data type identity — lexicon config & discovery — see `.specs/done/data-type-identity.md` 3/20/26
 - [x] Data type fields — see `.specs/done/data-type-fields.md` 3/20/26
+- [x] Lexicon publishing (PDS writes + DNS) — see `.specs/done/lexicon-publishing.md` 3/24/26
 - [x] Requirements navigation wiring — see `.specs/done/requirements-navigation-wiring.md` 3/23/26
 - [x] Non-data interactive elements — see `.specs/done/non-data-elements.md` 3/21/26
 - [x] Data modeling guidance — see `.specs/done/data-modeling-guidance.md` 3/21/26
