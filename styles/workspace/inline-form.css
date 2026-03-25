@@ -55,7 +55,6 @@
   }
 
   .inline-form input:focus-visible,
-  .inline-form select:focus-visible,
   .inline-form textarea:focus-visible {
     outline: none;
     border-color: var(--accent);
@@ -176,6 +175,85 @@
   .reorder-item .reorder-btns {
     display: flex;
     gap: 0.125rem;
+  }
+
+  /* ===== CUSTOM SELECT (replaces native <select>) ===== */
+
+  .custom-select {
+    position: relative;
+  }
+
+  .custom-select-trigger {
+    width: 100%;
+    font-size: 0.8125rem;
+    padding: 0.5rem 0.625rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: border-color 0.2s;
+    text-align: left;
+  }
+
+  .custom-select-trigger:hover {
+    border-color: var(--border-accent);
+  }
+
+  .custom-select-trigger:focus-visible {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-glow);
+  }
+
+  .custom-select-trigger:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+
+  .custom-select-arrow {
+    font-size: 0.625rem;
+    color: var(--text-muted);
+    margin-left: 0.5rem;
+  }
+
+  .custom-select-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-accent);
+    border-radius: 4px;
+    margin-top: 2px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .custom-select-option {
+    padding: 0.5rem 0.625rem;
+    font-size: 0.8125rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background-color 0.1s;
+  }
+
+  .custom-select-option:hover {
+    background: var(--accent-glow);
+  }
+
+  .custom-select-option.selected {
+    color: var(--accent);
+  }
+
+  .custom-select-disabled .custom-select-trigger {
+    opacity: 0.6;
+    cursor: default;
   }
 
   /* --- Very narrow: stack form rows --- */

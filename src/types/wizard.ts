@@ -90,8 +90,6 @@ export type SectionName = 'requirements' | 'data' | 'components' | 'views' | 'ge
 
 export type RequirementType = 'know' | 'do' | 'navigate';
 
-export type InteractionTarget = 'data' | 'element';
-
 export interface NonDataElement {
   id: string;
   name: string; // human-readable label, e.g. "Timer"
@@ -123,12 +121,9 @@ export interface Requirement {
   text?: string;
   content?: string;
   // 'do' type
-  verb?: string;
-  data?: string;
-  dataTypeId?: string;
-  interactionTarget?: InteractionTarget; // default 'data' for backward compat
-  elementId?: string; // link to NonDataElement (when target is 'element')
-  usesDataTypeId?: string; // optional data source for element interactions
+  description?: string; // free-text user story
+  dataTypeIds?: string[]; // links to RecordTypes (multiple allowed)
+  elementId?: string; // link to NonDataElement (max one widget)
   // 'navigate' type
   navType?: NavType;
   // navigate — direct link

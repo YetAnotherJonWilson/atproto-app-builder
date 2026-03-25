@@ -23,7 +23,6 @@ import type {
   RequirementType,
   RecordType,
   NonDataElement,
-  InteractionTarget,
   NavType,
   NavControlType,
   View,
@@ -59,6 +58,7 @@ function renderEmptyState(): string {
       <button class="add-btn" id="req-add-btn">+ Add Your First Requirement</button>
     </div>
     <div id="req-form-area"></div>
+
   `;
 }
 
@@ -107,7 +107,7 @@ function getTypeLabel(req: Requirement): string {
     case 'know':
       return 'Information';
     case 'do':
-      return 'Interaction';
+      return getDoItemsMeta(req);
     case 'navigate':
       switch (req.navType) {
         case 'menu':
@@ -120,28 +120,63 @@ function getTypeLabel(req: Requirement): string {
   }
 }
 
+function getDoItemsMeta(req: Requirement): string {
+  const { recordTypes, nonDataElements } = getWizardState();
+  const parts: string[] = [];
+  if (req.dataTypeIds) {
+    for (const id of req.dataTypeIds) {
+      const rt = recordTypes.find((r) => r.id === id);
+      if (rt) parts.push(rt.displayName);
+    }
+  }
+  if (req.elementId) {
+    const el = nonDataElements.find((e) => e.id === req.elementId);
+    if (el) parts.push(`${el.name} (widget)`);
+  }
+  return parts.length > 0 ? parts.join(', ') : 'Interaction';
+}
+
 // ── Inline form rendering ─────────────────────────────────────────────
+
+const TYPE_OPTIONS: { value: RequirementType; label: string }[] = [
+  { value: 'know', label: 'Information' },
+  { value: 'do', label: 'Interaction' },
+  { value: 'navigate', label: 'Navigation' },
+];
+
+function renderTypeSelect(selectedType: RequirementType, disabled: boolean): string {
+  const selectedLabel = TYPE_OPTIONS.find((o) => o.value === selectedType)?.label ?? 'Information';
+  const disabledClass = disabled ? ' custom-select-disabled' : '';
+  return `
+    <div class="custom-select${disabledClass}" id="req-type-select-wrap">
+      <input type="hidden" id="req-type-select" value="${selectedType}">
+      <button type="button" class="custom-select-trigger" id="req-type-trigger"${disabled ? ' disabled' : ''}>
+        <span class="custom-select-value">${escapeHtml(selectedLabel)}</span>
+        <span class="custom-select-arrow">&#9662;</span>
+      </button>
+      <div class="custom-select-dropdown" id="req-type-dropdown">
+        ${TYPE_OPTIONS.map(
+          (o) =>
+            `<div class="custom-select-option${o.value === selectedType ? ' selected' : ''}" data-value="${o.value}">${escapeHtml(o.label)}</div>`,
+        ).join('')}
+      </div>
+    </div>
+  `;
+}
 
 function renderInlineForm(
   type: RequirementType,
   existing?: Requirement,
 ): string {
   const saveLabel = existing ? 'Save' : 'Add Requirement';
-  const knowSelected = type === 'know' ? ' selected' : '';
-  const doSelected = type === 'do' ? ' selected' : '';
-  const navSelected = type === 'navigate' ? ' selected' : '';
-  const typeDisabled = existing ? ' disabled' : '';
+  const typeDisabled = !!existing;
 
   return `
     <div class="inline-form open" id="req-form">
       <div class="form-row">
         <div class="form-group">
           <label>Type</label>
-          <select id="req-type-select"${typeDisabled}>
-            <option value="know"${knowSelected}>Information</option>
-            <option value="do"${doSelected}>Interaction</option>
-            <option value="navigate"${navSelected}>Navigation</option>
-          </select>
+          ${renderTypeSelect(type, typeDisabled)}
         </div>
         <div class="form-group" id="req-header-right">
           ${renderHeaderRight(type, existing)}
@@ -165,24 +200,7 @@ function renderHeaderRight(
   if (type === 'navigate') {
     return renderNavTypeDropdown(existing);
   }
-  if (type === 'do') {
-    return renderDoTargetDropdown(existing);
-  }
   return '';
-}
-
-function renderDoTargetDropdown(existing?: Requirement): string {
-  const target = existing?.interactionTarget ?? 'data';
-  const disabled = existing ? ' disabled' : '';
-  return `
-    <label>Target</label>
-    <select id="req-do-target-select"${disabled}>
-      <option value="data"${target === 'data' ? ' selected' : ''}>Data Type</option>
-      <option value="element"${target === 'element' ? ' selected' : ''}>Widget</option>
-    </select>
-    <div class="form-hint"><strong>Data Type</strong> &mdash; stored info like posts, settings, or lists.
-    <strong>Widget</strong> &mdash; interactive UI like a timer, calculator, or drawing canvas.</div>
-  `;
 }
 
 function renderNavTypeDropdown(existing?: Requirement): string {
@@ -228,10 +246,7 @@ function renderTypeFields(
   }
 
   if (type === 'do') {
-    const target = existing?.interactionTarget ?? 'data';
-    return target === 'element'
-      ? renderDoElementFields(existing)
-      : renderDoDataFields(existing);
+    return renderDoFields(existing);
   }
 
   // navigate — render based on navType
@@ -239,94 +254,24 @@ function renderTypeFields(
   return renderNavSubtypeFields(navType, existing);
 }
 
-function renderDoDataFields(existing?: Requirement): string {
-  const verb = existing?.verb ?? '';
-  let dataValue = existing?.data ?? '';
-  if (existing?.dataTypeId) {
-    const { recordTypes } = getWizardState();
-    const linked = recordTypes.find((r) => r.id === existing.dataTypeId);
-    if (linked) dataValue = linked.displayName;
-  }
+function renderDoFields(existing?: Requirement): string {
+  const desc = existing?.description ?? '';
   return `
-    <div class="form-hint">As a user of the app, I need to&hellip;</div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Verb</label>
-        <input id="req-do-verb" placeholder="search, list, create, update, etc." value="${escapeAttr(verb)}">
-      </div>
-      <div class="form-group">
-        <label>Data Type</label>
-        <div class="combobox" id="req-do-data-combobox">
-          <input id="req-do-data" placeholder="e.g., grocery item, book, appointment"
-                 autocomplete="off" value="${escapeAttr(dataValue)}">
-          <div class="combobox-dropdown" id="req-do-data-dropdown">
-          </div>
-        </div>
-        <div class="form-hint">What kind of thing does this action work with? Select an
-        existing type or enter a new one. Focus on the thing being acted on &mdash; if your
-        action involves two things (like &ldquo;add an item to a list&rdquo;), the item is the
-        data type. The list is a separate type you&rsquo;ll connect later.</div>
-        <details class="guidance-details">
-          <summary>Does your action involve two things?</summary>
-          <div class="guidance-details-body">
-            <p><em>&ldquo;I need to add an item to my grocery list&rdquo;</em> becomes:</p>
-            <ul>
-              <li>I need to <strong>add</strong> a <strong>grocery item</strong> <span class="guidance-muted">(the thing being acted on)</span></li>
-              <li>I need to <strong>create</strong> a <strong>grocery list</strong> <span class="guidance-muted">(the container &mdash; a separate data type)</span></li>
-            </ul>
-            <p>Focus each requirement on one type of thing. You&rsquo;ll connect them in the Data section.</p>
-          </div>
-        </details>
-      </div>
+    <div class="form-group">
+      <label>Description</label>
+      <div class="form-hint">As a user of the app, I need to&hellip;</div>
+      <textarea id="req-do-description"
+        placeholder="e.g., add items to my grocery list, set a timer using my saved presets">${escapeHtml(desc)}</textarea>
     </div>
-  `;
-}
-
-function renderDoElementFields(existing?: Requirement): string {
-  const verb = existing?.verb ?? '';
-  let elementValue = '';
-  if (existing?.elementId) {
-    const { nonDataElements } = getWizardState();
-    const linked = nonDataElements.find((e) => e.id === existing.elementId);
-    if (linked) elementValue = linked.name;
-  }
-  let usesDataValue = '';
-  if (existing?.usesDataTypeId) {
-    const { recordTypes } = getWizardState();
-    const linked = recordTypes.find((r) => r.id === existing.usesDataTypeId);
-    if (linked) usesDataValue = linked.displayName;
-  }
-  return `
-    <div class="form-hint">As a user of the app, I need to&hellip;</div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Verb</label>
-        <input id="req-do-verb" placeholder="set, start, stop, draw, etc." value="${escapeAttr(verb)}">
+    <div class="form-group">
+      <label>Data Types &amp; Widgets</label>
+      <div class="form-hint">Add at least one data type or widget involved in this interaction.</div>
+      <div id="req-do-items-chips"></div>
+      <div id="req-do-item-buttons">
+        <button class="btn-ghost btn-small" id="req-do-add-data" type="button">+ Data Type</button>
+        <button class="btn-ghost btn-small" id="req-do-add-widget" type="button">+ Widget</button>
       </div>
-      <div class="form-group">
-        <label>Element</label>
-        <div class="combobox" id="req-do-element-combobox">
-          <input id="req-do-element" placeholder="e.g., timer, calculator, canvas"
-                 autocomplete="off" value="${escapeAttr(elementValue)}">
-          <div class="combobox-dropdown" id="req-do-element-dropdown">
-          </div>
-        </div>
-        <div class="form-hint">Name the interactive element. Select an existing
-        element or enter a new one.</div>
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Uses data from <span class="label-optional">(optional)</span></label>
-        <div class="combobox" id="req-uses-data-combobox">
-          <input id="req-uses-data" placeholder="e.g., settings, preferences"
-                 autocomplete="off" value="${escapeAttr(usesDataValue)}">
-          <div class="combobox-dropdown" id="req-uses-data-dropdown">
-          </div>
-        </div>
-        <div class="form-hint">Some elements need stored data to work. For example,
-        a timer might use saved preferences to auto-configure.</div>
-      </div>
+      <div id="req-do-item-combobox-area"></div>
     </div>
   `;
 }
@@ -580,14 +525,7 @@ export function getDisplayText(req: Requirement): string {
     case 'know':
       return `${req.text ?? ''}`;
     case 'do':
-      if (req.interactionTarget === 'element') {
-        const { nonDataElements } = getWizardState();
-        const el = req.elementId
-          ? nonDataElements.find((e) => e.id === req.elementId)
-          : undefined;
-        return `I need to ${req.verb ?? ''} the ${el?.name ?? req.data ?? ''}`;
-      }
-      return `I need to ${req.verb ?? ''} ${req.data ?? ''}`;
+      return req.description ?? '';
     case 'navigate':
       switch (req.navType) {
         case 'menu': {
@@ -606,16 +544,8 @@ export function getSidebarText(req: Requirement): string {
   switch (req.type) {
     case 'know':
       return `Know: ${truncate(req.text ?? '', 30)}`;
-    case 'do': {
-      if (req.interactionTarget === 'element') {
-        const { nonDataElements } = getWizardState();
-        const el = req.elementId
-          ? nonDataElements.find((e) => e.id === req.elementId)
-          : undefined;
-        return `Do: ${truncate((req.verb ?? '') + ' ' + (el?.name ?? req.data ?? ''), 30)}`;
-      }
-      return `Do: ${truncate((req.verb ?? '') + ' ' + (req.data ?? ''), 30)}`;
-    }
+    case 'do':
+      return `Do: ${truncate(req.description ?? '', 30)}`;
     case 'navigate':
       switch (req.navType) {
         case 'menu':
@@ -652,14 +582,16 @@ function escapeAttr(str: string): string {
 /** The ID of the requirement being edited, or null if adding new. */
 let editingId: string | null = null;
 
-/** Tracks the selected RecordType ID in the current combobox, or null for new type. */
-let selectedDataTypeId: string | null = null;
+/** Pending items (chips) for the current "do" form. */
+interface PendingItem {
+  itemType: 'data' | 'widget';
+  existingId: string | null; // non-null if selecting existing item
+  name: string; // display name
+}
+let pendingItems: PendingItem[] = [];
 
-/** Tracks the selected NonDataElement ID in the element combobox, or null for new element. */
-let selectedElementId: string | null = null;
-
-/** Tracks the selected RecordType ID in the "uses data from" combobox, or null for new/none. */
-let selectedUsesDataTypeId: string | null = null;
+/** Tracks which combobox is currently open in the item area, or null. */
+let activeItemCombobox: 'data' | 'widget' | null = null;
 
 export function wireRequirementsPanel(): void {
   editingId = null;
@@ -708,14 +640,24 @@ function wireNextStepButton(): void {
 function showForm(type?: RequirementType, existing?: Requirement): void {
   if (!existing) {
     editingId = null;
-    selectedDataTypeId = null;
-    selectedElementId = null;
-    selectedUsesDataTypeId = null;
+    pendingItems = [];
   } else {
-    selectedDataTypeId = existing.dataTypeId ?? null;
-    selectedElementId = existing.elementId ?? null;
-    selectedUsesDataTypeId = existing.usesDataTypeId ?? null;
+    // Pre-populate pending items from existing requirement
+    pendingItems = [];
+    const { recordTypes, nonDataElements } = getWizardState();
+    if (existing.dataTypeIds) {
+      for (const id of existing.dataTypeIds) {
+        const rt = recordTypes.find((r) => r.id === id);
+        if (rt) pendingItems.push({ itemType: 'data', existingId: id, name: rt.displayName });
+      }
+    }
+    if (existing.elementId) {
+      const el = nonDataElements.find((e) => e.id === existing.elementId);
+      if (el) pendingItems.push({ itemType: 'widget', existingId: existing.elementId, name: el.name });
+    }
   }
+  activeItemCombobox = null;
+
   const formType = type ?? existing?.type ?? 'know';
   const area = document.getElementById('req-form-area');
   if (!area) return;
@@ -727,14 +669,8 @@ function showForm(type?: RequirementType, existing?: Requirement): void {
     wireNavSubtypeControls(existing?.navType ?? 'direct');
   }
   if (formType === 'do') {
-    const target = existing?.interactionTarget ?? 'data';
-    wireDoTargetDropdown(existing);
-    if (target === 'element') {
-      wireElementCombobox();
-      wireUsesDataCombobox();
-    } else {
-      wireCombobox();
-    }
+    renderChips();
+    wireDoItemButtons();
   }
   wireFormValidation(formType);
   wireFormButtons();
@@ -750,57 +686,87 @@ function showForm(type?: RequirementType, existing?: Requirement): void {
 }
 
 function wireTypeDropdown(existing?: Requirement): void {
-  const typeSelect = document.getElementById(
-    'req-type-select',
-  ) as HTMLSelectElement | null;
-  if (!typeSelect) return;
+  const hiddenInput = document.getElementById('req-type-select') as HTMLInputElement | null;
+  const trigger = document.getElementById('req-type-trigger') as HTMLButtonElement | null;
+  const dropdown = document.getElementById('req-type-dropdown');
+  if (!hiddenInput || !trigger || !dropdown) return;
 
-  typeSelect.addEventListener('change', () => {
-    const newType = typeSelect.value as RequirementType;
+  // Toggle dropdown on trigger click
+  trigger.addEventListener('click', () => {
+    const isOpen = dropdown.style.display === 'block';
+    dropdown.style.display = isOpen ? 'none' : 'block';
+  });
 
-    // Re-render header right (Related View, Target, or Type of Navigation)
-    const headerRight = document.getElementById('req-header-right');
-    if (headerRight) {
-      const prefill = existing?.type === newType ? existing : undefined;
-      headerRight.innerHTML = renderHeaderRight(newType, prefill);
-      if (newType === 'navigate') {
-        wireNavTypeDropdown(prefill);
-      }
-      if (newType === 'do') {
-        wireDoTargetDropdown(prefill);
-      }
+  // Close dropdown on outside click
+  document.addEventListener('click', (e) => {
+    const wrap = document.getElementById('req-type-select-wrap');
+    if (wrap && !wrap.contains(e.target as Node)) {
+      dropdown.style.display = 'none';
     }
+  });
 
-    // Re-render type fields
-    const fieldsArea = document.getElementById('req-type-fields');
-    if (fieldsArea) {
-      const prefill = existing?.type === newType ? existing : undefined;
-      fieldsArea.innerHTML = renderTypeFields(newType, prefill);
-      if (newType === 'navigate') {
-        wireNavSubtypeControls(prefill?.navType ?? 'direct');
-      }
-      if (newType === 'do') {
-        const target = prefill?.interactionTarget ?? 'data';
-        if (target === 'element') {
-          selectedElementId = prefill?.elementId ?? null;
-          selectedUsesDataTypeId = prefill?.usesDataTypeId ?? null;
-          wireElementCombobox();
-          wireUsesDataCombobox();
-        } else {
-          selectedDataTypeId = prefill?.dataTypeId ?? null;
-          wireCombobox();
+  // Handle option selection
+  dropdown.querySelectorAll('.custom-select-option').forEach((option) => {
+    option.addEventListener('click', () => {
+      const newType = (option as HTMLElement).dataset.value as RequirementType;
+      hiddenInput.value = newType;
+
+      // Update trigger text and selected state
+      const valueSpan = trigger.querySelector('.custom-select-value');
+      if (valueSpan) valueSpan.textContent = option.textContent;
+      dropdown.querySelectorAll('.custom-select-option').forEach((o) => o.classList.remove('selected'));
+      option.classList.add('selected');
+      dropdown.style.display = 'none';
+
+      // Re-render header right
+      const headerRight = document.getElementById('req-header-right');
+      if (headerRight) {
+        const prefill = existing?.type === newType ? existing : undefined;
+        headerRight.innerHTML = renderHeaderRight(newType, prefill);
+        if (newType === 'navigate') {
+          wireNavTypeDropdown(prefill);
         }
       }
-    }
 
-    wireFormValidation(newType);
-    validateForm(newType);
+      // Re-render type fields
+      const fieldsArea = document.getElementById('req-type-fields');
+      if (fieldsArea) {
+        const prefill = existing?.type === newType ? existing : undefined;
+        fieldsArea.innerHTML = renderTypeFields(newType, prefill);
+        if (newType === 'navigate') {
+          wireNavSubtypeControls(prefill?.navType ?? 'direct');
+        }
+        if (newType === 'do') {
+          if (prefill) {
+            pendingItems = [];
+            const { recordTypes, nonDataElements } = getWizardState();
+            if (prefill.dataTypeIds) {
+              for (const id of prefill.dataTypeIds) {
+                const rt = recordTypes.find((r) => r.id === id);
+                if (rt) pendingItems.push({ itemType: 'data', existingId: id, name: rt.displayName });
+              }
+            }
+            if (prefill.elementId) {
+              const el = nonDataElements.find((e) => e.id === prefill.elementId);
+              if (el) pendingItems.push({ itemType: 'widget', existingId: prefill.elementId, name: el.name });
+            }
+          } else {
+            pendingItems = [];
+          }
+          activeItemCombobox = null;
+          renderChips();
+          wireDoItemButtons();
+        }
+      }
 
-    // Update save button text
-    const saveBtn = document.querySelector('.req-save-btn');
-    if (saveBtn && !editingId) {
-      saveBtn.textContent = 'Add Requirement';
-    }
+      wireFormValidation(newType);
+      validateForm(newType);
+
+      const saveBtn = document.querySelector('.req-save-btn');
+      if (saveBtn && !editingId) {
+        saveBtn.textContent = 'Add Requirement';
+      }
+    });
   });
 }
 
@@ -929,286 +895,239 @@ function reindexPageOrder(container: HTMLElement): void {
   wirePageOrderButtons();
 }
 
-function wireDoTargetDropdown(existing?: Requirement): void {
-  const targetSelect = document.getElementById(
-    'req-do-target-select',
-  ) as HTMLSelectElement | null;
-  if (!targetSelect) return;
+// ── Do-requirement chip & combobox logic ─────────────────────────────
 
-  targetSelect.addEventListener('change', () => {
-    const target = targetSelect.value as InteractionTarget;
-    const fieldsArea = document.getElementById('req-type-fields');
-    if (!fieldsArea) return;
+function wireDoItemButtons(): void {
+  const addDataBtn = document.getElementById('req-do-add-data');
+  const addWidgetBtn = document.getElementById('req-do-add-widget');
 
-    // Preserve verb across target switch
-    const verbEl = document.getElementById(
-      'req-do-verb',
-    ) as HTMLInputElement | null;
-    const currentVerb = verbEl?.value ?? '';
+  if (addDataBtn) {
+    addDataBtn.addEventListener('click', () => showItemCombobox('data'));
+  }
+  if (addWidgetBtn) {
+    addWidgetBtn.addEventListener('click', () => showItemCombobox('widget'));
+  }
 
-    if (target === 'element') {
-      selectedDataTypeId = null;
-      selectedElementId = null;
-      selectedUsesDataTypeId = null;
-      fieldsArea.innerHTML = renderDoElementFields();
-      wireElementCombobox();
-      wireUsesDataCombobox();
+  updateItemButtonStates();
+}
+
+function updateItemButtonStates(): void {
+  const addWidgetBtn = document.getElementById('req-do-add-widget') as HTMLButtonElement | null;
+  if (addWidgetBtn) {
+    const hasWidget = pendingItems.some((item) => item.itemType === 'widget');
+    addWidgetBtn.disabled = hasWidget;
+  }
+}
+
+function renderChips(): void {
+  const container = document.getElementById('req-do-items-chips');
+  if (!container) return;
+
+  if (pendingItems.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+
+  container.innerHTML = pendingItems
+    .map((item, index) => {
+      const typeLabel = item.existingId ? '' :
+        ` <span class="item-chip-type">(new ${item.itemType === 'data' ? 'data type' : 'widget'})</span>`;
+      return `<span class="item-chip" data-index="${index}">
+        ${escapeHtml(item.name)}${typeLabel}
+        <button class="item-chip-remove" data-index="${index}" aria-label="Remove" type="button">&times;</button>
+      </span>`;
+    })
+    .join('');
+
+  // Wire remove buttons
+  container.querySelectorAll('.item-chip-remove').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const index = parseInt((btn as HTMLElement).dataset.index ?? '0', 10);
+      pendingItems.splice(index, 1);
+      renderChips();
+      updateItemButtonStates();
+      validateForm('do');
+    });
+  });
+}
+
+function showItemCombobox(itemType: 'data' | 'widget'): void {
+  activeItemCombobox = itemType;
+  const area = document.getElementById('req-do-item-combobox-area');
+  if (!area) return;
+
+  const placeholder = itemType === 'data'
+    ? 'e.g., grocery item, book, appointment'
+    : 'e.g., timer, calculator, canvas';
+
+  area.innerHTML = `
+    <div class="combobox" id="req-do-item-combobox">
+      <input id="req-do-item-input" placeholder="${placeholder}"
+             autocomplete="off" type="text">
+      <div class="combobox-dropdown" id="req-do-item-dropdown"></div>
+    </div>
+  `;
+
+  wireItemCombobox(itemType);
+  const input = document.getElementById('req-do-item-input') as HTMLInputElement | null;
+  if (input) input.focus();
+}
+
+function closeItemCombobox(): void {
+  activeItemCombobox = null;
+  const area = document.getElementById('req-do-item-combobox-area');
+  if (area) area.innerHTML = '';
+}
+
+function wireItemCombobox(itemType: 'data' | 'widget'): void {
+  const input = document.getElementById('req-do-item-input') as HTMLInputElement | null;
+  const dropdown = document.getElementById('req-do-item-dropdown');
+  if (!input || !dropdown) return;
+
+  function getAlreadySelectedIds(): string[] {
+    return pendingItems
+      .filter((p) => p.itemType === itemType && p.existingId)
+      .map((p) => p.existingId!);
+  }
+
+  function updateDropdown(): void {
+    const { recordTypes, nonDataElements } = getWizardState();
+    const alreadySelected = getAlreadySelectedIds();
+    const query = input!.value.trim().toLowerCase();
+
+    if (itemType === 'data') {
+      const available = recordTypes.filter((rt) => !alreadySelected.includes(rt.id));
+      if (available.length === 0 && !query) {
+        dropdown!.style.display = 'none';
+        return;
+      }
+
+      const filtered = query
+        ? available.filter((rt) => rt.displayName.toLowerCase().includes(query))
+        : available;
+
+      // Check exact match against ALL record types (including already selected)
+      const exactMatch = query && recordTypes.some(
+        (rt) => rt.displayName.toLowerCase() === query,
+      );
+      // But also check if already added by name
+      const alreadyAdded = query && pendingItems.some(
+        (p) => p.itemType === 'data' && p.name.toLowerCase() === query,
+      );
+
+      let html = filtered
+        .map((rt) =>
+          `<div class="combobox-item" data-id="${rt.id}">${escapeHtml(rt.displayName)}</div>`,
+        )
+        .join('');
+
+      if (query && !exactMatch && !alreadyAdded) {
+        html += `<div class="combobox-item combobox-create">Create &ldquo;${escapeHtml(input!.value.trim())}&rdquo;</div>`;
+      }
+
+      if (!html) {
+        dropdown!.style.display = 'none';
+        return;
+      }
+      dropdown!.innerHTML = html;
+      dropdown!.style.display = 'block';
     } else {
-      selectedElementId = null;
-      selectedUsesDataTypeId = null;
-      selectedDataTypeId = null;
-      fieldsArea.innerHTML = renderDoDataFields();
-      wireCombobox();
+      // widget
+      const available = nonDataElements.filter((el) => !alreadySelected.includes(el.id));
+      if (available.length === 0 && !query) {
+        dropdown!.style.display = 'none';
+        return;
+      }
+
+      const filtered = query
+        ? available.filter((el) => el.name.toLowerCase().includes(query))
+        : available;
+
+      const exactMatch = query && nonDataElements.some(
+        (el) => el.name.toLowerCase() === query,
+      );
+
+      let html = filtered
+        .map((el) =>
+          `<div class="combobox-item" data-id="${el.id}">${escapeHtml(el.name)}</div>`,
+        )
+        .join('');
+
+      if (query && !exactMatch) {
+        html += `<div class="combobox-item combobox-create">Create &ldquo;${escapeHtml(input!.value.trim())}&rdquo;</div>`;
+      }
+
+      if (!html) {
+        dropdown!.style.display = 'none';
+        return;
+      }
+      dropdown!.innerHTML = html;
+      dropdown!.style.display = 'block';
     }
 
-    // Restore verb
-    const newVerbEl = document.getElementById(
-      'req-do-verb',
-    ) as HTMLInputElement | null;
-    if (newVerbEl && currentVerb) {
-      newVerbEl.value = currentVerb;
-    }
-
-    wireFormValidation('do');
-    validateForm('do');
-  });
-}
-
-// ── Combobox ────────────────────────────────────────────────────────────
-
-function wireCombobox(): void {
-  const input = document.getElementById(
-    'req-do-data',
-  ) as HTMLInputElement | null;
-  const dropdown = document.getElementById('req-do-data-dropdown');
-  if (!input || !dropdown) return;
-
-  function updateDropdown(): void {
-    const { recordTypes } = getWizardState();
-    if (recordTypes.length === 0) {
-      dropdown!.style.display = 'none';
-      return;
-    }
-
-    const query = input!.value.trim().toLowerCase();
-    const filtered = query
-      ? recordTypes.filter((rt) => rt.displayName.toLowerCase().includes(query))
-      : recordTypes;
-
-    const exactMatch =
-      query && recordTypes.some((rt) => rt.displayName.toLowerCase() === query);
-
-    let html = filtered
-      .map(
-        (rt) =>
-          `<div class="combobox-item" data-record-id="${rt.id}">${escapeHtml(rt.displayName)}</div>`,
-      )
-      .join('');
-
-    if (query && !exactMatch) {
-      html += `<div class="combobox-item combobox-create">Create &ldquo;${escapeHtml(input!.value.trim())}&rdquo;</div>`;
-    }
-
-    if (!html) {
-      dropdown!.style.display = 'none';
-      return;
-    }
-
-    dropdown!.innerHTML = html;
-    dropdown!.style.display = 'block';
-
-    // Wire click handlers on items
+    // Wire click handlers
     dropdown!.querySelectorAll('.combobox-item').forEach((item) => {
       item.addEventListener('mousedown', (e) => {
-        e.preventDefault(); // Prevent blur before click registers
+        e.preventDefault();
         const el = item as HTMLElement;
-        const recordId = el.dataset.recordId;
-        if (recordId) {
-          selectedDataTypeId = recordId;
-          const rt = getWizardState().recordTypes.find(
-            (r) => r.id === recordId,
-          );
-          if (rt) input!.value = rt.displayName;
-        } else {
-          // "Create" option — keep typed text, clear selection
-          selectedDataTypeId = null;
+        const id = el.dataset.id ?? null;
+        let name = input!.value.trim();
+        if (id) {
+          // Selected existing item — get its proper name
+          if (itemType === 'data') {
+            const rt = getWizardState().recordTypes.find((r) => r.id === id);
+            if (rt) name = rt.displayName;
+          } else {
+            const nde = getWizardState().nonDataElements.find((n) => n.id === id);
+            if (nde) name = nde.name;
+          }
         }
-        dropdown!.style.display = 'none';
+        pendingItems.push({ itemType, existingId: id, name });
+        closeItemCombobox();
+        renderChips();
+        updateItemButtonStates();
         validateForm('do');
       });
     });
   }
 
   input.addEventListener('focus', () => updateDropdown());
-  input.addEventListener('input', () => {
-    selectedDataTypeId = null;
-    updateDropdown();
-    validateForm('do');
-  });
+  input.addEventListener('input', () => updateDropdown());
   input.addEventListener('blur', () => {
     setTimeout(() => {
-      dropdown.style.display = 'none';
-    }, 150);
-  });
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      dropdown.style.display = 'none';
-    }
-  });
-}
-
-function wireElementCombobox(): void {
-  const input = document.getElementById(
-    'req-do-element',
-  ) as HTMLInputElement | null;
-  const dropdown = document.getElementById('req-do-element-dropdown');
-  if (!input || !dropdown) return;
-
-  function updateDropdown(): void {
-    const { nonDataElements } = getWizardState();
-    if (nonDataElements.length === 0) {
-      dropdown!.style.display = 'none';
-      return;
-    }
-
-    const query = input!.value.trim().toLowerCase();
-    const filtered = query
-      ? nonDataElements.filter((el) => el.name.toLowerCase().includes(query))
-      : nonDataElements;
-
-    const exactMatch =
-      query && nonDataElements.some((el) => el.name.toLowerCase() === query);
-
-    let html = filtered
-      .map(
-        (el) =>
-          `<div class="combobox-item" data-element-id="${el.id}">${escapeHtml(el.name)}</div>`,
-      )
-      .join('');
-
-    if (query && !exactMatch) {
-      html += `<div class="combobox-item combobox-create">Create &ldquo;${escapeHtml(input!.value.trim())}&rdquo;</div>`;
-    }
-
-    if (!html) {
-      dropdown!.style.display = 'none';
-      return;
-    }
-
-    dropdown!.innerHTML = html;
-    dropdown!.style.display = 'block';
-
-    dropdown!.querySelectorAll('.combobox-item').forEach((item) => {
-      item.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        const el = item as HTMLElement;
-        const elementId = el.dataset.elementId;
-        if (elementId) {
-          selectedElementId = elementId;
-          const nde = getWizardState().nonDataElements.find(
-            (n) => n.id === elementId,
-          );
-          if (nde) input!.value = nde.name;
-        } else {
-          selectedElementId = null;
+      // If there's text and user blurs without selecting, treat as new item
+      const val = input.value.trim();
+      if (val && activeItemCombobox) {
+        // Check if exact match exists that wasn't already added
+        const alreadyAdded = pendingItems.some(
+          (p) => p.itemType === itemType && p.name.toLowerCase() === val.toLowerCase(),
+        );
+        if (!alreadyAdded) {
+          // Check for existing item match
+          let existingId: string | null = null;
+          if (itemType === 'data') {
+            const match = getWizardState().recordTypes.find(
+              (rt) => rt.displayName.toLowerCase() === val.toLowerCase(),
+            );
+            if (match) existingId = match.id;
+          } else {
+            const match = getWizardState().nonDataElements.find(
+              (el) => el.name.toLowerCase() === val.toLowerCase(),
+            );
+            if (match) existingId = match.id;
+          }
+          pendingItems.push({ itemType, existingId, name: val });
+          renderChips();
+          updateItemButtonStates();
+          validateForm('do');
         }
-        dropdown!.style.display = 'none';
-        validateForm('do');
-      });
-    });
-  }
-
-  input.addEventListener('focus', () => updateDropdown());
-  input.addEventListener('input', () => {
-    selectedElementId = null;
-    updateDropdown();
-    validateForm('do');
-  });
-  input.addEventListener('blur', () => {
-    setTimeout(() => {
-      dropdown.style.display = 'none';
+      }
+      closeItemCombobox();
     }, 150);
   });
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-      dropdown.style.display = 'none';
-    }
-  });
-}
-
-function wireUsesDataCombobox(): void {
-  const input = document.getElementById(
-    'req-uses-data',
-  ) as HTMLInputElement | null;
-  const dropdown = document.getElementById('req-uses-data-dropdown');
-  if (!input || !dropdown) return;
-
-  function updateDropdown(): void {
-    const { recordTypes } = getWizardState();
-    if (recordTypes.length === 0) {
-      dropdown!.style.display = 'none';
-      return;
-    }
-
-    const query = input!.value.trim().toLowerCase();
-    const filtered = query
-      ? recordTypes.filter((rt) => rt.displayName.toLowerCase().includes(query))
-      : recordTypes;
-
-    const exactMatch =
-      query && recordTypes.some((rt) => rt.displayName.toLowerCase() === query);
-
-    let html = filtered
-      .map(
-        (rt) =>
-          `<div class="combobox-item" data-record-id="${rt.id}">${escapeHtml(rt.displayName)}</div>`,
-      )
-      .join('');
-
-    if (query && !exactMatch) {
-      html += `<div class="combobox-item combobox-create">Create &ldquo;${escapeHtml(input!.value.trim())}&rdquo;</div>`;
-    }
-
-    if (!html) {
-      dropdown!.style.display = 'none';
-      return;
-    }
-
-    dropdown!.innerHTML = html;
-    dropdown!.style.display = 'block';
-
-    dropdown!.querySelectorAll('.combobox-item').forEach((item) => {
-      item.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        const el = item as HTMLElement;
-        const recordId = el.dataset.recordId;
-        if (recordId) {
-          selectedUsesDataTypeId = recordId;
-          const rt = getWizardState().recordTypes.find(
-            (r) => r.id === recordId,
-          );
-          if (rt) input!.value = rt.displayName;
-        } else {
-          selectedUsesDataTypeId = null;
-        }
-        dropdown!.style.display = 'none';
-      });
-    });
-  }
-
-  input.addEventListener('focus', () => updateDropdown());
-  input.addEventListener('input', () => {
-    selectedUsesDataTypeId = null;
-    updateDropdown();
-  });
-  input.addEventListener('blur', () => {
-    setTimeout(() => {
-      dropdown.style.display = 'none';
-    }, 150);
-  });
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      dropdown.style.display = 'none';
+      closeItemCombobox();
     }
   });
 }
@@ -1227,9 +1146,8 @@ function wireFormButtons(): void {
 
 function closeForm(): void {
   editingId = null;
-  selectedDataTypeId = null;
-  selectedElementId = null;
-  selectedUsesDataTypeId = null;
+  pendingItems = [];
+  activeItemCombobox = null;
   const area = document.getElementById('req-form-area');
   if (area) area.innerHTML = '';
 }
@@ -1253,20 +1171,11 @@ function wireFormValidation(type: RequirementType): void {
       textarea.addEventListener('input', () => validateForm(type));
     }
   } else if (type === 'do') {
-    const verb = document.getElementById(
-      'req-do-verb',
-    ) as HTMLInputElement | null;
-    // Data target
-    const data = document.getElementById(
-      'req-do-data',
-    ) as HTMLInputElement | null;
-    // Element target
-    const element = document.getElementById(
-      'req-do-element',
-    ) as HTMLInputElement | null;
-    if (verb) verb.addEventListener('input', () => validateForm(type));
-    if (data) data.addEventListener('input', () => validateForm(type));
-    if (element) element.addEventListener('input', () => validateForm(type));
+    const desc = document.getElementById(
+      'req-do-description',
+    ) as HTMLTextAreaElement | null;
+    if (desc) desc.addEventListener('input', () => validateForm(type));
+    // Chip changes also trigger validation via renderChips/updateItemButtonStates
   }
   // navigate: validation is wired in wireNavSubtypeControls
 }
@@ -1284,21 +1193,12 @@ function validateForm(type: RequirementType): void {
     ) as HTMLTextAreaElement | null;
     valid = (textarea?.value.trim().length ?? 0) > 0;
   } else if (type === 'do') {
-    const verb = document.getElementById(
-      'req-do-verb',
-    ) as HTMLInputElement | null;
-    const hasVerb = (verb?.value.trim().length ?? 0) > 0;
-    // Check whichever target field exists
-    const data = document.getElementById(
-      'req-do-data',
-    ) as HTMLInputElement | null;
-    const element = document.getElementById(
-      'req-do-element',
-    ) as HTMLInputElement | null;
-    const hasTarget = data
-      ? (data.value.trim().length ?? 0) > 0
-      : (element?.value.trim().length ?? 0) > 0;
-    valid = hasVerb && hasTarget;
+    const desc = document.getElementById(
+      'req-do-description',
+    ) as HTMLTextAreaElement | null;
+    const hasDesc = (desc?.value.trim().length ?? 0) > 0;
+    const hasItems = pendingItems.length > 0;
+    valid = hasDesc && hasItems;
   } else if (type === 'navigate') {
     valid = validateNavigateForm();
   }
@@ -1338,11 +1238,11 @@ function validateNavigateForm(): boolean {
 // ── State mutations ────────────────────────────────────────────────────
 
 function saveRequirement(): void {
-  const typeSelect = document.getElementById(
+  const typeInput = document.getElementById(
     'req-type-select',
-  ) as HTMLSelectElement | null;
-  if (!typeSelect) return;
-  const type = typeSelect.value as RequirementType;
+  ) as HTMLInputElement | null;
+  if (!typeInput) return;
+  const type = typeInput.value as RequirementType;
 
   const wizardState = getWizardState();
   const req = buildRequirementFromForm(type, wizardState);
@@ -1391,60 +1291,31 @@ function buildRequirementFromForm(
     base.text = text;
     if (content) base.content = content;
   } else if (type === 'do') {
-    // Determine interaction target
-    const targetSelect = document.getElementById(
-      'req-do-target-select',
-    ) as HTMLSelectElement | null;
-    const target = (targetSelect?.value ?? 'data') as InteractionTarget;
+    const descEl = document.getElementById(
+      'req-do-description',
+    ) as HTMLTextAreaElement | null;
+    const description = descEl?.value.trim() ?? '';
+    if (!description) return null;
+    if (pendingItems.length === 0) return null;
+    base.description = description;
 
-    const verbEl = document.getElementById(
-      'req-do-verb',
-    ) as HTMLInputElement | null;
-    const verb = verbEl?.value.trim() ?? '';
-    if (!verb) return null;
-    base.verb = verb;
+    // Resolve pending items into IDs
+    const dataTypeIds: string[] = [];
+    let elementId: string | null = null;
 
-    if (target === 'element') {
-      base.interactionTarget = 'element';
-
-      const elementEl = document.getElementById(
-        'req-do-element',
-      ) as HTMLInputElement | null;
-      const elementName = elementEl?.value.trim() ?? '';
-      if (!elementName) return null;
-      base.data = elementName;
-
-      // Resolve or create a NonDataElement
-      const elementId = resolveOrCreateElement(elementName, wizardState);
-      base.elementId = elementId;
-
-      // Optional: "uses data from"
-      const usesDataEl = document.getElementById(
-        'req-uses-data',
-      ) as HTMLInputElement | null;
-      const usesDataName = usesDataEl?.value.trim() ?? '';
-      if (usesDataName) {
-        const usesDataTypeId = resolveOrCreateDataType(
-          usesDataName,
-          wizardState,
-          selectedUsesDataTypeId,
-        );
-        base.usesDataTypeId = usesDataTypeId;
+    for (const item of pendingItems) {
+      if (item.itemType === 'data') {
+        const id = resolveOrCreateDataType(item.name, wizardState, item.existingId);
+        dataTypeIds.push(id);
+      } else {
+        // widget
+        const id = resolveOrCreateElement(item.name, wizardState, item.existingId);
+        elementId = id;
       }
-    } else {
-      base.interactionTarget = 'data';
-
-      const dataEl = document.getElementById(
-        'req-do-data',
-      ) as HTMLInputElement | null;
-      const data = dataEl?.value.trim() ?? '';
-      if (!data) return null;
-      base.data = data;
-
-      // Resolve or create a RecordType for this data type
-      const dataTypeId = resolveOrCreateDataType(data, wizardState);
-      base.dataTypeId = dataTypeId;
     }
+
+    if (dataTypeIds.length > 0) base.dataTypeIds = dataTypeIds;
+    if (elementId) base.elementId = elementId;
   } else {
     // navigate
     const navTypeSelect = document.getElementById(
@@ -1497,18 +1368,16 @@ function buildRequirementFromForm(
 /**
  * Resolve the data type to an existing RecordType or create a new one.
  * Returns the RecordType ID.
- * When preselectedId is provided, it takes priority (used by "uses data from" combobox).
+ * When preselectedId is provided, it takes priority.
  */
 function resolveOrCreateDataType(
   displayName: string,
   wizardState: import('../../../types/wizard').WizardState,
   preselectedId?: string | null,
 ): string {
-  // 1. If user selected an existing type via the combobox, use it
-  const selId =
-    preselectedId !== undefined ? preselectedId : selectedDataTypeId;
-  if (selId) {
-    const existing = wizardState.recordTypes.find((r) => r.id === selId);
+  // 1. If a pre-selected ID was provided, use it
+  if (preselectedId) {
+    const existing = wizardState.recordTypes.find((r) => r.id === preselectedId);
     if (existing) return existing.id;
   }
 
@@ -1538,11 +1407,12 @@ function resolveOrCreateDataType(
 function resolveOrCreateElement(
   name: string,
   wizardState: import('../../../types/wizard').WizardState,
+  preselectedId?: string | null,
 ): string {
-  // 1. If user selected an existing element via the combobox, use it
-  if (selectedElementId) {
+  // 1. If a pre-selected ID was provided, use it
+  if (preselectedId) {
     const existing = wizardState.nonDataElements.find(
-      (e) => e.id === selectedElementId,
+      (e) => e.id === preselectedId,
     );
     if (existing) return existing.id;
   }

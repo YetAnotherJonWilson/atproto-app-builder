@@ -63,19 +63,17 @@ const QUICK_NAMES: Record<string, QuickNameOption[]> = {
 
 function getQuickNames(req: Requirement): QuickNameOption[] | null {
   if (req.type === 'do') {
-    if (req.interactionTarget === 'element') return null; // auto-name from element
+    if (req.elementId) return null; // auto-name from element
     return QUICK_NAMES['do-data'];
   }
   return QUICK_NAMES[req.type] ?? [];
 }
 
 function getElementAutoName(req: Requirement): string | null {
-  if (req.type !== 'do' || req.interactionTarget !== 'element') return null;
+  if (req.type !== 'do' || !req.elementId) return null;
   const { nonDataElements } = getWizardState();
-  const el = req.elementId
-    ? nonDataElements.find((e) => e.id === req.elementId)
-    : undefined;
-  return el?.name ?? req.data ?? null;
+  const el = nonDataElements.find((e) => e.id === req.elementId);
+  return el?.name ?? null;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────
@@ -88,16 +86,8 @@ function getRequirementShortText(req: Requirement): string {
   switch (req.type) {
     case 'know':
       return truncate(req.text ?? '', 40);
-    case 'do': {
-      if (req.interactionTarget === 'element') {
-        const { nonDataElements } = getWizardState();
-        const el = req.elementId
-          ? nonDataElements.find((e) => e.id === req.elementId)
-          : undefined;
-        return `${req.verb ?? ''} ${el?.name ?? req.data ?? ''}`.trim();
-      }
-      return `${req.verb ?? ''} ${req.data ?? ''}`.trim();
-    }
+    case 'do':
+      return truncate(req.description ?? '', 40);
     case 'navigate':
       switch (req.navType) {
         case 'menu':

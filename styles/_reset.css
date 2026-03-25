@@ -9,6 +9,7 @@
     -moz-text-size-adjust: none;
     -webkit-text-size-adjust: none;
     text-size-adjust: none;
+    color-scheme: dark;
   }
 
   body,

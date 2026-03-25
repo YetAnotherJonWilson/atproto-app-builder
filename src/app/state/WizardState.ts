@@ -92,6 +92,46 @@ export function setWizardState(state: WizardState): void {
       }
     }
   }
+  // Migrate: convert old do-requirement fields to new description + dataTypeIds format
+  if (state.requirements) {
+    for (const req of state.requirements) {
+      if (req.type !== 'do') continue;
+      const legacy = req as unknown as Record<string, unknown>;
+
+      // verb + data → description
+      if (legacy.verb !== undefined && legacy.description === undefined) {
+        const verb = (legacy.verb as string) || '';
+        const data = (legacy.data as string) || '';
+        req.description = (verb + (data ? ` ${data}` : '')).trim();
+        delete legacy.verb;
+        delete legacy.data;
+      }
+
+      // dataTypeId (single) → dataTypeIds (array)
+      if (legacy.dataTypeId !== undefined && req.dataTypeIds === undefined) {
+        const ids: string[] = [];
+        if (legacy.dataTypeId) ids.push(legacy.dataTypeId as string);
+        // Merge usesDataTypeId into the array if present and not duplicate
+        if (legacy.usesDataTypeId && !ids.includes(legacy.usesDataTypeId as string)) {
+          ids.push(legacy.usesDataTypeId as string);
+        }
+        req.dataTypeIds = ids;
+        delete legacy.dataTypeId;
+      } else if (legacy.usesDataTypeId !== undefined && !legacy.dataTypeId) {
+        // Element-only requirement with usesDataTypeId but no dataTypeId
+        const ids = req.dataTypeIds ?? [];
+        if (!ids.includes(legacy.usesDataTypeId as string)) {
+          ids.push(legacy.usesDataTypeId as string);
+        }
+        req.dataTypeIds = ids;
+      }
+
+      // Clean up removed fields
+      delete legacy.interactionTarget;
+      delete legacy.usesDataTypeId;
+    }
+  }
+
   wizardState = state;
 }
 

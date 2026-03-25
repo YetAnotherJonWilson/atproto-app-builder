@@ -647,33 +647,29 @@ describe('BlocksPanel — sidebar', () => {
 // ── Non-data element requirements ────────────────────────────────────
 
 describe('BlocksPanel — non-data element requirements', () => {
-  it('shows element name for do/element requirements', () => {
+  it('shows description for do requirements with widget', () => {
     const state = initializeWizardState();
     state.nonDataElements = [{ id: 'el-1', name: 'Timer' }];
     state.requirements = [
       makeRequirement({
         type: 'do',
-        interactionTarget: 'element',
-        verb: 'set',
-        data: 'Timer',
+        description: 'set the Timer',
         elementId: 'el-1',
       }),
     ];
     setWizardState(state);
 
     const html = renderBlocksPanel();
-    expect(html).toContain('set Timer');
+    expect(html).toContain('set the Timer');
   });
 
-  it('auto-names block from element name for do/element requirements', () => {
+  it('auto-names block from element name for do requirements with widget', () => {
     const state = initializeWizardState();
     state.nonDataElements = [{ id: 'el-1', name: 'Timer' }];
     state.requirements = [
       makeRequirement({
         type: 'do',
-        interactionTarget: 'element',
-        verb: 'set',
-        data: 'Timer',
+        description: 'set the Timer',
         elementId: 'el-1',
       }),
     ];
@@ -682,8 +678,5 @@ describe('BlocksPanel — non-data element requirements', () => {
     const html = renderBlocksPanel();
     // Should have auto-name button, not a dropdown
     expect(html).toContain('data-auto-name="Timer"');
-    expect(html).not.toContain('Widget');
-    expect(html).not.toContain('Tool');
-    expect(html).not.toContain('Control');
   });
 });

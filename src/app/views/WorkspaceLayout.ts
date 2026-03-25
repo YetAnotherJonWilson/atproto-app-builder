@@ -104,7 +104,7 @@ function showWelcomeDialog(): void {
   const dialog = document.createElement('dialog');
   dialog.className = 'wizard-dialog';
   dialog.innerHTML = `<div class="dialog-content">
-  <h2>Welcome to the AT Protocol App Builder</h2>
+  <h2>Welcome to the AT Protocol App Wizard</h2>
   <p>A few things to know before you start:</p>
   <p>This tool is experimental. The apps it generates are scaffolded starting points, with placeholders for content that cannot yet be generated automatically.</p>
   <p>Your data schemas (lexicons) will be published under a <code>.temp</code> namespace, signaling that they are experimental and may change. This is the right choice while you\u2019re prototyping.</p>
@@ -237,7 +237,7 @@ export function updateAccordionSummaries(): void {
       } else {
         const texts = wizardState.requirements.map((r) => {
           if (r.type === 'know') return r.text ?? '';
-          if (r.type === 'do') return `${r.verb ?? ''} ${r.data ?? ''}`.trim();
+          if (r.type === 'do') return r.description ?? '';
           if (r.navType === 'menu') {
             const label = r.menuLabel || 'menu';
             return r.menuIncludeAllViews !== false

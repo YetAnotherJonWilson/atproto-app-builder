@@ -30,6 +30,24 @@ function setStateWithRequirements(reqs: Requirement[]): void {
   setWizardState(state);
 }
 
+/** Simulate selecting a value from the custom type dropdown. */
+function selectType(value: string): void {
+  const option = document.querySelector(
+    `#req-type-dropdown .custom-select-option[data-value="${value}"]`,
+  ) as HTMLElement | null;
+  if (option) option.click();
+}
+
+/** Read the current value of the custom type dropdown. */
+function getTypeValue(): string {
+  return (document.getElementById('req-type-select') as HTMLInputElement)?.value ?? '';
+}
+
+/** Check if the custom type dropdown is disabled. */
+function isTypeDisabled(): boolean {
+  return (document.getElementById('req-type-trigger') as HTMLButtonElement)?.disabled ?? false;
+}
+
 // ── Display text ───────────────────────────────────────────────────────
 
 describe('getDisplayText', () => {
@@ -38,9 +56,9 @@ describe('getDisplayText', () => {
     expect(getDisplayText(req)).toBe('how this app works');
   });
 
-  it('returns "I need to [verb] [data]" for do type', () => {
-    const req = makeRequirement({ type: 'do', verb: 'create', data: 'a bookmark' });
-    expect(getDisplayText(req)).toBe('I need to create a bookmark');
+  it('returns description for do type', () => {
+    const req = makeRequirement({ type: 'do', description: 'create a bookmark' });
+    expect(getDisplayText(req)).toBe('create a bookmark');
   });
 
   it('returns "ViewA → ViewB" for direct navigate type with view IDs', () => {
@@ -116,28 +134,20 @@ describe('getDisplayText', () => {
     expect(getDisplayText(req)).toBe('');
   });
 
-  it('returns "I need to [verb] the [element]" for do/element type', () => {
+  it('returns description for do type with widget', () => {
     const state = getWizardState();
     state.nonDataElements = [{ id: 'el-1', name: 'Timer' }];
     const req = makeRequirement({
       type: 'do',
-      interactionTarget: 'element',
-      verb: 'set',
-      data: 'Timer',
+      description: 'set the Timer',
       elementId: 'el-1',
     });
-    expect(getDisplayText(req)).toBe('I need to set the Timer');
+    expect(getDisplayText(req)).toBe('set the Timer');
   });
 
-  it('falls back to data field for do/element when element not found', () => {
-    const req = makeRequirement({
-      type: 'do',
-      interactionTarget: 'element',
-      verb: 'set',
-      data: 'Timer',
-      elementId: 'missing-id',
-    });
-    expect(getDisplayText(req)).toBe('I need to set the Timer');
+  it('returns empty string for do type with no description', () => {
+    const req = makeRequirement({ type: 'do' });
+    expect(getDisplayText(req)).toBe('');
   });
 });
 
@@ -147,8 +157,8 @@ describe('getSidebarText', () => {
     expect(getSidebarText(req)).toBe('Know: how this app works');
   });
 
-  it('returns truncated "Do: [verb] [data]"', () => {
-    const req = makeRequirement({ type: 'do', verb: 'create', data: 'a bookmark' });
+  it('returns truncated "Do: [description]"', () => {
+    const req = makeRequirement({ type: 'do', description: 'create a bookmark' });
     expect(getSidebarText(req)).toBe('Do: create a bookmark');
   });
 
@@ -203,17 +213,15 @@ describe('getSidebarText', () => {
     expect(result).toContain('…');
   });
 
-  it('returns "Do: [verb] [element]" for do/element type', () => {
+  it('returns "Do: [description]" for do type with widget', () => {
     const state = getWizardState();
     state.nonDataElements = [{ id: 'el-1', name: 'Timer' }];
     const req = makeRequirement({
       type: 'do',
-      interactionTarget: 'element',
-      verb: 'set',
-      data: 'Timer',
+      description: 'set the Timer',
       elementId: 'el-1',
     });
-    expect(getSidebarText(req)).toBe('Do: set Timer');
+    expect(getSidebarText(req)).toBe('Do: set the Timer');
   });
 });
 
@@ -238,14 +246,14 @@ describe('renderRequirementsPanel', () => {
     const state = getWizardState();
     state.requirements = [
       makeRequirement({ type: 'know', text: 'how this works' }),
-      makeRequirement({ type: 'do', verb: 'track', data: 'sessions' }),
+      makeRequirement({ type: 'do', description: 'track sessions' }),
     ];
     const html = renderRequirementsPanel();
     expect(html).not.toContain('Build a Decentralized Web App');
     expect(html).toContain('Add Requirement');
     expect(html).toContain('item-grid');
     expect(html).toContain('how this works');
-    expect(html).toContain('I need to track sessions');
+    expect(html).toContain('track sessions');
   });
 
   it('renders item cards with type labels and accessible action buttons', () => {
@@ -267,11 +275,12 @@ describe('renderRequirementsPanel', () => {
     const state = getWizardState();
     state.requirements = [
       makeRequirement({ type: 'know', text: 'something' }),
-      makeRequirement({ type: 'do', verb: 'track', data: 'items' }),
+      makeRequirement({ type: 'do', description: 'track items' }),
       makeRequirement({ type: 'navigate', navType: 'direct' }),
     ];
     const html = renderRequirementsPanel();
     expect(html).toContain('Information');
+    // "do" with no linked items shows "Interaction" as meta
     expect(html).toContain('Interaction');
     expect(html).toContain('Direct Link');
   });
@@ -337,19 +346,17 @@ describe('wireRequirementsPanel (DOM)', () => {
   it('Type dropdown defaults to "know" when adding new', () => {
     mountPanel();
     document.getElementById('req-add-btn')!.click();
-    const typeSelect = document.getElementById('req-type-select') as HTMLSelectElement;
-    expect(typeSelect.value).toBe('know');
+    expect(getTypeValue()).toBe('know');
     expect(document.getElementById('req-know-text')).not.toBeNull();
   });
 
-  it('changing Type dropdown to "do" shows verb and data fields', () => {
+  it('changing Type dropdown to "do" shows description and item buttons', () => {
     mountPanel();
     document.getElementById('req-add-btn')!.click();
-    const typeSelect = document.getElementById('req-type-select') as HTMLSelectElement;
-    typeSelect.value = 'do';
-    typeSelect.dispatchEvent(new Event('change'));
-    expect(document.getElementById('req-do-verb')).not.toBeNull();
-    expect(document.getElementById('req-do-data')).not.toBeNull();
+    selectType('do');
+    expect(document.getElementById('req-do-description')).not.toBeNull();
+    expect(document.getElementById('req-do-add-data')).not.toBeNull();
+    expect(document.getElementById('req-do-add-widget')).not.toBeNull();
     expect(document.getElementById('req-know-text')).toBeNull();
   });
 
@@ -358,31 +365,24 @@ describe('wireRequirementsPanel (DOM)', () => {
   it('changing Type to navigate shows Type of Navigation dropdown', () => {
     mountPanel();
     document.getElementById('req-add-btn')!.click();
-    const typeSelect = document.getElementById('req-type-select') as HTMLSelectElement;
-    typeSelect.value = 'navigate';
-    typeSelect.dispatchEvent(new Event('change'));
+    selectType('navigate');
     expect(document.getElementById('req-nav-type-select')).not.toBeNull();
   });
 
   it('switching back from navigate to know removes nav type dropdown', () => {
     mountPanel();
     document.getElementById('req-add-btn')!.click();
-    const typeSelect = document.getElementById('req-type-select') as HTMLSelectElement;
-    typeSelect.value = 'navigate';
-    typeSelect.dispatchEvent(new Event('change'));
+    selectType('navigate');
     expect(document.getElementById('req-nav-type-select')).not.toBeNull();
 
-    typeSelect.value = 'know';
-    typeSelect.dispatchEvent(new Event('change'));
+    selectType('know');
     expect(document.getElementById('req-nav-type-select')).toBeNull();
   });
 
   it('navigate defaults to Direct Link with populated From/To dropdowns (Home view is seeded)', () => {
     mountPanel();
     document.getElementById('req-add-btn')!.click();
-    const typeSelect = document.getElementById('req-type-select') as HTMLSelectElement;
-    typeSelect.value = 'navigate';
-    typeSelect.dispatchEvent(new Event('change'));
+    selectType('navigate');
 
     const navTypeSelect = document.getElementById('req-nav-type-select') as HTMLSelectElement;
     expect(navTypeSelect.value).toBe('direct');
@@ -403,9 +403,7 @@ describe('wireRequirementsPanel (DOM)', () => {
     ];
     mountPanel();
     document.getElementById('req-add-btn')!.click();
-    const typeSelect = document.getElementById('req-type-select') as HTMLSelectElement;
-    typeSelect.value = 'navigate';
-    typeSelect.dispatchEvent(new Event('change'));
+    selectType('navigate');
 
     const from = document.getElementById('req-nav-from') as HTMLSelectElement;
     const to = document.getElementById('req-nav-to') as HTMLSelectElement;
@@ -418,9 +416,7 @@ describe('wireRequirementsPanel (DOM)', () => {
   it('changing nav type to menu shows include-all toggle and checkbox lists (Home is seeded)', () => {
     mountPanel();
     document.getElementById('req-add-btn')!.click();
-    const typeSelect = document.getElementById('req-type-select') as HTMLSelectElement;
-    typeSelect.value = 'navigate';
-    typeSelect.dispatchEvent(new Event('change'));
+    selectType('navigate');
 
     const navTypeSelect = document.getElementById('req-nav-type-select') as HTMLSelectElement;
     navTypeSelect.value = 'menu';
@@ -439,9 +435,7 @@ describe('wireRequirementsPanel (DOM)', () => {
     ];
     mountPanel();
     document.getElementById('req-add-btn')!.click();
-    const typeSelect = document.getElementById('req-type-select') as HTMLSelectElement;
-    typeSelect.value = 'navigate';
-    typeSelect.dispatchEvent(new Event('change'));
+    selectType('navigate');
 
     const navTypeSelect = document.getElementById('req-nav-type-select') as HTMLSelectElement;
     navTypeSelect.value = 'menu';
@@ -458,9 +452,7 @@ describe('wireRequirementsPanel (DOM)', () => {
   it('changing nav type to forward-back shows page order and control type (Home is seeded)', () => {
     mountPanel();
     document.getElementById('req-add-btn')!.click();
-    const typeSelect = document.getElementById('req-type-select') as HTMLSelectElement;
-    typeSelect.value = 'navigate';
-    typeSelect.dispatchEvent(new Event('change'));
+    selectType('navigate');
 
     const navTypeSelect = document.getElementById('req-nav-type-select') as HTMLSelectElement;
     navTypeSelect.value = 'forward-back';
@@ -482,9 +474,7 @@ describe('wireRequirementsPanel (DOM)', () => {
     mountPanel();
 
     document.getElementById('req-add-btn')!.click();
-    const typeSelect = document.getElementById('req-type-select') as HTMLSelectElement;
-    typeSelect.value = 'navigate';
-    typeSelect.dispatchEvent(new Event('change'));
+    selectType('navigate');
 
     const navTypeSelect = document.getElementById('req-nav-type-select') as HTMLSelectElement;
     const menuOption = navTypeSelect.querySelector('option[value="menu"]') as HTMLOptionElement;
@@ -498,9 +488,7 @@ describe('wireRequirementsPanel (DOM)', () => {
     mountPanel();
 
     document.getElementById('req-add-btn')!.click();
-    const typeSelect = document.getElementById('req-type-select') as HTMLSelectElement;
-    typeSelect.value = 'navigate';
-    typeSelect.dispatchEvent(new Event('change'));
+    selectType('navigate');
 
     const navTypeSelect = document.getElementById('req-nav-type-select') as HTMLSelectElement;
     const fbOption = navTypeSelect.querySelector('option[value="forward-back"]') as HTMLOptionElement;
@@ -514,9 +502,7 @@ describe('wireRequirementsPanel (DOM)', () => {
     mountPanel();
 
     document.getElementById('req-add-btn')!.click();
-    const typeSelect = document.getElementById('req-type-select') as HTMLSelectElement;
-    typeSelect.value = 'navigate';
-    typeSelect.dispatchEvent(new Event('change'));
+    selectType('navigate');
 
     const navTypeSelect = document.getElementById('req-nav-type-select') as HTMLSelectElement;
     const directOption = navTypeSelect.querySelector('option[value="direct"]') as HTMLOptionElement;
@@ -526,17 +512,19 @@ describe('wireRequirementsPanel (DOM)', () => {
   // ── Standard form behavior tests ──────────────────────────────────
 
   it('Type dropdown is set to requirement type when editing', () => {
-    const req = makeRequirement({ type: 'do', verb: 'create', data: 'a bookmark' });
     const state = getWizardState();
+    state.recordTypes = [{ id: 'rt-1', name: '', displayName: 'bookmark', description: '', fields: [], source: 'new' as const }];
+    const req = makeRequirement({ type: 'do', description: 'create a bookmark', dataTypeIds: ['rt-1'] });
     state.requirements = [req];
     mountPanel();
 
     (document.querySelector('.req-edit-btn') as HTMLElement).click();
-    const typeSelect = document.getElementById('req-type-select') as HTMLSelectElement;
-    expect(typeSelect.value).toBe('do');
-    expect(document.getElementById('req-do-verb')).not.toBeNull();
-    expect((document.getElementById('req-do-verb') as HTMLInputElement).value).toBe('create');
-    expect((document.getElementById('req-do-data') as HTMLInputElement).value).toBe('a bookmark');
+    expect(getTypeValue()).toBe('do');
+    expect(document.getElementById('req-do-description')).not.toBeNull();
+    expect((document.getElementById('req-do-description') as HTMLTextAreaElement).value).toBe('create a bookmark');
+    // Chips should show the linked data type
+    const chips = document.querySelectorAll('.item-chip');
+    expect(chips).toHaveLength(1);
   });
 
   it('save button is disabled initially for know form', () => {
@@ -556,31 +544,32 @@ describe('wireRequirementsPanel (DOM)', () => {
     expect(saveBtn.disabled).toBe(false);
   });
 
-  it('save button stays disabled when only verb is filled for do type', () => {
+  it('save button stays disabled when only description is filled for do type', () => {
     mountPanel();
     document.getElementById('req-add-btn')!.click();
-    const typeSelect = document.getElementById('req-type-select') as HTMLSelectElement;
-    typeSelect.value = 'do';
-    typeSelect.dispatchEvent(new Event('change'));
-    const verb = document.getElementById('req-do-verb') as HTMLInputElement;
-    verb.value = 'create';
-    verb.dispatchEvent(new Event('input'));
+    selectType('do');
+    const desc = document.getElementById('req-do-description') as HTMLTextAreaElement;
+    desc.value = 'create something';
+    desc.dispatchEvent(new Event('input'));
     const saveBtn = document.querySelector('.req-save-btn') as HTMLButtonElement;
-    expect(saveBtn.disabled).toBe(true);
+    expect(saveBtn.disabled).toBe(true); // no items added
   });
 
-  it('save button enables when both verb and data are filled', () => {
+  it('save button enables when description filled and item added', () => {
     mountPanel();
     document.getElementById('req-add-btn')!.click();
-    const typeSelect = document.getElementById('req-type-select') as HTMLSelectElement;
-    typeSelect.value = 'do';
-    typeSelect.dispatchEvent(new Event('change'));
-    const verb = document.getElementById('req-do-verb') as HTMLInputElement;
-    const data = document.getElementById('req-do-data') as HTMLInputElement;
-    verb.value = 'create';
-    verb.dispatchEvent(new Event('input'));
-    data.value = 'a bookmark';
-    data.dispatchEvent(new Event('input'));
+    selectType('do');
+    const desc = document.getElementById('req-do-description') as HTMLTextAreaElement;
+    desc.value = 'create a bookmark';
+    desc.dispatchEvent(new Event('input'));
+    // Add a data type via the pick-then-type flow
+    document.getElementById('req-do-add-data')!.click();
+    const input = document.getElementById('req-do-item-input') as HTMLInputElement;
+    input.value = 'bookmark';
+    input.dispatchEvent(new Event('input'));
+    // Click the "Create" option in the dropdown
+    const createItem = document.querySelector('#req-do-item-dropdown .combobox-create') as HTMLElement;
+    createItem.dispatchEvent(new MouseEvent('mousedown'));
     const saveBtn = document.querySelector('.req-save-btn') as HTMLButtonElement;
     expect(saveBtn.disabled).toBe(false);
   });
@@ -588,9 +577,7 @@ describe('wireRequirementsPanel (DOM)', () => {
   it('save button disabled for direct link until both views selected, enabled for menu/fwd-back with seeded view', () => {
     mountPanel();
     document.getElementById('req-add-btn')!.click();
-    const typeSelect = document.getElementById('req-type-select') as HTMLSelectElement;
-    typeSelect.value = 'navigate';
-    typeSelect.dispatchEvent(new Event('change'));
+    selectType('navigate');
     const saveBtn = document.querySelector('.req-save-btn') as HTMLButtonElement;
     // Direct link: disabled until both from/to selected
     expect(saveBtn.disabled).toBe(true);
@@ -629,22 +616,23 @@ describe('wireRequirementsPanel (DOM)', () => {
   it('saving a do requirement adds it to state', () => {
     mountPanel();
     document.getElementById('req-add-btn')!.click();
-    const typeSelect = document.getElementById('req-type-select') as HTMLSelectElement;
-    typeSelect.value = 'do';
-    typeSelect.dispatchEvent(new Event('change'));
-    const verb = document.getElementById('req-do-verb') as HTMLInputElement;
-    const data = document.getElementById('req-do-data') as HTMLInputElement;
-    verb.value = 'track';
-    verb.dispatchEvent(new Event('input'));
-    data.value = 'meditation sessions';
-    data.dispatchEvent(new Event('input'));
+    selectType('do');
+    const desc = document.getElementById('req-do-description') as HTMLTextAreaElement;
+    desc.value = 'track meditation sessions';
+    desc.dispatchEvent(new Event('input'));
+    // Add a data type chip
+    document.getElementById('req-do-add-data')!.click();
+    const input = document.getElementById('req-do-item-input') as HTMLInputElement;
+    input.value = 'meditation session';
+    input.dispatchEvent(new Event('input'));
+    (document.querySelector('#req-do-item-dropdown .combobox-create') as HTMLElement).dispatchEvent(new MouseEvent('mousedown'));
     (document.querySelector('.req-save-btn') as HTMLElement).click();
 
     const state = getWizardState();
     expect(state.requirements).toHaveLength(1);
     expect(state.requirements[0].type).toBe('do');
-    expect(state.requirements[0].verb).toBe('track');
-    expect(state.requirements[0].data).toBe('meditation sessions');
+    expect(state.requirements[0].description).toBe('track meditation sessions');
+    expect(state.requirements[0].dataTypeIds).toHaveLength(1);
   });
 
   it('deleting a requirement removes it from state and re-renders', () => {
@@ -662,35 +650,33 @@ describe('wireRequirementsPanel (DOM)', () => {
 
   it('editing a requirement pre-fills the form and updates in place', () => {
     const req1 = makeRequirement({ type: 'know', text: 'first' });
-    const req2 = makeRequirement({ type: 'do', verb: 'create', data: 'a bookmark' });
-    const req3 = makeRequirement({ type: 'know', text: 'third' });
     const state = getWizardState();
+    state.recordTypes = [{ id: 'rt-1', name: '', displayName: 'bookmark', description: '', fields: [], source: 'new' as const }];
+    const req2 = makeRequirement({ type: 'do', description: 'create a bookmark', dataTypeIds: ['rt-1'] });
+    const req3 = makeRequirement({ type: 'know', text: 'third' });
     state.requirements = [req1, req2, req3];
     mountPanel();
 
     const editBtns = document.querySelectorAll('.req-edit-btn');
     (editBtns[1] as HTMLElement).click();
 
-    const typeSelect = document.getElementById('req-type-select') as HTMLSelectElement;
-    expect(typeSelect.value).toBe('do');
+    expect(getTypeValue()).toBe('do');
 
-    const verb = document.getElementById('req-do-verb') as HTMLInputElement;
-    const data = document.getElementById('req-do-data') as HTMLInputElement;
-    expect(verb.value).toBe('create');
-    expect(data.value).toBe('a bookmark');
+    const desc = document.getElementById('req-do-description') as HTMLTextAreaElement;
+    expect(desc.value).toBe('create a bookmark');
 
     const saveBtn = document.querySelector('.req-save-btn') as HTMLButtonElement;
     expect(saveBtn.textContent).toBe('Save');
 
-    verb.value = 'save';
-    verb.dispatchEvent(new Event('input'));
+    desc.value = 'save a bookmark';
+    desc.dispatchEvent(new Event('input'));
     saveBtn.click();
 
     const updated = getWizardState().requirements;
     expect(updated).toHaveLength(3);
     expect(updated[0].id).toBe(req1.id);
     expect(updated[1].id).toBe(req2.id);
-    expect(updated[1].verb).toBe('save');
+    expect(updated[1].description).toBe('save a bookmark');
     expect(updated[2].id).toBe(req3.id);
   });
 
@@ -733,7 +719,7 @@ describe('updateSidebar', () => {
     const state = getWizardState();
     state.requirements = [
       makeRequirement({ type: 'know', text: 'how this works' }),
-      makeRequirement({ type: 'do', verb: 'track', data: 'sessions' }),
+      makeRequirement({ type: 'do', description: 'track sessions' }),
     ];
     mountSidebar();
     updateSidebar();
@@ -785,46 +771,69 @@ describe('data type combobox and seeding', () => {
   }
 
   function switchToDo(): void {
-    const typeSelect = document.getElementById('req-type-select') as HTMLSelectElement;
-    typeSelect.value = 'do';
-    typeSelect.dispatchEvent(new Event('change'));
+    selectType('do');
   }
 
-  function fillDoForm(verb: string, data: string): void {
-    const verbEl = document.getElementById('req-do-verb') as HTMLInputElement;
-    const dataEl = document.getElementById('req-do-data') as HTMLInputElement;
-    verbEl.value = verb;
-    verbEl.dispatchEvent(new Event('input'));
-    dataEl.value = data;
-    dataEl.dispatchEvent(new Event('input'));
+  function fillDescription(text: string): void {
+    const desc = document.getElementById('req-do-description') as HTMLTextAreaElement;
+    desc.value = text;
+    desc.dispatchEvent(new Event('input'));
+  }
+
+  function addDataTypeChip(name: string): void {
+    document.getElementById('req-do-add-data')!.click();
+    const input = document.getElementById('req-do-item-input') as HTMLInputElement;
+    input.value = name;
+    input.dispatchEvent(new Event('input'));
+    const createItem = document.querySelector('#req-do-item-dropdown .combobox-create') as HTMLElement;
+    if (createItem) {
+      createItem.dispatchEvent(new MouseEvent('mousedown'));
+    } else {
+      // Exact match — click the matching item
+      const item = document.querySelector('#req-do-item-dropdown .combobox-item') as HTMLElement;
+      if (item) item.dispatchEvent(new MouseEvent('mousedown'));
+    }
+  }
+
+  function selectExistingDataType(name: string): void {
+    document.getElementById('req-do-add-data')!.click();
+    const input = document.getElementById('req-do-item-input') as HTMLInputElement;
+    input.value = name;
+    input.dispatchEvent(new Event('input'));
+    const items = document.querySelectorAll('#req-do-item-dropdown .combobox-item:not(.combobox-create)');
+    const match = Array.from(items).find(el => el.textContent === name) as HTMLElement;
+    if (match) match.dispatchEvent(new MouseEvent('mousedown'));
   }
 
   function saveForm(): void {
     (document.querySelector('.req-save-btn') as HTMLElement).click();
   }
 
-  // ── Combobox rendering ──────────────────────────────────────────────
+  // ── Form rendering ──────────────────────────────────────────────────
 
-  it('shows combobox with hint text when type is "do"', () => {
+  it('shows description and item buttons when type is "do"', () => {
     mountPanel();
     document.getElementById('req-add-btn')!.click();
     switchToDo();
 
-    expect(document.getElementById('req-do-data-combobox')).not.toBeNull();
-    expect(document.getElementById('req-do-data-dropdown')).not.toBeNull();
+    expect(document.getElementById('req-do-description')).not.toBeNull();
+    expect(document.getElementById('req-do-add-data')).not.toBeNull();
+    expect(document.getElementById('req-do-add-widget')).not.toBeNull();
     const hints = document.querySelectorAll('#req-type-fields .form-hint');
     const hintTexts = Array.from(hints).map(h => h.textContent);
-    expect(hintTexts.some(t => t?.includes('What kind of thing'))).toBe(true);
+    expect(hintTexts.some(t => t?.includes('Add at least one'))).toBe(true);
   });
 
-  it('dropdown does not appear when no record types exist', () => {
+  it('clicking + Data Type shows combobox, no dropdown when no types exist', () => {
     mountPanel();
     document.getElementById('req-add-btn')!.click();
     switchToDo();
 
-    const input = document.getElementById('req-do-data') as HTMLInputElement;
+    document.getElementById('req-do-add-data')!.click();
+    expect(document.getElementById('req-do-item-input')).not.toBeNull();
+    const input = document.getElementById('req-do-item-input') as HTMLInputElement;
     input.dispatchEvent(new Event('focus'));
-    const dropdown = document.getElementById('req-do-data-dropdown')!;
+    const dropdown = document.getElementById('req-do-item-dropdown')!;
     expect(dropdown.style.display).toBe('none');
   });
 
@@ -834,39 +843,39 @@ describe('data type combobox and seeding', () => {
     mountPanel();
     document.getElementById('req-add-btn')!.click();
     switchToDo();
-    fillDoForm('create', 'book');
+    fillDescription('create a book');
+    addDataTypeChip('book');
     saveForm();
 
     const state = getWizardState();
     expect(state.recordTypes).toHaveLength(1);
     expect(state.recordTypes[0].displayName).toBe('book');
     expect(state.recordTypes[0].name).toBe('');
-    // Should have system createdAt field
     expect(state.recordTypes[0].fields).toHaveLength(1);
     expect(state.recordTypes[0].fields[0].name).toBe('createdAt');
     expect(state.recordTypes[0].fields[0].isSystem).toBe(true);
-    expect(state.requirements[0].dataTypeId).toBe(state.recordTypes[0].id);
+    expect(state.requirements[0].dataTypeIds).toEqual([state.recordTypes[0].id]);
   });
 
   it('saving a second "do" requirement with new name seeds another RecordType', () => {
     mountPanel();
-    // First requirement
     document.getElementById('req-add-btn')!.click();
     switchToDo();
-    fillDoForm('create', 'book');
+    fillDescription('create a book');
+    addDataTypeChip('book');
     saveForm();
 
-    // Second requirement
     document.getElementById('req-add-btn')!.click();
     switchToDo();
-    fillDoForm('list', 'grocery item');
+    fillDescription('list grocery items');
+    addDataTypeChip('grocery item');
     saveForm();
 
     const state = getWizardState();
     expect(state.recordTypes).toHaveLength(2);
     expect(state.recordTypes[0].displayName).toBe('book');
     expect(state.recordTypes[1].displayName).toBe('grocery item');
-    expect(state.requirements[1].dataTypeId).toBe(state.recordTypes[1].id);
+    expect(state.requirements[1].dataTypeIds).toEqual([state.recordTypes[1].id]);
   });
 
   it('exact name match reuses existing RecordType (no duplicate)', () => {
@@ -877,17 +886,19 @@ describe('data type combobox and seeding', () => {
       displayName: 'book',
       description: '',
       fields: [],
+      source: 'new' as const,
     }];
     mountPanel();
 
     document.getElementById('req-add-btn')!.click();
     switchToDo();
-    fillDoForm('update', 'book');
+    fillDescription('update a book');
+    selectExistingDataType('book');
     saveForm();
 
     const updated = getWizardState();
     expect(updated.recordTypes).toHaveLength(1);
-    expect(updated.requirements[0].dataTypeId).toBe('existing-book');
+    expect(updated.requirements[0].dataTypeIds).toEqual(['existing-book']);
   });
 
   it('exact name match is case-insensitive', () => {
@@ -898,17 +909,20 @@ describe('data type combobox and seeding', () => {
       displayName: 'Book',
       description: '',
       fields: [],
+      source: 'new' as const,
     }];
     mountPanel();
 
     document.getElementById('req-add-btn')!.click();
     switchToDo();
-    fillDoForm('update', 'book');
+    fillDescription('update a book');
+    // Type lowercase "book" — should match existing "Book"
+    addDataTypeChip('book');
     saveForm();
 
     const updated = getWizardState();
     expect(updated.recordTypes).toHaveLength(1);
-    expect(updated.requirements[0].dataTypeId).toBe('existing-book');
+    expect(updated.requirements[0].dataTypeIds).toEqual(['existing-book']);
   });
 
   it('editing a "do" requirement and changing data type creates new RecordType', () => {
@@ -919,29 +933,28 @@ describe('data type combobox and seeding', () => {
       displayName: 'book',
       description: '',
       fields: [],
+      source: 'new' as const,
     }];
     state.requirements = [{
       id: 'req-1',
-      type: 'do',
-      verb: 'create',
-      data: 'book',
-      dataTypeId: 'rt-book',
+      type: 'do' as const,
+      description: 'create a book',
+      dataTypeIds: ['rt-book'],
     }];
     mountPanel();
 
-    // Edit the requirement
     (document.querySelector('.req-edit-btn') as HTMLElement).click();
-    const dataEl = document.getElementById('req-do-data') as HTMLInputElement;
-    dataEl.value = 'novel';
-    dataEl.dispatchEvent(new Event('input'));
+    // Remove existing chip
+    (document.querySelector('.item-chip-remove') as HTMLElement).click();
+    // Add a new one
+    addDataTypeChip('novel');
     saveForm();
 
     const updated = getWizardState();
-    // Old "book" RecordType is preserved (orphaned)
     expect(updated.recordTypes).toHaveLength(2);
     expect(updated.recordTypes[0].displayName).toBe('book');
     expect(updated.recordTypes[1].displayName).toBe('novel');
-    expect(updated.requirements[0].dataTypeId).toBe(updated.recordTypes[1].id);
+    expect(updated.requirements[0].dataTypeIds).toEqual([updated.recordTypes[1].id]);
   });
 
   it('deleting a "do" requirement does not delete its RecordType', () => {
@@ -952,13 +965,13 @@ describe('data type combobox and seeding', () => {
       displayName: 'book',
       description: '',
       fields: [],
+      source: 'new' as const,
     }];
     state.requirements = [{
       id: 'req-1',
-      type: 'do',
-      verb: 'create',
-      data: 'book',
-      dataTypeId: 'rt-book',
+      type: 'do' as const,
+      description: 'create a book',
+      dataTypeIds: ['rt-book'],
     }];
     mountPanel();
 
@@ -974,38 +987,37 @@ describe('data type combobox and seeding', () => {
 
   it('type dropdown is disabled when editing an existing requirement', () => {
     const state = getWizardState();
-    state.requirements = [makeRequirement({ type: 'do', verb: 'create', data: 'book' })];
+    state.requirements = [makeRequirement({ type: 'do', description: 'create a book' })];
     mountPanel();
 
     (document.querySelector('.req-edit-btn') as HTMLElement).click();
-    const typeSelect = document.getElementById('req-type-select') as HTMLSelectElement;
-    expect(typeSelect.disabled).toBe(true);
+    expect(isTypeDisabled()).toBe(true);
   });
 
   it('type dropdown is enabled when adding a new requirement', () => {
     mountPanel();
     document.getElementById('req-add-btn')!.click();
-    const typeSelect = document.getElementById('req-type-select') as HTMLSelectElement;
-    expect(typeSelect.disabled).toBe(false);
+    expect(isTypeDisabled()).toBe(false);
   });
 
   // ── Dropdown behavior ──────────────────────────────────────────────
 
-  it('dropdown shows existing record types on focus', () => {
+  it('dropdown shows existing record types when + Data Type clicked', () => {
     const state = getWizardState();
     state.recordTypes = [
-      { id: 'rt-1', name: '', displayName: 'book', description: '', fields: [] },
-      { id: 'rt-2', name: '', displayName: 'grocery item', description: '', fields: [] },
+      { id: 'rt-1', name: '', displayName: 'book', description: '', fields: [], source: 'new' as const },
+      { id: 'rt-2', name: '', displayName: 'grocery item', description: '', fields: [], source: 'new' as const },
     ];
     mountPanel();
 
     document.getElementById('req-add-btn')!.click();
     switchToDo();
 
-    const input = document.getElementById('req-do-data') as HTMLInputElement;
+    document.getElementById('req-do-add-data')!.click();
+    const input = document.getElementById('req-do-item-input') as HTMLInputElement;
     input.dispatchEvent(new Event('focus'));
 
-    const dropdown = document.getElementById('req-do-data-dropdown')!;
+    const dropdown = document.getElementById('req-do-item-dropdown')!;
     expect(dropdown.style.display).toBe('block');
     const items = dropdown.querySelectorAll('.combobox-item');
     expect(items).toHaveLength(2);
@@ -1016,25 +1028,24 @@ describe('data type combobox and seeding', () => {
   it('dropdown filters items as user types', () => {
     const state = getWizardState();
     state.recordTypes = [
-      { id: 'rt-1', name: '', displayName: 'book', description: '', fields: [] },
-      { id: 'rt-2', name: '', displayName: 'grocery item', description: '', fields: [] },
+      { id: 'rt-1', name: '', displayName: 'book', description: '', fields: [], source: 'new' as const },
+      { id: 'rt-2', name: '', displayName: 'grocery item', description: '', fields: [], source: 'new' as const },
     ];
     mountPanel();
 
     document.getElementById('req-add-btn')!.click();
     switchToDo();
 
-    const input = document.getElementById('req-do-data') as HTMLInputElement;
+    document.getElementById('req-do-add-data')!.click();
+    const input = document.getElementById('req-do-item-input') as HTMLInputElement;
     input.value = 'boo';
     input.dispatchEvent(new Event('input'));
-    input.dispatchEvent(new Event('focus'));
 
-    const dropdown = document.getElementById('req-do-data-dropdown')!;
+    const dropdown = document.getElementById('req-do-item-dropdown')!;
     const items = dropdown.querySelectorAll('.combobox-item:not(.combobox-create)');
     expect(items).toHaveLength(1);
     expect(items[0].textContent).toBe('book');
 
-    // "Create" option should appear since "boo" is not an exact match
     const createItem = dropdown.querySelector('.combobox-create');
     expect(createItem).not.toBeNull();
   });
@@ -1042,19 +1053,19 @@ describe('data type combobox and seeding', () => {
   it('exact match suppresses "Create" option', () => {
     const state = getWizardState();
     state.recordTypes = [
-      { id: 'rt-1', name: '', displayName: 'book', description: '', fields: [] },
+      { id: 'rt-1', name: '', displayName: 'book', description: '', fields: [], source: 'new' as const },
     ];
     mountPanel();
 
     document.getElementById('req-add-btn')!.click();
     switchToDo();
 
-    const input = document.getElementById('req-do-data') as HTMLInputElement;
+    document.getElementById('req-do-add-data')!.click();
+    const input = document.getElementById('req-do-item-input') as HTMLInputElement;
     input.value = 'book';
     input.dispatchEvent(new Event('input'));
-    input.dispatchEvent(new Event('focus'));
 
-    const dropdown = document.getElementById('req-do-data-dropdown')!;
+    const dropdown = document.getElementById('req-do-item-dropdown')!;
     const createItem = dropdown.querySelector('.combobox-create');
     expect(createItem).toBeNull();
   });
@@ -1062,31 +1073,23 @@ describe('data type combobox and seeding', () => {
   it('clicking a dropdown item selects existing RecordType', () => {
     const state = getWizardState();
     state.recordTypes = [
-      { id: 'rt-1', name: '', displayName: 'book', description: '', fields: [] },
+      { id: 'rt-1', name: '', displayName: 'book', description: '', fields: [], source: 'new' as const },
     ];
     mountPanel();
 
     document.getElementById('req-add-btn')!.click();
     switchToDo();
+    fillDescription('update a book');
 
-    const input = document.getElementById('req-do-data') as HTMLInputElement;
-    input.dispatchEvent(new Event('focus'));
+    selectExistingDataType('book');
+    // A chip should appear
+    expect(document.querySelectorAll('.item-chip')).toHaveLength(1);
 
-    const dropdown = document.getElementById('req-do-data-dropdown')!;
-    const item = dropdown.querySelector('.combobox-item') as HTMLElement;
-    item.dispatchEvent(new MouseEvent('mousedown'));
-
-    expect(input.value).toBe('book');
-
-    // Fill verb and save
-    const verb = document.getElementById('req-do-verb') as HTMLInputElement;
-    verb.value = 'update';
-    verb.dispatchEvent(new Event('input'));
     saveForm();
 
     const updated = getWizardState();
     expect(updated.recordTypes).toHaveLength(1);
-    expect(updated.requirements[0].dataTypeId).toBe('rt-1');
+    expect(updated.requirements[0].dataTypeIds).toEqual(['rt-1']);
   });
 });
 
@@ -1151,9 +1154,9 @@ describe('updateDataSidebar', () => {
   });
 });
 
-// ── Non-data element interactions ──────────────────────────────────────
+// ── Widget and mixed interactions ──────────────────────────────────────
 
-describe('non-data element interactions', () => {
+describe('widget and mixed interactions', () => {
   beforeEach(() => {
     setWizardState(initializeWizardState());
     localStorage.clear();
@@ -1175,185 +1178,162 @@ describe('non-data element interactions', () => {
   }
 
   function switchToDo(): void {
-    const typeSelect = document.getElementById('req-type-select') as HTMLSelectElement;
-    typeSelect.value = 'do';
-    typeSelect.dispatchEvent(new Event('change'));
+    selectType('do');
   }
 
-  function switchToElement(): void {
-    const targetSelect = document.getElementById('req-do-target-select') as HTMLSelectElement;
-    targetSelect.value = 'element';
-    targetSelect.dispatchEvent(new Event('change'));
+  function fillDescription(text: string): void {
+    const desc = document.getElementById('req-do-description') as HTMLTextAreaElement;
+    desc.value = text;
+    desc.dispatchEvent(new Event('input'));
   }
 
-  function switchToDataTarget(): void {
-    const targetSelect = document.getElementById('req-do-target-select') as HTMLSelectElement;
-    targetSelect.value = 'data';
-    targetSelect.dispatchEvent(new Event('change'));
+  function addWidgetChip(name: string): void {
+    document.getElementById('req-do-add-widget')!.click();
+    const input = document.getElementById('req-do-item-input') as HTMLInputElement;
+    input.value = name;
+    input.dispatchEvent(new Event('input'));
+    const createItem = document.querySelector('#req-do-item-dropdown .combobox-create') as HTMLElement;
+    if (createItem) {
+      createItem.dispatchEvent(new MouseEvent('mousedown'));
+    } else {
+      const item = document.querySelector('#req-do-item-dropdown .combobox-item') as HTMLElement;
+      if (item) item.dispatchEvent(new MouseEvent('mousedown'));
+    }
+  }
+
+  function addDataTypeChip(name: string): void {
+    document.getElementById('req-do-add-data')!.click();
+    const input = document.getElementById('req-do-item-input') as HTMLInputElement;
+    input.value = name;
+    input.dispatchEvent(new Event('input'));
+    const createItem = document.querySelector('#req-do-item-dropdown .combobox-create') as HTMLElement;
+    if (createItem) {
+      createItem.dispatchEvent(new MouseEvent('mousedown'));
+    } else {
+      const item = document.querySelector('#req-do-item-dropdown .combobox-item') as HTMLElement;
+      if (item) item.dispatchEvent(new MouseEvent('mousedown'));
+    }
   }
 
   function saveForm(): void {
     (document.querySelector('.req-save-btn') as HTMLElement).click();
   }
 
-  // ── Target selector rendering ───────────────────────────────────────
+  // ── No target dropdown ──────────────────────────────────────────────
 
-  it('shows Target dropdown when type is "do"', () => {
+  it('no target dropdown exists for "do" type (replaced by pick-then-type)', () => {
     mountPanel();
     document.getElementById('req-add-btn')!.click();
     switchToDo();
-    expect(document.getElementById('req-do-target-select')).not.toBeNull();
+    expect(document.getElementById('req-do-target-select')).toBeNull();
   });
 
-  it('Target dropdown defaults to "Data Type"', () => {
+  it('both + Data Type and + Widget buttons shown for "do" type', () => {
     mountPanel();
     document.getElementById('req-add-btn')!.click();
     switchToDo();
-    const targetSelect = document.getElementById('req-do-target-select') as HTMLSelectElement;
-    expect(targetSelect.value).toBe('data');
+    expect(document.getElementById('req-do-add-data')).not.toBeNull();
+    expect(document.getElementById('req-do-add-widget')).not.toBeNull();
   });
 
-  it('does not show Target dropdown for "know" type', () => {
+  it('no target dropdown for "know" type', () => {
     mountPanel();
     document.getElementById('req-add-btn')!.click();
     expect(document.getElementById('req-do-target-select')).toBeNull();
   });
 
-  // ── Switching targets ───────────────────────────────────────────────
+  // ── Widget button state ─────────────────────────────────────────────
 
-  it('switching to "Non-data Element" shows element form fields', () => {
+  it('+ Widget button disables after a widget is added', () => {
     mountPanel();
     document.getElementById('req-add-btn')!.click();
     switchToDo();
-    switchToElement();
-    expect(document.getElementById('req-do-element')).not.toBeNull();
-    expect(document.getElementById('req-uses-data')).not.toBeNull();
-    expect(document.getElementById('req-do-data')).toBeNull();
+    addWidgetChip('Timer');
+    const widgetBtn = document.getElementById('req-do-add-widget') as HTMLButtonElement;
+    expect(widgetBtn.disabled).toBe(true);
   });
 
-  it('switching back to "Data Type" shows data form fields', () => {
+  it('+ Widget button re-enables when widget chip is removed', () => {
     mountPanel();
     document.getElementById('req-add-btn')!.click();
     switchToDo();
-    switchToElement();
-    switchToDataTarget();
-    expect(document.getElementById('req-do-data')).not.toBeNull();
-    expect(document.getElementById('req-do-element')).toBeNull();
-    expect(document.getElementById('req-uses-data')).toBeNull();
+    addWidgetChip('Timer');
+    // Remove the widget chip
+    (document.querySelector('.item-chip-remove') as HTMLElement).click();
+    const widgetBtn = document.getElementById('req-do-add-widget') as HTMLButtonElement;
+    expect(widgetBtn.disabled).toBe(false);
   });
 
-  it('verb is preserved when switching targets', () => {
+  // ── Validation ──────────────────────────────────────────────────────
+
+  it('save button disabled when description filled but no items', () => {
     mountPanel();
     document.getElementById('req-add-btn')!.click();
     switchToDo();
-    const verb = document.getElementById('req-do-verb') as HTMLInputElement;
-    verb.value = 'configure';
-    verb.dispatchEvent(new Event('input'));
-    switchToElement();
-    const newVerb = document.getElementById('req-do-verb') as HTMLInputElement;
-    expect(newVerb.value).toBe('configure');
-  });
-
-  // ── Element form validation ─────────────────────────────────────────
-
-  it('save button is disabled when element name is empty', () => {
-    mountPanel();
-    document.getElementById('req-add-btn')!.click();
-    switchToDo();
-    switchToElement();
-    const verb = document.getElementById('req-do-verb') as HTMLInputElement;
-    verb.value = 'set';
-    verb.dispatchEvent(new Event('input'));
+    fillDescription('set the Timer');
     const saveBtn = document.querySelector('.req-save-btn') as HTMLButtonElement;
     expect(saveBtn.disabled).toBe(true);
   });
 
-  it('save button enables when both verb and element name are filled', () => {
+  it('save button enables with description and widget', () => {
     mountPanel();
     document.getElementById('req-add-btn')!.click();
     switchToDo();
-    switchToElement();
-    const verb = document.getElementById('req-do-verb') as HTMLInputElement;
-    const element = document.getElementById('req-do-element') as HTMLInputElement;
-    verb.value = 'set';
-    verb.dispatchEvent(new Event('input'));
-    element.value = 'Timer';
-    element.dispatchEvent(new Event('input'));
+    fillDescription('set the Timer');
+    addWidgetChip('Timer');
     const saveBtn = document.querySelector('.req-save-btn') as HTMLButtonElement;
     expect(saveBtn.disabled).toBe(false);
   });
 
-  it('"uses data from" being empty does not block saving', () => {
+  it('save button enables with description and data type', () => {
     mountPanel();
     document.getElementById('req-add-btn')!.click();
     switchToDo();
-    switchToElement();
-    const verb = document.getElementById('req-do-verb') as HTMLInputElement;
-    const element = document.getElementById('req-do-element') as HTMLInputElement;
-    verb.value = 'start';
-    verb.dispatchEvent(new Event('input'));
-    element.value = 'Timer';
-    element.dispatchEvent(new Event('input'));
+    fillDescription('track meditation sessions');
+    addDataTypeChip('meditation session');
     const saveBtn = document.querySelector('.req-save-btn') as HTMLButtonElement;
     expect(saveBtn.disabled).toBe(false);
   });
 
-  // ── Saving element requirements ─────────────────────────────────────
+  // ── Saving widget requirements ──────────────────────────────────────
 
   it('saving creates a NonDataElement and links the requirement', () => {
     mountPanel();
     document.getElementById('req-add-btn')!.click();
     switchToDo();
-    switchToElement();
-    const verb = document.getElementById('req-do-verb') as HTMLInputElement;
-    const element = document.getElementById('req-do-element') as HTMLInputElement;
-    verb.value = 'set';
-    verb.dispatchEvent(new Event('input'));
-    element.value = 'Timer';
-    element.dispatchEvent(new Event('input'));
+    fillDescription('set the Timer');
+    addWidgetChip('Timer');
     saveForm();
 
     const state = getWizardState();
     expect(state.nonDataElements).toHaveLength(1);
     expect(state.nonDataElements[0].name).toBe('Timer');
     expect(state.requirements).toHaveLength(1);
-    expect(state.requirements[0].interactionTarget).toBe('element');
     expect(state.requirements[0].elementId).toBe(state.nonDataElements[0].id);
-    expect(state.requirements[0].verb).toBe('set');
-    // No RecordType should be created
+    expect(state.requirements[0].description).toBe('set the Timer');
     expect(state.recordTypes).toHaveLength(0);
   });
 
-  it('saving does not create a RecordType for element interactions', () => {
+  it('saving widget-only does not create a RecordType', () => {
     mountPanel();
     document.getElementById('req-add-btn')!.click();
     switchToDo();
-    switchToElement();
-    const verb = document.getElementById('req-do-verb') as HTMLInputElement;
-    const element = document.getElementById('req-do-element') as HTMLInputElement;
-    verb.value = 'start';
-    verb.dispatchEvent(new Event('input'));
-    element.value = 'Timer';
-    element.dispatchEvent(new Event('input'));
+    fillDescription('start the Timer');
+    addWidgetChip('Timer');
     saveForm();
 
     expect(getWizardState().recordTypes).toHaveLength(0);
   });
 
-  it('reuses existing NonDataElement on second requirement', () => {
+  it('reuses existing NonDataElement by name', () => {
     const state = getWizardState();
     state.nonDataElements = [{ id: 'el-timer', name: 'Timer' }];
 
     mountPanel();
     document.getElementById('req-add-btn')!.click();
     switchToDo();
-    switchToElement();
-    const verb = document.getElementById('req-do-verb') as HTMLInputElement;
-    const element = document.getElementById('req-do-element') as HTMLInputElement;
-    verb.value = 'start';
-    verb.dispatchEvent(new Event('input'));
-    element.value = 'Timer';
-    element.dispatchEvent(new Event('input'));
+    fillDescription('start the Timer');
+    addWidgetChip('Timer');
     saveForm();
 
     const updated = getWizardState();
@@ -1361,30 +1341,24 @@ describe('non-data element interactions', () => {
     expect(updated.requirements[0].elementId).toBe('el-timer');
   });
 
-  it('"uses data from" seeds a RecordType when new name entered', () => {
+  it('saving with widget and data type creates both', () => {
     mountPanel();
     document.getElementById('req-add-btn')!.click();
     switchToDo();
-    switchToElement();
-    const verb = document.getElementById('req-do-verb') as HTMLInputElement;
-    const element = document.getElementById('req-do-element') as HTMLInputElement;
-    const usesData = document.getElementById('req-uses-data') as HTMLInputElement;
-    verb.value = 'set';
-    verb.dispatchEvent(new Event('input'));
-    element.value = 'Timer';
-    element.dispatchEvent(new Event('input'));
-    usesData.value = 'Preferences';
-    usesData.dispatchEvent(new Event('input'));
+    fillDescription('set Timer using Preferences');
+    addWidgetChip('Timer');
+    addDataTypeChip('Preferences');
     saveForm();
 
     const state = getWizardState();
     expect(state.nonDataElements).toHaveLength(1);
     expect(state.recordTypes).toHaveLength(1);
     expect(state.recordTypes[0].displayName).toBe('Preferences');
-    expect(state.requirements[0].usesDataTypeId).toBe(state.recordTypes[0].id);
+    expect(state.requirements[0].elementId).toBe(state.nonDataElements[0].id);
+    expect(state.requirements[0].dataTypeIds).toEqual([state.recordTypes[0].id]);
   });
 
-  it('"uses data from" reuses existing RecordType', () => {
+  it('saving with existing RecordType reuses it via dataTypeIds', () => {
     const state = getWizardState();
     state.recordTypes = [{
       id: 'rt-settings',
@@ -1392,51 +1366,25 @@ describe('non-data element interactions', () => {
       displayName: 'Settings',
       description: '',
       fields: [],
-      source: 'new',
+      source: 'new' as const,
     }];
 
     mountPanel();
     document.getElementById('req-add-btn')!.click();
     switchToDo();
-    switchToElement();
-    const verb = document.getElementById('req-do-verb') as HTMLInputElement;
-    const element = document.getElementById('req-do-element') as HTMLInputElement;
-    const usesData = document.getElementById('req-uses-data') as HTMLInputElement;
-    verb.value = 'configure';
-    verb.dispatchEvent(new Event('input'));
-    element.value = 'Timer';
-    element.dispatchEvent(new Event('input'));
-    usesData.value = 'Settings';
-    usesData.dispatchEvent(new Event('input'));
+    fillDescription('configure Timer with Settings');
+    addWidgetChip('Timer');
+    addDataTypeChip('Settings');
     saveForm();
 
     const updated = getWizardState();
     expect(updated.recordTypes).toHaveLength(1);
-    expect(updated.requirements[0].usesDataTypeId).toBe('rt-settings');
+    expect(updated.requirements[0].dataTypeIds).toEqual(['rt-settings']);
   });
 
-  // ── Editing element requirements ────────────────────────────────────
+  // ── Editing ─────────────────────────────────────────────────────────
 
-  it('target select is disabled when editing an element requirement', () => {
-    const state = getWizardState();
-    state.nonDataElements = [{ id: 'el-1', name: 'Timer' }];
-    state.requirements = [{
-      id: 'req-1',
-      type: 'do',
-      interactionTarget: 'element',
-      verb: 'set',
-      data: 'Timer',
-      elementId: 'el-1',
-    }];
-    mountPanel();
-
-    (document.querySelector('.req-edit-btn') as HTMLElement).click();
-    const targetSelect = document.getElementById('req-do-target-select') as HTMLSelectElement;
-    expect(targetSelect.disabled).toBe(true);
-    expect(targetSelect.value).toBe('element');
-  });
-
-  it('editing pre-fills element form fields', () => {
+  it('editing pre-fills description and chips', () => {
     const state = getWizardState();
     state.nonDataElements = [{ id: 'el-1', name: 'Timer' }];
     state.recordTypes = [{
@@ -1445,36 +1393,32 @@ describe('non-data element interactions', () => {
       displayName: 'Settings',
       description: '',
       fields: [],
-      source: 'new',
+      source: 'new' as const,
     }];
     state.requirements = [{
       id: 'req-1',
-      type: 'do',
-      interactionTarget: 'element',
-      verb: 'set',
-      data: 'Timer',
+      type: 'do' as const,
+      description: 'set Timer with Settings',
       elementId: 'el-1',
-      usesDataTypeId: 'rt-1',
+      dataTypeIds: ['rt-1'],
     }];
     mountPanel();
 
     (document.querySelector('.req-edit-btn') as HTMLElement).click();
-    expect((document.getElementById('req-do-verb') as HTMLInputElement).value).toBe('set');
-    expect((document.getElementById('req-do-element') as HTMLInputElement).value).toBe('Timer');
-    expect((document.getElementById('req-uses-data') as HTMLInputElement).value).toBe('Settings');
+    expect((document.getElementById('req-do-description') as HTMLTextAreaElement).value).toBe('set Timer with Settings');
+    const chips = document.querySelectorAll('.item-chip');
+    expect(chips).toHaveLength(2);
   });
 
-  // ── Deleting element requirements ───────────────────────────────────
+  // ── Deleting ────────────────────────────────────────────────────────
 
-  it('deleting an element requirement preserves the NonDataElement', () => {
+  it('deleting a widget requirement preserves the NonDataElement', () => {
     const state = getWizardState();
     state.nonDataElements = [{ id: 'el-1', name: 'Timer' }];
     state.requirements = [{
       id: 'req-1',
-      type: 'do',
-      interactionTarget: 'element',
-      verb: 'set',
-      data: 'Timer',
+      type: 'do' as const,
+      description: 'set the Timer',
       elementId: 'el-1',
     }];
     mountPanel();
@@ -1486,9 +1430,9 @@ describe('non-data element interactions', () => {
     expect(updated.nonDataElements[0].name).toBe('Timer');
   });
 
-  // ── Element combobox dropdown ───────────────────────────────────────
+  // ── Widget dropdown ─────────────────────────────────────────────────
 
-  it('element dropdown shows existing elements on focus', () => {
+  it('widget dropdown shows existing elements on focus', () => {
     const state = getWizardState();
     state.nonDataElements = [
       { id: 'el-1', name: 'Timer' },
@@ -1498,12 +1442,12 @@ describe('non-data element interactions', () => {
 
     document.getElementById('req-add-btn')!.click();
     switchToDo();
-    switchToElement();
 
-    const input = document.getElementById('req-do-element') as HTMLInputElement;
+    document.getElementById('req-do-add-widget')!.click();
+    const input = document.getElementById('req-do-item-input') as HTMLInputElement;
     input.dispatchEvent(new Event('focus'));
 
-    const dropdown = document.getElementById('req-do-element-dropdown')!;
+    const dropdown = document.getElementById('req-do-item-dropdown')!;
     expect(dropdown.style.display).toBe('block');
     const items = dropdown.querySelectorAll('.combobox-item');
     expect(items).toHaveLength(2);
@@ -1511,59 +1455,56 @@ describe('non-data element interactions', () => {
     expect(items[1].textContent).toBe('Canvas');
   });
 
-  it('element dropdown does not appear when no elements exist', () => {
+  it('widget dropdown does not appear when no elements exist', () => {
     mountPanel();
     document.getElementById('req-add-btn')!.click();
     switchToDo();
-    switchToElement();
 
-    const input = document.getElementById('req-do-element') as HTMLInputElement;
+    document.getElementById('req-do-add-widget')!.click();
+    const input = document.getElementById('req-do-item-input') as HTMLInputElement;
     input.dispatchEvent(new Event('focus'));
-    const dropdown = document.getElementById('req-do-element-dropdown')!;
+    const dropdown = document.getElementById('req-do-item-dropdown')!;
     expect(dropdown.style.display).toBe('none');
   });
 
-  it('exact element name match suppresses "Create" option', () => {
+  it('exact widget name match suppresses "Create" option', () => {
     const state = getWizardState();
     state.nonDataElements = [{ id: 'el-1', name: 'Timer' }];
     mountPanel();
 
     document.getElementById('req-add-btn')!.click();
     switchToDo();
-    switchToElement();
 
-    const input = document.getElementById('req-do-element') as HTMLInputElement;
+    document.getElementById('req-do-add-widget')!.click();
+    const input = document.getElementById('req-do-item-input') as HTMLInputElement;
     input.value = 'timer';
     input.dispatchEvent(new Event('input'));
-    input.dispatchEvent(new Event('focus'));
 
-    const dropdown = document.getElementById('req-do-element-dropdown')!;
+    const dropdown = document.getElementById('req-do-item-dropdown')!;
     const createItem = dropdown.querySelector('.combobox-create');
     expect(createItem).toBeNull();
   });
 
-  it('clicking an element dropdown item selects it', () => {
+  it('clicking a widget dropdown item selects it', () => {
     const state = getWizardState();
     state.nonDataElements = [{ id: 'el-1', name: 'Timer' }];
     mountPanel();
 
     document.getElementById('req-add-btn')!.click();
     switchToDo();
-    switchToElement();
+    fillDescription('start the Timer');
 
-    const input = document.getElementById('req-do-element') as HTMLInputElement;
+    document.getElementById('req-do-add-widget')!.click();
+    const input = document.getElementById('req-do-item-input') as HTMLInputElement;
     input.dispatchEvent(new Event('focus'));
 
-    const dropdown = document.getElementById('req-do-element-dropdown')!;
+    const dropdown = document.getElementById('req-do-item-dropdown')!;
     const item = dropdown.querySelector('.combobox-item') as HTMLElement;
     item.dispatchEvent(new MouseEvent('mousedown'));
 
-    expect(input.value).toBe('Timer');
+    // Chip should appear
+    expect(document.querySelectorAll('.item-chip')).toHaveLength(1);
 
-    // Fill verb and save
-    const verb = document.getElementById('req-do-verb') as HTMLInputElement;
-    verb.value = 'start';
-    verb.dispatchEvent(new Event('input'));
     saveForm();
 
     const updated = getWizardState();
@@ -1571,22 +1512,276 @@ describe('non-data element interactions', () => {
     expect(updated.requirements[0].elementId).toBe('el-1');
   });
 
+  // ── Duplicate data type prevention ───────────────────────────────────
+
+  it('already-selected data type is excluded from combobox dropdown', () => {
+    const state = getWizardState();
+    state.recordTypes = [
+      { id: 'rt-1', name: '', displayName: 'book', description: '', fields: [], source: 'new' as const },
+      { id: 'rt-2', name: '', displayName: 'grocery item', description: '', fields: [], source: 'new' as const },
+    ];
+    mountPanel();
+
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+    fillDescription('manage books and groceries');
+
+    // Add "book" as a chip first
+    document.getElementById('req-do-add-data')!.click();
+    let input = document.getElementById('req-do-item-input') as HTMLInputElement;
+    input.dispatchEvent(new Event('focus'));
+    let items = document.querySelectorAll('#req-do-item-dropdown .combobox-item:not(.combobox-create)');
+    expect(items).toHaveLength(2); // both available initially
+    const bookItem = items[0] as HTMLElement;
+    bookItem.dispatchEvent(new MouseEvent('mousedown'));
+
+    // Now open combobox again — "book" should be excluded
+    document.getElementById('req-do-add-data')!.click();
+    input = document.getElementById('req-do-item-input') as HTMLInputElement;
+    input.dispatchEvent(new Event('focus'));
+    items = document.querySelectorAll('#req-do-item-dropdown .combobox-item:not(.combobox-create)');
+    expect(items).toHaveLength(1);
+    expect(items[0].textContent).toBe('grocery item');
+  });
+
+  // ── Multiple data types on one requirement ─────────────────────────
+
+  it('supports multiple data type chips on one requirement', () => {
+    mountPanel();
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+    fillDescription('manage my grocery lists and items');
+    addDataTypeChip('grocery item');
+    addDataTypeChip('grocery list');
+
+    const chips = document.querySelectorAll('.item-chip');
+    expect(chips).toHaveLength(2);
+
+    saveForm();
+
+    const state = getWizardState();
+    expect(state.requirements[0].dataTypeIds).toHaveLength(2);
+    expect(state.recordTypes).toHaveLength(2);
+    expect(state.recordTypes[0].displayName).toBe('grocery item');
+    expect(state.recordTypes[1].displayName).toBe('grocery list');
+  });
+
+  // ── Chip removal re-validates ──────────────────────────────────────
+
+  it('removing last chip disables save button', () => {
+    mountPanel();
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+    fillDescription('track something');
+    addDataTypeChip('item');
+
+    const saveBtn = document.querySelector('.req-save-btn') as HTMLButtonElement;
+    expect(saveBtn.disabled).toBe(false);
+
+    // Remove the only chip
+    (document.querySelector('.item-chip-remove') as HTMLElement).click();
+    expect(saveBtn.disabled).toBe(true);
+  });
+
+  it('removing one of two chips keeps save enabled', () => {
+    mountPanel();
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+    fillDescription('manage stuff');
+    addDataTypeChip('item A');
+    addDataTypeChip('item B');
+
+    const saveBtn = document.querySelector('.req-save-btn') as HTMLButtonElement;
+    expect(saveBtn.disabled).toBe(false);
+
+    // Remove first chip
+    const removeButtons = document.querySelectorAll('.item-chip-remove');
+    (removeButtons[0] as HTMLElement).click();
+
+    expect(saveBtn.disabled).toBe(false);
+    expect(document.querySelectorAll('.item-chip')).toHaveLength(1);
+  });
+
+  // ── Combobox cancel via Escape ─────────────────────────────────────
+
+  it('pressing Escape closes combobox without adding a chip', () => {
+    mountPanel();
+    document.getElementById('req-add-btn')!.click();
+    switchToDo();
+
+    document.getElementById('req-do-add-data')!.click();
+    expect(document.getElementById('req-do-item-input')).not.toBeNull();
+
+    const input = document.getElementById('req-do-item-input') as HTMLInputElement;
+    input.value = 'something';
+    input.dispatchEvent(new Event('input'));
+
+    // Press Escape
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+    // Combobox area should be cleared, no chip added
+    expect(document.getElementById('req-do-item-input')).toBeNull();
+    expect(document.querySelectorAll('.item-chip')).toHaveLength(0);
+  });
+
   // ── Display ─────────────────────────────────────────────────────────
 
-  it('renders element requirement with correct display text and type label', () => {
+  it('renders widget requirement with description and widget meta', () => {
     const state = getWizardState();
     state.nonDataElements = [{ id: 'el-1', name: 'Timer' }];
     state.requirements = [{
       id: 'req-1',
-      type: 'do',
-      interactionTarget: 'element',
-      verb: 'set',
-      data: 'Timer',
+      type: 'do' as const,
+      description: 'set the Timer',
       elementId: 'el-1',
     }];
     const html = renderRequirementsPanel();
-    expect(html).toContain('I need to set the Timer');
-    expect(html).toContain('Interaction');
+    expect(html).toContain('set the Timer');
+    expect(html).toContain('Timer (widget)');
+  });
+
+  it('renders mixed requirement with data types and widget in meta', () => {
+    const state = getWizardState();
+    state.nonDataElements = [{ id: 'el-1', name: 'Timer' }];
+    state.recordTypes = [
+      { id: 'rt-1', name: '', displayName: 'presets', description: '', fields: [], source: 'new' as const },
+    ];
+    state.requirements = [{
+      id: 'req-1',
+      type: 'do' as const,
+      description: 'set timer using saved presets',
+      elementId: 'el-1',
+      dataTypeIds: ['rt-1'],
+    }];
+    const html = renderRequirementsPanel();
+    expect(html).toContain('set timer using saved presets');
+    expect(html).toContain('presets');
+    expect(html).toContain('Timer (widget)');
+  });
+});
+
+// ── Migration of old "do" requirement fields ─────────────────────────
+
+describe('do requirement field migration', () => {
+  it('migrates verb + data to description', () => {
+    const oldState = initializeWizardState();
+    // Simulate old-format requirement via cast
+    const legacy = {
+      id: 'req-1',
+      type: 'do' as const,
+      verb: 'create',
+      data: 'book',
+      dataTypeId: 'rt-1',
+      interactionTarget: 'data',
+    };
+    oldState.requirements = [legacy as unknown as Requirement];
+    setWizardState(oldState);
+
+    const state = getWizardState();
+    const req = state.requirements[0];
+    expect(req.description).toBe('create book');
+    expect(req.dataTypeIds).toEqual(['rt-1']);
+    // Old fields should be removed
+    const raw = req as unknown as Record<string, unknown>;
+    expect(raw.verb).toBeUndefined();
+    expect(raw.data).toBeUndefined();
+    expect(raw.dataTypeId).toBeUndefined();
+    expect(raw.interactionTarget).toBeUndefined();
+  });
+
+  it('migrates verb-only (no data) to description', () => {
+    const oldState = initializeWizardState();
+    const legacy = {
+      id: 'req-1',
+      type: 'do' as const,
+      verb: 'set',
+      dataTypeId: undefined,
+      interactionTarget: 'element',
+      elementId: 'el-1',
+    };
+    oldState.requirements = [legacy as unknown as Requirement];
+    setWizardState(oldState);
+
+    const req = getWizardState().requirements[0];
+    expect(req.description).toBe('set');
+    expect(req.elementId).toBe('el-1');
+  });
+
+  it('migrates usesDataTypeId into dataTypeIds array', () => {
+    const oldState = initializeWizardState();
+    const legacy = {
+      id: 'req-1',
+      type: 'do' as const,
+      verb: 'set',
+      data: 'Timer',
+      dataTypeId: 'rt-1',
+      interactionTarget: 'element',
+      elementId: 'el-1',
+      usesDataTypeId: 'rt-2',
+    };
+    oldState.requirements = [legacy as unknown as Requirement];
+    setWizardState(oldState);
+
+    const req = getWizardState().requirements[0];
+    expect(req.dataTypeIds).toEqual(['rt-1', 'rt-2']);
+    const raw = req as unknown as Record<string, unknown>;
+    expect(raw.usesDataTypeId).toBeUndefined();
+  });
+
+  it('does not duplicate when usesDataTypeId equals dataTypeId', () => {
+    const oldState = initializeWizardState();
+    const legacy = {
+      id: 'req-1',
+      type: 'do' as const,
+      verb: 'configure',
+      data: 'settings',
+      dataTypeId: 'rt-1',
+      interactionTarget: 'element',
+      elementId: 'el-1',
+      usesDataTypeId: 'rt-1', // same as dataTypeId
+    };
+    oldState.requirements = [legacy as unknown as Requirement];
+    setWizardState(oldState);
+
+    const req = getWizardState().requirements[0];
+    expect(req.dataTypeIds).toEqual(['rt-1']); // no duplicate
+  });
+
+  it('does not migrate know or navigate requirements', () => {
+    const oldState = initializeWizardState();
+    oldState.requirements = [
+      { id: 'req-1', type: 'know' as const, text: 'some info' },
+      { id: 'req-2', type: 'navigate' as const, navType: 'direct' as const, fromView: 'v1', toView: 'v2' },
+    ];
+    setWizardState(oldState);
+
+    const state = getWizardState();
+    expect(state.requirements[0].text).toBe('some info');
+    expect(state.requirements[1].navType).toBe('direct');
+    // No description field added to non-do requirements
+    expect(state.requirements[0].description).toBeUndefined();
+  });
+
+  it('migrates element-only requirement with usesDataTypeId but no dataTypeId', () => {
+    const oldState = initializeWizardState();
+    const legacy = {
+      id: 'req-1',
+      type: 'do' as const,
+      verb: 'set',
+      interactionTarget: 'element',
+      elementId: 'el-1',
+      usesDataTypeId: 'rt-1',
+    };
+    oldState.requirements = [legacy as unknown as Requirement];
+    setWizardState(oldState);
+
+    const req = getWizardState().requirements[0];
+    expect(req.description).toBe('set');
+    expect(req.elementId).toBe('el-1');
+    expect(req.dataTypeIds).toEqual(['rt-1']);
+    const raw = req as unknown as Record<string, unknown>;
+    expect(raw.usesDataTypeId).toBeUndefined();
+    expect(raw.interactionTarget).toBeUndefined();
   });
 });
 
@@ -1621,9 +1816,7 @@ describe('navigate requirements with views', () => {
 
   function openNavForm(navType: string): void {
     document.getElementById('req-add-btn')!.click();
-    const typeSelect = document.getElementById('req-type-select') as HTMLSelectElement;
-    typeSelect.value = 'navigate';
-    typeSelect.dispatchEvent(new Event('change'));
+    selectType('navigate');
     if (navType !== 'direct') {
       const navTypeSelect = document.getElementById('req-nav-type-select') as HTMLSelectElement;
       navTypeSelect.value = navType;

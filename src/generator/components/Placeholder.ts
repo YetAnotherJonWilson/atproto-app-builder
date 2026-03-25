@@ -30,19 +30,8 @@ function getRequirementSummary(
   switch (req.type) {
     case 'know':
       return req.text || 'Info section';
-    case 'do': {
-      const verb = req.verb || 'interact with';
-      if (req.interactionTarget === 'element') {
-        const el = req.elementId
-          ? nonDataElements.find(e => e.id === req.elementId)
-          : undefined;
-        return `${verb} ${el?.name || 'element'}`;
-      }
-      const dataType = req.dataTypeId
-        ? recordTypes.find(r => r.id === req.dataTypeId)
-        : undefined;
-      return `${verb} ${dataType?.displayName || req.data || 'data'}`;
-    }
+    case 'do':
+      return req.description || 'interaction';
     case 'navigate': {
       if (req.navType === 'menu') return 'navigation menu';
       if (req.navType === 'direct') {

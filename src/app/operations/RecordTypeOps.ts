@@ -24,15 +24,11 @@ export function findRecordTypeReferences(
 
   // Requirements
   for (const req of state.requirements) {
-    if (req.dataTypeId === id) {
+    if (req.dataTypeIds?.includes(id)) {
       const desc = req.type === 'do'
-        ? `"${req.verb ?? ''} ${req.data ?? ''}"`
+        ? `"${req.description ?? ''}"`
         : `"${req.text ?? ''}"`;
       refs.push({ kind: 'requirement', label: `${desc.trim()} (in Requirements)` });
-    }
-    if (req.usesDataTypeId === id) {
-      const desc = `"${req.verb ?? ''} ${req.data ?? ''}"`;
-      refs.push({ kind: 'requirement', label: `${desc.trim()} uses this as a data source (in Requirements)` });
     }
   }
 
