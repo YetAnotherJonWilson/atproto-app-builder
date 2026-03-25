@@ -144,8 +144,12 @@ const TYPE_OPTIONS: { value: RequirementType; label: string }[] = [
   { value: 'navigate', label: 'Navigation' },
 ];
 
-function renderTypeSelect(selectedType: RequirementType, disabled: boolean): string {
-  const selectedLabel = TYPE_OPTIONS.find((o) => o.value === selectedType)?.label ?? 'Information';
+function renderTypeSelect(
+  selectedType: RequirementType,
+  disabled: boolean,
+): string {
+  const selectedLabel =
+    TYPE_OPTIONS.find((o) => o.value === selectedType)?.label ?? 'Information';
   const disabledClass = disabled ? ' custom-select-disabled' : '';
   return `
     <div class="custom-select${disabledClass}" id="req-type-select-wrap">
@@ -265,13 +269,18 @@ function renderDoFields(existing?: Requirement): string {
     </div>
     <div class="form-group">
       <label>Data Types &amp; Widgets</label>
-      <div class="form-hint">Add at least one data type or widget involved in this interaction.</div>
       <div id="req-do-items-chips"></div>
       <div id="req-do-item-buttons">
         <button class="btn-ghost btn-small" id="req-do-add-data" type="button">+ Data Type</button>
         <button class="btn-ghost btn-small" id="req-do-add-widget" type="button">+ Widget</button>
       </div>
       <div id="req-do-item-combobox-area"></div>
+      <div class="form-hint form-hint-loose">What type of thing(s) are you interacting with? <strong>Add at least one.</strong>
+      <br>
+      <strong>Data types</strong> are things your app stores &mdash; posts, items, settings.
+      <br>
+      <strong>Widgets</strong> are interactive UI that doesn&rsquo;t store data &mdash; a timer, canvas, or calculator.
+      </div>
     </div>
   `;
 }
@@ -374,7 +383,8 @@ function renderMenuFields(
 
   const menuItemsCheckboxes = views
     .map((v) => {
-      const checked = allCheckedForManual || manualItems.has(v.id) ? ' checked' : '';
+      const checked =
+        allCheckedForManual || manualItems.has(v.id) ? ' checked' : '';
       return `<label class="checkbox-item"><input type="checkbox" value="${v.id}" class="menu-item-cb"${checked}> ${escapeHtml(v.name)}</label>`;
     })
     .join('');
@@ -648,12 +658,22 @@ function showForm(type?: RequirementType, existing?: Requirement): void {
     if (existing.dataTypeIds) {
       for (const id of existing.dataTypeIds) {
         const rt = recordTypes.find((r) => r.id === id);
-        if (rt) pendingItems.push({ itemType: 'data', existingId: id, name: rt.displayName });
+        if (rt)
+          pendingItems.push({
+            itemType: 'data',
+            existingId: id,
+            name: rt.displayName,
+          });
       }
     }
     if (existing.elementId) {
       const el = nonDataElements.find((e) => e.id === existing.elementId);
-      if (el) pendingItems.push({ itemType: 'widget', existingId: existing.elementId, name: el.name });
+      if (el)
+        pendingItems.push({
+          itemType: 'widget',
+          existingId: existing.elementId,
+          name: el.name,
+        });
     }
   }
   activeItemCombobox = null;
@@ -686,8 +706,12 @@ function showForm(type?: RequirementType, existing?: Requirement): void {
 }
 
 function wireTypeDropdown(existing?: Requirement): void {
-  const hiddenInput = document.getElementById('req-type-select') as HTMLInputElement | null;
-  const trigger = document.getElementById('req-type-trigger') as HTMLButtonElement | null;
+  const hiddenInput = document.getElementById(
+    'req-type-select',
+  ) as HTMLInputElement | null;
+  const trigger = document.getElementById(
+    'req-type-trigger',
+  ) as HTMLButtonElement | null;
   const dropdown = document.getElementById('req-type-dropdown');
   if (!hiddenInput || !trigger || !dropdown) return;
 
@@ -714,7 +738,9 @@ function wireTypeDropdown(existing?: Requirement): void {
       // Update trigger text and selected state
       const valueSpan = trigger.querySelector('.custom-select-value');
       if (valueSpan) valueSpan.textContent = option.textContent;
-      dropdown.querySelectorAll('.custom-select-option').forEach((o) => o.classList.remove('selected'));
+      dropdown
+        .querySelectorAll('.custom-select-option')
+        .forEach((o) => o.classList.remove('selected'));
       option.classList.add('selected');
       dropdown.style.display = 'none';
 
@@ -743,12 +769,24 @@ function wireTypeDropdown(existing?: Requirement): void {
             if (prefill.dataTypeIds) {
               for (const id of prefill.dataTypeIds) {
                 const rt = recordTypes.find((r) => r.id === id);
-                if (rt) pendingItems.push({ itemType: 'data', existingId: id, name: rt.displayName });
+                if (rt)
+                  pendingItems.push({
+                    itemType: 'data',
+                    existingId: id,
+                    name: rt.displayName,
+                  });
               }
             }
             if (prefill.elementId) {
-              const el = nonDataElements.find((e) => e.id === prefill.elementId);
-              if (el) pendingItems.push({ itemType: 'widget', existingId: prefill.elementId, name: el.name });
+              const el = nonDataElements.find(
+                (e) => e.id === prefill.elementId,
+              );
+              if (el)
+                pendingItems.push({
+                  itemType: 'widget',
+                  existingId: prefill.elementId,
+                  name: el.name,
+                });
             }
           } else {
             pendingItems = [];
@@ -801,14 +839,18 @@ function wireNavSubtypeControls(navType: NavType): void {
 }
 
 function wireDirectLinkSelects(): void {
-  const from = document.getElementById('req-nav-from') as HTMLSelectElement | null;
+  const from = document.getElementById(
+    'req-nav-from',
+  ) as HTMLSelectElement | null;
   const to = document.getElementById('req-nav-to') as HTMLSelectElement | null;
   if (from) from.addEventListener('change', () => validateForm('navigate'));
   if (to) to.addEventListener('change', () => validateForm('navigate'));
 }
 
 function wireMenuControls(): void {
-  const toggle = document.getElementById('menu-include-all-views') as HTMLInputElement | null;
+  const toggle = document.getElementById(
+    'menu-include-all-views',
+  ) as HTMLInputElement | null;
   const preview = document.getElementById('menu-items-preview');
   const manual = document.getElementById('menu-items-manual');
 
@@ -831,11 +873,15 @@ function wireForwardBackControls(): void {
   wirePageOrderButtons();
 
   // Control type toggles button text visibility
-  const controlType = document.getElementById('req-nav-control-type') as HTMLSelectElement | null;
+  const controlType = document.getElementById(
+    'req-nav-control-type',
+  ) as HTMLSelectElement | null;
   const textRow = document.getElementById('req-nav-button-text-row');
   if (controlType) {
     controlType.addEventListener('change', () => {
-      if (textRow) textRow.style.display = controlType.value === 'buttons' ? 'grid' : 'none';
+      if (textRow)
+        textRow.style.display =
+          controlType.value === 'buttons' ? 'grid' : 'none';
       validateForm('navigate');
     });
   }
@@ -859,7 +905,11 @@ function wirePageOrderButtons(): void {
   });
 }
 
-function swapPageOrderItems(container: HTMLElement, fromIdx: number, toIdx: number): void {
+function swapPageOrderItems(
+  container: HTMLElement,
+  fromIdx: number,
+  toIdx: number,
+): void {
   const items = container.querySelectorAll('.reorder-item');
   if (toIdx < 0 || toIdx >= items.length) return;
 
@@ -881,7 +931,9 @@ function reindexPageOrder(container: HTMLElement): void {
   const items = container.querySelectorAll('.reorder-item');
   items.forEach((item, i) => {
     const up = item.querySelector('.page-order-up') as HTMLButtonElement | null;
-    const down = item.querySelector('.page-order-down') as HTMLButtonElement | null;
+    const down = item.querySelector(
+      '.page-order-down',
+    ) as HTMLButtonElement | null;
     if (up) {
       up.dataset.index = String(i);
       up.disabled = i === 0;
@@ -912,7 +964,9 @@ function wireDoItemButtons(): void {
 }
 
 function updateItemButtonStates(): void {
-  const addWidgetBtn = document.getElementById('req-do-add-widget') as HTMLButtonElement | null;
+  const addWidgetBtn = document.getElementById(
+    'req-do-add-widget',
+  ) as HTMLButtonElement | null;
   if (addWidgetBtn) {
     const hasWidget = pendingItems.some((item) => item.itemType === 'widget');
     addWidgetBtn.disabled = hasWidget;
@@ -930,8 +984,9 @@ function renderChips(): void {
 
   container.innerHTML = pendingItems
     .map((item, index) => {
-      const typeLabel = item.existingId ? '' :
-        ` <span class="item-chip-type">(new ${item.itemType === 'data' ? 'data type' : 'widget'})</span>`;
+      const typeLabel = item.existingId
+        ? ''
+        : ` <span class="item-chip-type">(new ${item.itemType === 'data' ? 'data type' : 'widget'})</span>`;
       return `<span class="item-chip" data-index="${index}">
         ${escapeHtml(item.name)}${typeLabel}
         <button class="item-chip-remove" data-index="${index}" aria-label="Remove" type="button">&times;</button>
@@ -956,9 +1011,10 @@ function showItemCombobox(itemType: 'data' | 'widget'): void {
   const area = document.getElementById('req-do-item-combobox-area');
   if (!area) return;
 
-  const placeholder = itemType === 'data'
-    ? 'e.g., grocery item, book, appointment'
-    : 'e.g., timer, calculator, canvas';
+  const placeholder =
+    itemType === 'data'
+      ? 'e.g., grocery item, book, appointment'
+      : 'e.g., timer, calculator, canvas';
 
   area.innerHTML = `
     <div class="combobox" id="req-do-item-combobox">
@@ -969,7 +1025,9 @@ function showItemCombobox(itemType: 'data' | 'widget'): void {
   `;
 
   wireItemCombobox(itemType);
-  const input = document.getElementById('req-do-item-input') as HTMLInputElement | null;
+  const input = document.getElementById(
+    'req-do-item-input',
+  ) as HTMLInputElement | null;
   if (input) input.focus();
 }
 
@@ -980,7 +1038,9 @@ function closeItemCombobox(): void {
 }
 
 function wireItemCombobox(itemType: 'data' | 'widget'): void {
-  const input = document.getElementById('req-do-item-input') as HTMLInputElement | null;
+  const input = document.getElementById(
+    'req-do-item-input',
+  ) as HTMLInputElement | null;
   const dropdown = document.getElementById('req-do-item-dropdown');
   if (!input || !dropdown) return;
 
@@ -996,7 +1056,9 @@ function wireItemCombobox(itemType: 'data' | 'widget'): void {
     const query = input!.value.trim().toLowerCase();
 
     if (itemType === 'data') {
-      const available = recordTypes.filter((rt) => !alreadySelected.includes(rt.id));
+      const available = recordTypes.filter(
+        (rt) => !alreadySelected.includes(rt.id),
+      );
       if (available.length === 0 && !query) {
         dropdown!.style.display = 'none';
         return;
@@ -1007,17 +1069,20 @@ function wireItemCombobox(itemType: 'data' | 'widget'): void {
         : available;
 
       // Check exact match against ALL record types (including already selected)
-      const exactMatch = query && recordTypes.some(
-        (rt) => rt.displayName.toLowerCase() === query,
-      );
+      const exactMatch =
+        query &&
+        recordTypes.some((rt) => rt.displayName.toLowerCase() === query);
       // But also check if already added by name
-      const alreadyAdded = query && pendingItems.some(
-        (p) => p.itemType === 'data' && p.name.toLowerCase() === query,
-      );
+      const alreadyAdded =
+        query &&
+        pendingItems.some(
+          (p) => p.itemType === 'data' && p.name.toLowerCase() === query,
+        );
 
       let html = filtered
-        .map((rt) =>
-          `<div class="combobox-item" data-id="${rt.id}">${escapeHtml(rt.displayName)}</div>`,
+        .map(
+          (rt) =>
+            `<div class="combobox-item" data-id="${rt.id}">${escapeHtml(rt.displayName)}</div>`,
         )
         .join('');
 
@@ -1033,7 +1098,9 @@ function wireItemCombobox(itemType: 'data' | 'widget'): void {
       dropdown!.style.display = 'block';
     } else {
       // widget
-      const available = nonDataElements.filter((el) => !alreadySelected.includes(el.id));
+      const available = nonDataElements.filter(
+        (el) => !alreadySelected.includes(el.id),
+      );
       if (available.length === 0 && !query) {
         dropdown!.style.display = 'none';
         return;
@@ -1043,13 +1110,13 @@ function wireItemCombobox(itemType: 'data' | 'widget'): void {
         ? available.filter((el) => el.name.toLowerCase().includes(query))
         : available;
 
-      const exactMatch = query && nonDataElements.some(
-        (el) => el.name.toLowerCase() === query,
-      );
+      const exactMatch =
+        query && nonDataElements.some((el) => el.name.toLowerCase() === query);
 
       let html = filtered
-        .map((el) =>
-          `<div class="combobox-item" data-id="${el.id}">${escapeHtml(el.name)}</div>`,
+        .map(
+          (el) =>
+            `<div class="combobox-item" data-id="${el.id}">${escapeHtml(el.name)}</div>`,
         )
         .join('');
 
@@ -1078,7 +1145,9 @@ function wireItemCombobox(itemType: 'data' | 'widget'): void {
             const rt = getWizardState().recordTypes.find((r) => r.id === id);
             if (rt) name = rt.displayName;
           } else {
-            const nde = getWizardState().nonDataElements.find((n) => n.id === id);
+            const nde = getWizardState().nonDataElements.find(
+              (n) => n.id === id,
+            );
             if (nde) name = nde.name;
           }
         }
@@ -1100,7 +1169,9 @@ function wireItemCombobox(itemType: 'data' | 'widget'): void {
       if (val && activeItemCombobox) {
         // Check if exact match exists that wasn't already added
         const alreadyAdded = pendingItems.some(
-          (p) => p.itemType === itemType && p.name.toLowerCase() === val.toLowerCase(),
+          (p) =>
+            p.itemType === itemType &&
+            p.name.toLowerCase() === val.toLowerCase(),
         );
         if (!alreadyAdded) {
           // Check for existing item match
@@ -1213,13 +1284,19 @@ function validateNavigateForm(): boolean {
   const navType = (navTypeSelect?.value ?? 'direct') as NavType;
 
   if (navType === 'direct') {
-    const from = document.getElementById('req-nav-from') as HTMLSelectElement | null;
-    const to = document.getElementById('req-nav-to') as HTMLSelectElement | null;
+    const from = document.getElementById(
+      'req-nav-from',
+    ) as HTMLSelectElement | null;
+    const to = document.getElementById(
+      'req-nav-to',
+    ) as HTMLSelectElement | null;
     return !!from?.value && !!to?.value;
   }
 
   if (navType === 'menu') {
-    const toggle = document.getElementById('menu-include-all-views') as HTMLInputElement | null;
+    const toggle = document.getElementById(
+      'menu-include-all-views',
+    ) as HTMLInputElement | null;
     const includeAll = toggle?.checked ?? true;
 
     // Menu items: either include-all or at least one manual item checked
@@ -1230,8 +1307,12 @@ function validateNavigateForm(): boolean {
 
   // forward-back: valid when views exist (page order is always all views)
   const pageOrder = document.getElementById('req-page-order');
-  const hasViews = pageOrder ? pageOrder.querySelectorAll('.reorder-item').length > 0 : false;
-  const controlType = document.getElementById('req-nav-control-type') as HTMLSelectElement | null;
+  const hasViews = pageOrder
+    ? pageOrder.querySelectorAll('.reorder-item').length > 0
+    : false;
+  const controlType = document.getElementById(
+    'req-nav-control-type',
+  ) as HTMLSelectElement | null;
   return hasViews && !!controlType?.value;
 }
 
@@ -1305,11 +1386,19 @@ function buildRequirementFromForm(
 
     for (const item of pendingItems) {
       if (item.itemType === 'data') {
-        const id = resolveOrCreateDataType(item.name, wizardState, item.existingId);
+        const id = resolveOrCreateDataType(
+          item.name,
+          wizardState,
+          item.existingId,
+        );
         dataTypeIds.push(id);
       } else {
         // widget
-        const id = resolveOrCreateElement(item.name, wizardState, item.existingId);
+        const id = resolveOrCreateElement(
+          item.name,
+          wizardState,
+          item.existingId,
+        );
         elementId = id;
       }
     }
@@ -1325,37 +1414,55 @@ function buildRequirementFromForm(
     base.navType = navType;
 
     if (navType === 'direct') {
-      const from = document.getElementById('req-nav-from') as HTMLSelectElement | null;
-      const to = document.getElementById('req-nav-to') as HTMLSelectElement | null;
+      const from = document.getElementById(
+        'req-nav-from',
+      ) as HTMLSelectElement | null;
+      const to = document.getElementById(
+        'req-nav-to',
+      ) as HTMLSelectElement | null;
       if (!from?.value || !to?.value) return null;
       base.fromView = from.value;
       base.toView = to.value;
     } else if (navType === 'menu') {
-      const labelEl = document.getElementById('req-menu-label') as HTMLInputElement | null;
+      const labelEl = document.getElementById(
+        'req-menu-label',
+      ) as HTMLInputElement | null;
       const label = labelEl?.value.trim() ?? '';
       if (label) base.menuLabel = label;
 
-      const toggle = document.getElementById('menu-include-all-views') as HTMLInputElement | null;
+      const toggle = document.getElementById(
+        'menu-include-all-views',
+      ) as HTMLInputElement | null;
       const includeAll = toggle?.checked ?? true;
       base.menuIncludeAllViews = includeAll;
 
       if (!includeAll) {
         const checked = document.querySelectorAll('.menu-item-cb:checked');
-        base.menuItems = Array.from(checked).map((cb) => (cb as HTMLInputElement).value);
+        base.menuItems = Array.from(checked).map(
+          (cb) => (cb as HTMLInputElement).value,
+        );
         if (base.menuItems.length === 0) return null;
       }
     } else {
       // forward-back — read page order from DOM
       const items = document.querySelectorAll('#req-page-order .reorder-item');
-      base.pageOrder = Array.from(items).map((el) => (el as HTMLElement).dataset.viewId!);
+      base.pageOrder = Array.from(items).map(
+        (el) => (el as HTMLElement).dataset.viewId!,
+      );
       if (base.pageOrder.length === 0) return null;
 
-      const controlType = document.getElementById('req-nav-control-type') as HTMLSelectElement | null;
+      const controlType = document.getElementById(
+        'req-nav-control-type',
+      ) as HTMLSelectElement | null;
       base.navControlType = (controlType?.value as NavControlType) ?? 'arrows';
 
       if (base.navControlType === 'buttons') {
-        const fwd = document.getElementById('req-nav-forward-text') as HTMLInputElement | null;
-        const back = document.getElementById('req-nav-back-text') as HTMLInputElement | null;
+        const fwd = document.getElementById(
+          'req-nav-forward-text',
+        ) as HTMLInputElement | null;
+        const back = document.getElementById(
+          'req-nav-back-text',
+        ) as HTMLInputElement | null;
         if (fwd?.value.trim()) base.buttonForwardText = fwd.value.trim();
         if (back?.value.trim()) base.buttonBackText = back.value.trim();
       }
@@ -1377,7 +1484,9 @@ function resolveOrCreateDataType(
 ): string {
   // 1. If a pre-selected ID was provided, use it
   if (preselectedId) {
-    const existing = wizardState.recordTypes.find((r) => r.id === preselectedId);
+    const existing = wizardState.recordTypes.find(
+      (r) => r.id === preselectedId,
+    );
     if (existing) return existing.id;
   }
 
