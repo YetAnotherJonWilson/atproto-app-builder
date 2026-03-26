@@ -53,33 +53,22 @@ function buildDevConfig(): Config {
 }
 
 function buildProdConfig(): Config {
-  const redirectUri = import.meta.env.VITE_OAUTH_REDIRECT_URI as string | undefined;
-  const clientId = import.meta.env.VITE_OAUTH_CLIENT_ID as string | undefined;
-  const baseUrl = import.meta.env.VITE_APP_BASE_URL as string | undefined;
-
-  const missing: string[] = [];
-  if (!redirectUri) missing.push('VITE_OAUTH_REDIRECT_URI');
-  if (!clientId) missing.push('VITE_OAUTH_CLIENT_ID');
-  if (!baseUrl) missing.push('VITE_APP_BASE_URL');
-
-  if (missing.length > 0) {
-    throw new Error(
-      `Missing required environment variables for production: ${missing.join(', ')}. ` +
-        'See .env.example for the full list.',
-    );
-  }
+  const origin = window.location.origin;
+  const redirectUri = import.meta.env.VITE_OAUTH_REDIRECT_URI || origin;
+  const clientId = import.meta.env.VITE_OAUTH_CLIENT_ID || `${origin}/client-metadata.json`;
+  const baseUrl = import.meta.env.VITE_APP_BASE_URL || origin;
 
   return {
     environment: 'production',
     isDev: false,
     oauth: {
-      redirectUri: redirectUri!,
-      clientId: clientId!,
+      redirectUri,
+      clientId,
       scope: DEV_SCOPE,
       handleResolver: HANDLE_RESOLVER,
     },
     app: {
-      baseUrl: baseUrl!,
+      baseUrl,
       name: APP_NAME,
     },
   };
