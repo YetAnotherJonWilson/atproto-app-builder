@@ -122,6 +122,20 @@ export async function saveProject(
     updatedAt: now,
   };
 
+  // If no rkey provided, check PDS for an existing project with the same name
+  // to avoid creating duplicates when localStorage tracking is lost.
+  if (!rkey) {
+    try {
+      const existing = await listProjects();
+      const match = existing.find((p) => p.projectName === projectName);
+      if (match) {
+        rkey = match.rkey;
+      }
+    } catch {
+      // If listing fails, proceed with creating a new record
+    }
+  }
+
   if (rkey) {
     // Update existing — preserve original createdAt
     try {
