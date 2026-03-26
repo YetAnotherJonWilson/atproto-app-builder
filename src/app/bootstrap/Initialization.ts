@@ -43,7 +43,7 @@ import {
 } from '../auth/LoginDialog';
 import { setupProjectPicker, showPostLoginPicker } from '../auth/ProjectPickerDialog';
 import { updateSaveButtonVisibility, wireSaveButtons, triggerAutoSave } from '../services/PdsSaveController';
-import { setLoggedIn, setOnSaveCallback, setActiveProjectRkey, setLastPdsSaveTimestamp, clearPdsContentSnapshot } from '../state/WizardState';
+import { setLoggedIn, setOnSaveCallback, setActiveProjectRkey, setLastPdsSaveTimestamp } from '../state/WizardState';
 
 export let setupTooltips: any;
 
@@ -264,7 +264,8 @@ export function initializeApp(): void {
     setLoggedIn(false);
     setActiveProjectRkey(null);
     setLastPdsSaveTimestamp(null);
-    clearPdsContentSnapshot();
+    // Don't clear PDS content snapshot — it tracks whether local state
+    // has changed since the last PDS save, regardless of login state.
     setupLoginButton();
     updateSaveButtonVisibility();
   });
