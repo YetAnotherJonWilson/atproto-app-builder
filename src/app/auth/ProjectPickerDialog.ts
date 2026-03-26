@@ -18,7 +18,7 @@ import {
   setActiveProjectRkey,
   setLastPdsSaveTimestamp,
 } from '../state/WizardState';
-import { switchSection, updateAppNameInputs } from '../views/WorkspaceLayout';
+import { switchSection, updateAppNameInputs, transitionToWizard } from '../views/WorkspaceLayout';
 import { renderCurrentStep } from '../views/StepRenderer';
 import { updateProgressBar } from '../navigation/StepNavigation';
 import { updateSaveButtonVisibility } from '../services/PdsSaveController';
@@ -134,7 +134,10 @@ function wirePickerEvents(projects: ProjectSummary[]): void {
       // Don't select if clicking the delete button
       if ((e.target as HTMLElement).closest('.project-item-delete')) return;
 
-      dialogEl!.querySelectorAll('.project-item').forEach((i) => i.classList.remove('selected'));
+      dialogEl!.querySelectorAll('.project-item').forEach((i) => {
+        i.classList.remove('selected');
+        i.classList.remove('active');
+      });
       item.classList.add('selected');
       selectedRkey = (item as HTMLElement).dataset.rkey || null;
     });
@@ -280,8 +283,18 @@ function closePicker(): void {
 function reloadUI(): void {
   const state = getWizardState();
   if (state.currentStep >= 2) {
-    // In wizard — re-render current section
-    switchSection(state.activeSection || 'requirements');
+    // Check if workspace layout is already rendered (i.e. we're already in the wizard)
+    const workspaceExists = document.getElementById('workspace-panel-body');
+    if (workspaceExists) {
+      // Already in wizard — just re-render current section
+      switchSection(state.activeSection || 'requirements');
+    } else {
+      // Still on landing page — transition to wizard and render workspace
+      transitionToWizard(() => {
+        renderCurrentStep();
+        updateProgressBar();
+      });
+    }
   } else {
     // On landing/early steps
     renderCurrentStep();

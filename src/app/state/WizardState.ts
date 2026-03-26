@@ -11,9 +11,12 @@ const STALE_DAYS = 30;
 export let wizardState: WizardState | null = null;
 export let currentEditingId: string | null = null;
 
-// --- PDS project tracking (session-only, not persisted) ---
-let activeProjectRkey: string | null = null;
-let lastPdsSaveTimestamp: string | null = null;
+// --- PDS project tracking (persisted in localStorage) ---
+const ACTIVE_RKEY_KEY = 'atproto-wizard-active-rkey';
+const LAST_PDS_SAVE_KEY = 'atproto-wizard-last-pds-save';
+
+let activeProjectRkey: string | null = localStorage.getItem(ACTIVE_RKEY_KEY);
+let lastPdsSaveTimestamp: string | null = localStorage.getItem(LAST_PDS_SAVE_KEY);
 let _isLoggedIn = false;
 
 export function getActiveProjectRkey(): string | null {
@@ -22,6 +25,11 @@ export function getActiveProjectRkey(): string | null {
 
 export function setActiveProjectRkey(rkey: string | null): void {
   activeProjectRkey = rkey;
+  if (rkey) {
+    localStorage.setItem(ACTIVE_RKEY_KEY, rkey);
+  } else {
+    localStorage.removeItem(ACTIVE_RKEY_KEY);
+  }
 }
 
 export function getLastPdsSaveTimestamp(): string | null {
@@ -30,6 +38,11 @@ export function getLastPdsSaveTimestamp(): string | null {
 
 export function setLastPdsSaveTimestamp(ts: string | null): void {
   lastPdsSaveTimestamp = ts;
+  if (ts) {
+    localStorage.setItem(LAST_PDS_SAVE_KEY, ts);
+  } else {
+    localStorage.removeItem(LAST_PDS_SAVE_KEY);
+  }
 }
 
 export function setLoggedIn(loggedIn: boolean): void {

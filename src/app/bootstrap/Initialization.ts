@@ -43,7 +43,7 @@ import {
 } from '../auth/LoginDialog';
 import { setupProjectPicker, showPostLoginPicker } from '../auth/ProjectPickerDialog';
 import { updateSaveButtonVisibility, wireSaveButtons, triggerAutoSave } from '../services/PdsSaveController';
-import { setLoggedIn, setOnSaveCallback } from '../state/WizardState';
+import { setLoggedIn, setOnSaveCallback, setActiveProjectRkey, setLastPdsSaveTimestamp } from '../state/WizardState';
 
 export let setupTooltips: any;
 
@@ -262,6 +262,8 @@ export function initializeApp(): void {
   setupProjectPicker();
   setOnLoggedOut(() => {
     setLoggedIn(false);
+    setActiveProjectRkey(null);
+    setLastPdsSaveTimestamp(null);
     setupLoginButton();
     updateSaveButtonVisibility();
   });
