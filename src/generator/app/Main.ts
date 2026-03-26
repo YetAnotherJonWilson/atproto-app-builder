@@ -23,9 +23,9 @@ import {
 
 let router: Router;
 
-initOAuthClient();
-
 window.addEventListener('DOMContentLoaded', async () => {
+  await initOAuthClient();
+
   const queryParams = new URLSearchParams(window.location.search);
   const hashParams = new URLSearchParams(window.location.hash.slice(1));
 

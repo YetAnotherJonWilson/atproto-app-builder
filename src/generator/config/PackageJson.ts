@@ -23,7 +23,8 @@ export function generatePackageJson(appInfo: AppInfo): string {
     "dependencies": {
       "@atproto/api": "^0.18.8",
       "@atproto/lexicon": "^0.5.1",
-      "@atproto/oauth-client-browser": "^0.3.35"
+      "@atproto/oauth-client-browser": "^0.3.35",
+      "@atproto/oauth-types": "^0.6.3"
     },
     "devDependencies": {
       "@types/node": "^25.0.3",

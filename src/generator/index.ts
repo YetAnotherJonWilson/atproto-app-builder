@@ -10,6 +10,8 @@ import { toPascalCase, toCamelCase } from '../utils';
 import { generatePackageJson } from './config/PackageJson';
 import { generateViteConfig } from './config/ViteConfig';
 import { generateTsConfig } from './config/TsConfig';
+import { generateEnvironmentTs } from './config/Environment';
+import { generateEnvExample } from './config/EnvExample';
 
 // Template generators
 import { generateIndexHtml } from './templates/IndexHtml';
@@ -96,8 +98,9 @@ export function generateAllFiles(wizardState: WizardState, appConfig: AppConfig)
   // ── Root files ─────────────────────────────────────────────────────
 
   files['package.json'] = generatePackageJson(appInfo);
-  files['vite.config.ts'] = generateViteConfig();
+  files['vite.config.ts'] = generateViteConfig(appInfo.appName);
   files['tsconfig.json'] = generateTsConfig();
+  files['.env.example'] = generateEnvExample();
   files['index.html'] = generateIndexHtml(appInfo);
   files['styles.css'] = generateStyles();
 
@@ -110,6 +113,7 @@ export function generateAllFiles(wizardState: WizardState, appConfig: AppConfig)
 
   // ── AT Protocol layer ──────────────────────────────────────────────
 
+  files['src/config/environment.ts'] = generateEnvironmentTs();
   files['src/atproto/auth.ts'] = generateAuthTs();
   files['src/atproto/types.ts'] = generateTypesTs(recordTypes, domain);
   files['src/atproto/api.ts'] = generateApiTs(recordTypes, domain);

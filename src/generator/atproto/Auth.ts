@@ -7,8 +7,9 @@ export function generateAuthTs(): string {
   BrowserOAuthClient,
   OAuthSession,
 } from '@atproto/oauth-client-browser';
-import { Agent } from '@atproto/api';
 import { atprotoLoopbackClientMetadata } from '@atproto/oauth-types';
+import { Agent } from '@atproto/api';
+import { getOAuthConfig } from '../config/environment';
 
 // OAuth client and session state
 let oauthClient: BrowserOAuthClient;
@@ -28,18 +29,24 @@ export interface SessionRestoreResult {
 }
 
 /**
- * Initialize the OAuth client
+ * Initialize the OAuth client.
+ * In development, uses loopback authentication (no server needed).
+ * In production, loads client metadata from the configured URL.
  */
 export async function initOAuthClient(): Promise<void> {
-  oauthClient = new BrowserOAuthClient({
-    handleResolver: 'https://bsky.social',
-    clientMetadata: atprotoLoopbackClientMetadata(
-      \`http://localhost?\${new URLSearchParams([
-        ['redirect_uri', \`http://127.0.0.1:8080\`],
-        ['scope', \`atproto transition:generic\`],
-      ])}\`
-    ),
-  });
+  const config = getOAuthConfig();
+
+  if (config.isDev) {
+    oauthClient = new BrowserOAuthClient({
+      handleResolver: config.handleResolver,
+      clientMetadata: atprotoLoopbackClientMetadata(config.clientId),
+    });
+  } else {
+    oauthClient = await BrowserOAuthClient.load({
+      clientId: config.clientId,
+      handleResolver: config.handleResolver,
+    });
+  }
 }
 
 /**
