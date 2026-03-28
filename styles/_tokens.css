@@ -1,17 +1,5 @@
 @layer base {
   @font-face {
-    font-family: djgross;
-    src: url(../fonts/DJ-Gross/DJGROSS.ttf);
-  }
-  @font-face {
-    font-family: bilbo-swash;
-    src: url(../fonts/bilbo/BilboSwashCaps-Regular.otf);
-  }
-  @font-face {
-    font-family: bilbo-regular;
-    src: url(../fonts/bilbo/Bilbo-Regular.otf);
-  }
-  @font-face {
     font-family: dirty-ego;
     src: url(../fonts/DirtyEgo/Truetype/DIRTYEGO.TTF);
   }

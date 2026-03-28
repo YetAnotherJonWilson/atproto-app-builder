@@ -27,7 +27,7 @@ Pick one item from "Up Next" before starting a coding session.
 ### Independent (no blockers)
 
 - [ ] Remove no-views dead code from navigate forms — see `.specs/active/remove-no-views-dead-code.md`
-- [ ] Clean up unused assets (fonts, SVG filters) — see `.specs/active/cleanup-unused-assets.md`
+- [x] Clean up unused assets (fonts, SVG filters) — see `.specs/done/cleanup-unused-assets.md`
 - [ ] Add Vitest unit tests for generator output — see `.specs/active/001-example-add-tests-for-generators.md`
 - [ ] Add Vitest unit tests for utility functions (text, id, html, nsid)
 
