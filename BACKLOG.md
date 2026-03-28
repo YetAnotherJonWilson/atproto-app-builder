@@ -58,6 +58,8 @@ Pick one item from "Up Next" before starting a coding session.
 
 <!-- Move completed items here with date -->
 
+- [x] LexiStats Lexicon Chooser integration — see `.specs/done/lexistats-chooser-integration.md` 3/28/26
+
 - [x] Generator view-driven pages + block types + nav menu — see `.specs/done/generator-view-driven-pages.md` 3/23/26
 - [x] Navigation subtypes — see `.specs/done/navigation-subtypes.md` 3/17/26
 - [x] Data type identity — lexicon config & discovery — see `.specs/done/data-type-identity.md` 3/20/26

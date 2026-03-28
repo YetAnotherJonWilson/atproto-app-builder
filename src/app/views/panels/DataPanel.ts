@@ -17,6 +17,10 @@ import {
   resolveLexicon,
 } from '../../services/LexiconDiscovery';
 import type { AutocompleteResult } from '../../services/LexiconDiscovery';
+import {
+  fetchPopularLexicons,
+} from '../../services/LexiStats';
+import type { LexiStatEntry } from '../../services/LexiStats';
 import { toCamelCase } from '../../../utils/text';
 import type { RecordType, NamespaceOption } from '../../../types/wizard';
 import type { LexiconSchema } from '../../../types/generation';
@@ -49,7 +53,14 @@ let searchResults: AutocompleteResult[] = [];
 let searchError = false;
 let selectedSchema: LexiconSchema | null = null;
 let selectedNsid: string | null = null;
+let resolveError: string | null = null;
 let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+// Browse sub-tab state
+let browseTab: 'search' | 'popular' = 'search';
+let popularLexicons: LexiStatEntry[] = [];
+let popularLoading = false;
+let popularError = false;
 
 // ── Public API ────────────────────────────────────────────────────────
 
@@ -114,8 +125,13 @@ export function resetDetailState(): void {
   searchError = false;
   selectedSchema = null;
   selectedNsid = null;
+  resolveError = null;
   editingFieldId = null;
   deletingFieldId = null;
+  browseTab = 'search';
+  popularLexicons = [];
+  popularLoading = false;
+  popularError = false;
 }
 
 // ── Card grid ─────────────────────────────────────────────────────────
@@ -697,13 +713,19 @@ function renderBrowseUI(): string {
     <div id="dt-browse-ui">
       <a href="#" class="data-detail-back" id="dt-back-to-create">&larr; Back</a>
 
+      <div class="browse-tabs">
+        <button id="dt-tab-search" class="browse-tab${browseTab === 'search' ? ' browse-tab--active' : ''}">Search</button>
+        <button id="dt-tab-popular" class="browse-tab${browseTab === 'popular' ? ' browse-tab--active' : ''}">Popular</button>
+      </div>
+
+      ${browseTab === 'search' ? `
       <div class="form-group">
         <label for="dt-search-input">Search for a lexicon</label>
         <input type="text" id="dt-search-input"
                value="${escapeAttr(searchQuery)}"
                placeholder="Search by name or NSID (e.g., 'feed post' or 'app.bsky.feed')"
                autocomplete="off" />
-      </div>
+      </div>` : ''}
 
       <div id="dt-browse-results">
         ${renderBrowseResults()}
@@ -713,6 +735,14 @@ function renderBrowseUI(): string {
 }
 
 function renderBrowseResults(): string {
+  if (browseTab === 'popular') {
+    return `
+      ${renderPopularContent()}
+      ${resolveError ? `<div class="search-error-msg">${escapeHtml(resolveError)}</div>` : ''}
+      ${selectedSchema ? renderSchemaPreview() : ''}
+    `;
+  }
+
   return `
     ${searchError ? '<div class="search-error-msg">Search unavailable. You can enter an NSID directly below.</div>' : ''}
 
@@ -727,8 +757,49 @@ function renderBrowseResults(): string {
       </div>
     </div>
 
+    ${resolveError ? `<div class="search-error-msg">${escapeHtml(resolveError)}</div>` : ''}
     ${selectedSchema ? renderSchemaPreview() : ''}
   `;
+}
+
+function renderPopularContent(): string {
+  if (popularLoading) {
+    return '<div class="search-loading-msg">Loading popular lexicons&hellip;</div>';
+  }
+  if (popularError) {
+    return '<div class="search-error-msg">Could not load popular lexicons. Try searching instead.</div>';
+  }
+  if (popularLexicons.length === 0) {
+    return '';
+  }
+  return renderPopularList();
+}
+
+function renderPopularList(): string {
+  const items = popularLexicons
+    .slice(0, 50)
+    .map((entry) => {
+      const events7d = entry.total_events_7d ?? 0;
+      const eps = entry.avg_eps_7d ?? 0;
+      const categoryBadge = entry.category
+        ? `<span class="search-result-source">${escapeHtml(entry.category)}</span>`
+        : '';
+      const desc = entry.description
+        ? `<div class="popular-result-desc">${escapeHtml(entry.description)}</div>`
+        : '';
+      const stats = `<div class="popular-result-stats">${events7d.toLocaleString()} events (7d) &middot; ${eps} eps</div>`;
+
+      return `
+        <div class="search-result-item popular-result-item" data-nsid="${escapeAttr(entry.nsid)}">
+          <div class="search-result-nsid">${escapeHtml(entry.nsid)} ${categoryBadge}</div>
+          ${desc}
+          ${stats}
+        </div>
+      `;
+    })
+    .join('');
+
+  return `<div class="search-results" id="dt-popular-results">${items}</div>`;
 }
 
 function renderSearchResults(): string {
@@ -973,7 +1044,32 @@ function wireBrowseUI(): void {
     });
   }
 
-  // Search input
+  // Tab: Search
+  const tabSearch = document.getElementById('dt-tab-search');
+  if (tabSearch) {
+    tabSearch.addEventListener('click', () => {
+      if (browseTab === 'search') return;
+      browseTab = 'search';
+      selectedSchema = null;
+      selectedNsid = null;
+      rerenderSourceSection();
+    });
+  }
+
+  // Tab: Popular
+  const tabPopular = document.getElementById('dt-tab-popular');
+  if (tabPopular) {
+    tabPopular.addEventListener('click', () => {
+      if (browseTab === 'popular') return;
+      browseTab = 'popular';
+      selectedSchema = null;
+      selectedNsid = null;
+      rerenderSourceSection();
+      handleLoadPopular();
+    });
+  }
+
+  // Search input (only present in search tab)
   const searchInput = document.getElementById(
     'dt-search-input',
   ) as HTMLInputElement | null;
@@ -1107,12 +1203,30 @@ function handleCancel(): void {
   rerenderSourceSection();
 }
 
+async function handleLoadPopular(): Promise<void> {
+  if (popularLexicons.length > 0) {
+    rerenderBrowseResults();
+    return;
+  }
+  popularLoading = true;
+  popularError = false;
+  rerenderBrowseResults();
+  try {
+    popularLexicons = await fetchPopularLexicons();
+  } catch {
+    popularError = true;
+  }
+  popularLoading = false;
+  rerenderBrowseResults();
+}
+
 async function handleSearch(query: string): Promise<void> {
   try {
     searchError = false;
     searchResults = await searchLexicons(query);
     selectedSchema = null;
     selectedNsid = null;
+    resolveError = null;
   } catch {
     searchError = true;
     searchResults = [];
@@ -1125,6 +1239,7 @@ async function handleSelectResult(nsid: string): Promise<void> {
     const result = await resolveLexicon(nsid);
     selectedSchema = result.schema;
     selectedNsid = nsid;
+    resolveError = null;
     rerenderBrowseResults();
     // Scroll schema preview into view
     const preview = document.getElementById('dt-schema-preview');
@@ -1134,12 +1249,10 @@ async function handleSelectResult(nsid: string): Promise<void> {
   } catch {
     selectedSchema = null;
     selectedNsid = null;
-    // Show error inline
-    const preview = document.getElementById('dt-schema-preview');
-    if (preview) {
-      preview.innerHTML =
-        '<div class="search-error-msg">Failed to load schema. Check the NSID and try again.</div>';
-    }
+    resolveError = browseTab === 'popular'
+      ? `Schema not publicly available for ${nsid}. The author hasn't published it yet.`
+      : `Failed to load schema for ${nsid}. Check the NSID and try again.`;
+    rerenderBrowseResults();
   }
 }
 
@@ -2002,6 +2115,19 @@ function wireBrowseResultEvents(): void {
     resultsContainer.addEventListener('click', (e) => {
       const item = (e.target as HTMLElement).closest(
         '.search-result-item',
+      ) as HTMLElement | null;
+      if (!item) return;
+      const nsid = item.dataset.nsid;
+      if (nsid) handleSelectResult(nsid);
+    });
+  }
+
+  // Popular result clicks
+  const popularContainer = document.getElementById('dt-popular-results');
+  if (popularContainer) {
+    popularContainer.addEventListener('click', (e) => {
+      const item = (e.target as HTMLElement).closest(
+        '.popular-result-item',
       ) as HTMLElement | null;
       if (!item) return;
       const nsid = item.dataset.nsid;
