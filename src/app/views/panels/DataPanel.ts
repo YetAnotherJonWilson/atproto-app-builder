@@ -779,8 +779,8 @@ function renderPopularList(): string {
   const items = popularLexicons
     .slice(0, 50)
     .map((entry) => {
-      const events7d = entry.total_events_7d ?? 0;
-      const users7d = entry.unique_users_7d;
+      const events7d = Number(entry.total_events_7d) || 0;
+      const users7d = entry.unique_users_7d != null ? Number(entry.unique_users_7d) : null;
       const categoryBadge = entry.category
         ? `<span class="search-result-source">${escapeHtml(entry.category)}</span>`
         : '';
