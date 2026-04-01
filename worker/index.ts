@@ -60,6 +60,14 @@ export default {
       });
     }
 
+    // Proxy Lexicon Garden — no CORS headers from upstream, so we must proxy
+    if (url.pathname.startsWith('/lexicon-garden/')) {
+      if (request.method === 'OPTIONS') {
+        return new Response(null, { headers: corsHeaders() });
+      }
+      return handleLexiconGardenProxy(request, url);
+    }
+
     return env.ASSETS.fetch(request);
   },
 } satisfies ExportedHandler<Env>;
@@ -259,6 +267,42 @@ function extractUniqueUsernames(nsids: string[]): string[] {
     }
   }
   return [...usernames];
+}
+
+// --- Lexicon Garden proxy ---
+
+const LEXICON_GARDEN_BASE = 'https://lexicon.garden';
+
+async function handleLexiconGardenProxy(request: Request, url: URL): Promise<Response> {
+  const upstreamPath = url.pathname.replace(/^\/lexicon-garden/, '') + url.search;
+  const upstreamUrl = `${LEXICON_GARDEN_BASE}${upstreamPath}`;
+
+  let response: Response;
+  try {
+    response = await fetch(upstreamUrl, {
+      method: request.method,
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+  } catch {
+    return Response.json(
+      { error: 'Lexicon Garden is unreachable' },
+      { status: 502, headers: corsHeaders() },
+    );
+  }
+
+  // Forward the response with CORS headers
+  const headers = new Headers(response.headers);
+  headers.set('Access-Control-Allow-Origin', '*');
+  headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  headers.set('Access-Control-Allow-Headers', 'Content-Type');
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
 }
 
 async function ensureDnsRecord(env: Env, username: string): Promise<void> {

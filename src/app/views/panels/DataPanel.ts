@@ -18,7 +18,11 @@ import {
 } from '../../services/LexiconDiscovery';
 import type { AutocompleteResult } from '../../services/LexiconDiscovery';
 import {
-  fetchPopularLexicons,
+  fetchLexiconCatalog,
+  filterRecords,
+  searchCatalog,
+  getCachedCatalog,
+  findByNsid,
 } from '../../services/LexiStats';
 import type { LexiStatEntry } from '../../services/LexiStats';
 import { toCamelCase } from '../../../utils/text';
@@ -50,6 +54,7 @@ let savedFormSnapshot: CreateNewFormState | null = null;
 // Browse/adopt state
 let searchQuery = '';
 let searchResults: AutocompleteResult[] = [];
+let searchLexiOnly: LexiStatEntry[] = [];
 let searchError = false;
 let selectedSchema: LexiconSchema | null = null;
 let selectedNsid: string | null = null;
@@ -61,6 +66,9 @@ let browseTab: 'search' | 'popular' = 'search';
 let popularLexicons: LexiStatEntry[] = [];
 let popularLoading = false;
 let popularError = false;
+let popularCategory: string | null = null;
+let popularSort: 'users' | 'events' | 'alpha' = 'users';
+let popularShowCount = 20;
 
 // ── Public API ────────────────────────────────────────────────────────
 
@@ -122,6 +130,7 @@ export function resetDetailState(): void {
   savedFormSnapshot = null;
   searchQuery = '';
   searchResults = [];
+  searchLexiOnly = [];
   searchError = false;
   selectedSchema = null;
   selectedNsid = null;
@@ -132,6 +141,9 @@ export function resetDetailState(): void {
   popularLexicons = [];
   popularLoading = false;
   popularError = false;
+  popularCategory = null;
+  popularSort = 'users';
+  popularShowCount = 20;
 }
 
 // ── Card grid ─────────────────────────────────────────────────────────
@@ -235,6 +247,7 @@ function openDetailView(recordId: string): void {
   guidanceChecklistOpen = false;
   searchQuery = '';
   searchResults = [];
+  searchLexiOnly = [];
   searchError = false;
   selectedSchema = null;
   selectedNsid = null;
@@ -715,7 +728,7 @@ function renderBrowseUI(): string {
 
       <div class="browse-tabs">
         <button id="dt-tab-search" class="browse-tab${browseTab === 'search' ? ' browse-tab--active' : ''}">Search</button>
-        <button id="dt-tab-popular" class="browse-tab${browseTab === 'popular' ? ' browse-tab--active' : ''}">Popular</button>
+        <button id="dt-tab-popular" class="browse-tab${browseTab === 'popular' ? ' browse-tab--active' : ''}">Browse popular</button>
       </div>
 
       ${browseTab === 'search' ? `
@@ -772,14 +785,63 @@ function renderPopularContent(): string {
   if (popularLexicons.length === 0) {
     return '';
   }
-  return renderPopularList();
+  return `
+    ${renderCategoryPills()}
+    ${renderSortControls()}
+    ${renderPopularList()}
+  `;
+}
+
+function getFilteredSortedPopular(): LexiStatEntry[] {
+  let list = popularLexicons;
+  if (popularCategory) {
+    list = list.filter((l) => l.category === popularCategory);
+  }
+  if (popularSort === 'users') {
+    list = [...list].sort((a, b) => (b.unique_users_7d ?? 0) - (a.unique_users_7d ?? 0));
+  } else if (popularSort === 'events') {
+    list = [...list].sort((a, b) => (b.total_events ?? 0) - (a.total_events ?? 0));
+  } else {
+    list = [...list].sort((a, b) => a.nsid.localeCompare(b.nsid));
+  }
+  return list;
+}
+
+function renderCategoryPills(): string {
+  const counts: Record<string, number> = {};
+  for (const l of popularLexicons) {
+    const cat = l.category ?? 'other';
+    counts[cat] = (counts[cat] ?? 0) + 1;
+  }
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  const pills = sorted
+    .map(([cat, count]) => {
+      const active = popularCategory === cat ? ' popular-pill--active' : '';
+      return `<button class="popular-pill${active}" data-category="${escapeAttr(cat)}">${escapeHtml(cat)} <span class="popular-pill-count">${count}</span></button>`;
+    })
+    .join('');
+  return `<div class="popular-pills" id="dt-category-pills">${pills}</div>`;
+}
+
+function renderSortControls(): string {
+  return `
+    <div class="popular-sort">
+      <label for="dt-popular-sort">Sort by</label>
+      <select id="dt-popular-sort">
+        <option value="users"${popularSort === 'users' ? ' selected' : ''}>Most users (7d)</option>
+        <option value="events"${popularSort === 'events' ? ' selected' : ''}>Most events</option>
+        <option value="alpha"${popularSort === 'alpha' ? ' selected' : ''}>Alphabetical</option>
+      </select>
+    </div>
+  `;
 }
 
 function renderPopularList(): string {
-  const items = popularLexicons
-    .slice(0, 50)
+  const filtered = getFilteredSortedPopular();
+  const visible = filtered.slice(0, popularShowCount);
+  const items = visible
     .map((entry) => {
-      const events7d = Number(entry.total_events_7d) || 0;
+      const events = Number(entry.total_events) || 0;
       const users7d = entry.unique_users_7d != null ? Number(entry.unique_users_7d) : null;
       const categoryBadge = entry.category
         ? `<span class="search-result-source">${escapeHtml(entry.category)}</span>`
@@ -788,35 +850,74 @@ function renderPopularList(): string {
         ? `<div class="popular-result-desc">${escapeHtml(entry.description)}</div>`
         : '';
       const usersPart = users7d != null ? `${users7d.toLocaleString()} users (7d) &middot; ` : '';
-      const stats = `<div class="popular-result-stats">${usersPart}${events7d.toLocaleString()} events (7d)</div>`;
+      const stats = `<div class="popular-result-stats">${usersPart}${events.toLocaleString()} events</div>`;
+      const noSchema = entry.has_schema === false
+        ? ' popular-result-no-schema'
+        : '';
+      const noSchemaBadge = entry.has_schema === false
+        ? '<span class="no-schema-badge">no schema</span>'
+        : '';
 
       return `
-        <div class="search-result-item popular-result-item" data-nsid="${escapeAttr(entry.nsid)}">
-          <div class="search-result-nsid">${escapeHtml(entry.nsid)} ${categoryBadge}</div>
+        <div class="search-result-item popular-result-item${noSchema}" data-nsid="${escapeAttr(entry.nsid)}">
+          <div class="search-result-nsid">${escapeHtml(entry.nsid)} ${categoryBadge} ${noSchemaBadge}</div>
           ${desc}
           ${stats}
         </div>
       `;
     })
     .join('');
+  const showMore = filtered.length > popularShowCount
+    ? `<button class="popular-show-more" id="dt-show-more">Show more (${filtered.length - popularShowCount} remaining)</button>`
+    : '';
 
-  return `<div class="search-results" id="dt-popular-results">${items}</div>`;
+  return `<div class="search-results" id="dt-popular-results">${items}</div>${showMore}`;
+}
+
+function renderSearchResultStats(nsid: string): string {
+  const catalog = getCachedCatalog();
+  if (!catalog) return '';
+  const entry = findByNsid(catalog, nsid);
+  if (!entry) return '';
+  const users = entry.unique_users_7d != null ? Number(entry.unique_users_7d) : null;
+  const events = Number(entry.total_events) || 0;
+  const usersPart = users != null ? `${users.toLocaleString()} users &middot; ` : '';
+  return `<span class="search-result-stats">${usersPart}${events.toLocaleString()} events</span>`;
 }
 
 function renderSearchResults(): string {
-  const items = searchResults
+  // Lexicon Garden results
+  const lgItems = searchResults
     .slice(0, 10)
     .map(
       (r) => `
       <div class="search-result-item" data-nsid="${escapeAttr(r.label)}">
         <span class="search-result-nsid">${escapeHtml(r.label)}</span>
-        <span class="search-result-source">via Lexicon Garden</span>
+        ${renderSearchResultStats(r.label)}
       </div>
     `,
     )
     .join('');
 
-  return `<div class="search-results" id="dt-search-results">${items}</div>`;
+  // LexiStats-only results (not in Lexicon Garden)
+  const lexiItems = searchLexiOnly
+    .slice(0, 10)
+    .map(
+      (entry) => {
+        const users = entry.unique_users_7d != null ? Number(entry.unique_users_7d) : null;
+        const events = Number(entry.total_events) || 0;
+        const usersPart = users != null ? `${users.toLocaleString()} users &middot; ` : '';
+        return `
+      <div class="search-result-item" data-nsid="${escapeAttr(entry.nsid)}">
+        <span class="search-result-nsid">${escapeHtml(entry.nsid)}</span>
+        <span class="search-result-stats">${usersPart}${events.toLocaleString()} events</span>
+      </div>
+    `;
+      },
+    )
+    .join('');
+
+  return `<div class="search-results" id="dt-search-results">${lgItems}${lexiItems}</div>`;
 }
 
 function renderSchemaPreview(): string {
@@ -1213,7 +1314,8 @@ async function handleLoadPopular(): Promise<void> {
   popularError = false;
   rerenderBrowseResults();
   try {
-    popularLexicons = await fetchPopularLexicons();
+    const catalog = await fetchLexiconCatalog();
+    popularLexicons = filterRecords(catalog);
   } catch {
     popularError = true;
   }
@@ -1222,16 +1324,31 @@ async function handleLoadPopular(): Promise<void> {
 }
 
 async function handleSearch(query: string): Promise<void> {
+  selectedSchema = null;
+  selectedNsid = null;
+  resolveError = null;
+
+  // Query Lexicon Garden
+  let lgResults: AutocompleteResult[] = [];
+  let lgFailed = false;
   try {
-    searchError = false;
-    searchResults = await searchLexicons(query);
-    selectedSchema = null;
-    selectedNsid = null;
-    resolveError = null;
+    lgResults = await searchLexicons(query);
   } catch {
-    searchError = true;
-    searchResults = [];
+    lgFailed = true;
   }
+
+  // Query LexiStats (client-side filter of cached catalog)
+  const catalog = getCachedCatalog();
+  const lexiResults = catalog ? searchCatalog(catalog, query) : [];
+
+  // Merge: LG first, then LexiStats-only matches, deduplicated
+  const seen = new Set(lgResults.map((r) => r.label.toLowerCase()));
+  const lexiOnly = lexiResults.filter((l) => !seen.has(l.nsid.toLowerCase()));
+
+  searchResults = lgResults;
+  searchLexiOnly = lexiOnly;
+  searchError = lgFailed && lexiOnly.length === 0;
+
   rerenderBrowseResults();
 }
 
@@ -2133,6 +2250,41 @@ function wireBrowseResultEvents(): void {
       if (!item) return;
       const nsid = item.dataset.nsid;
       if (nsid) handleSelectResult(nsid);
+    });
+  }
+
+  // Category pill clicks
+  const pillsContainer = document.getElementById('dt-category-pills');
+  if (pillsContainer) {
+    pillsContainer.addEventListener('click', (e) => {
+      const pill = (e.target as HTMLElement).closest('.popular-pill') as HTMLElement | null;
+      if (!pill) return;
+      const cat = pill.dataset.category ?? null;
+      popularCategory = popularCategory === cat ? null : cat;
+      popularShowCount = 20;
+      selectedSchema = null;
+      selectedNsid = null;
+      resolveError = null;
+      rerenderBrowseResults();
+    });
+  }
+
+  // Sort dropdown
+  const sortSelect = document.getElementById('dt-popular-sort') as HTMLSelectElement | null;
+  if (sortSelect) {
+    sortSelect.addEventListener('change', () => {
+      popularSort = sortSelect.value as 'users' | 'events' | 'alpha';
+      popularShowCount = 20;
+      rerenderBrowseResults();
+    });
+  }
+
+  // Show more button
+  const showMoreBtn = document.getElementById('dt-show-more');
+  if (showMoreBtn) {
+    showMoreBtn.addEventListener('click', () => {
+      popularShowCount += 20;
+      rerenderBrowseResults();
     });
   }
 

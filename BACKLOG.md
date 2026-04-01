@@ -7,6 +7,8 @@ Pick one item from "Up Next" before starting a coding session.
 
 <!-- Move one item here when you start working on it -->
 
+- [ ] Lexicon discovery production fixes & browse enhancements — see `.specs/active/lexicon-discovery-production.md` (pending production verification)
+
 ### Layout Migration (sequential phases)
 
 - [x] Phase 0: Preparation — delete orphans, add sidebar HTML/CSS

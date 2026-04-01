@@ -69,11 +69,6 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/lexicon-garden/, ''),
       },
-      '/lexistats': {
-        target: 'https://lexistats.linkedtrust.us',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/lexistats/, ''),
-      },
       '/api': {
         target: 'https://thelexfiles.com',
         changeOrigin: true,
