@@ -25,9 +25,6 @@ export async function createGitHubRepo(files: FileOutput): Promise<void> {
   }
 
   try {
-    // Store token in sessionStorage temporarily
-    sessionStorage.setItem('github-pat', token);
-
     // Create repository
     const createResponse = await fetch('https://api.github.com/user/repos', {
       method: 'POST',
@@ -52,9 +49,10 @@ export async function createGitHubRepo(files: FileOutput): Promise<void> {
     const repoData = await createResponse.json();
     const owner = repoData.owner.login;
 
-    // Add files to the repository
+    // Add files to the repository, tracking failures
+    const failed: string[] = [];
     for (const [path, content] of Object.entries(files)) {
-      await fetch(`https://api.github.com/repos/${owner}/${repoName}/contents/${path}`, {
+      const fileResponse = await fetch(`https://api.github.com/repos/${owner}/${repoName}/contents/${path}`, {
         method: 'PUT',
         headers: {
           'Authorization': `token ${token}`,
@@ -66,10 +64,17 @@ export async function createGitHubRepo(files: FileOutput): Promise<void> {
           content: btoa(unescape(encodeURIComponent(content)))
         })
       });
+
+      if (!fileResponse.ok) {
+        failed.push(path);
+      }
     }
 
-    // Clear token from session storage
-    sessionStorage.removeItem('github-pat');
+    if (failed.length > 0) {
+      throw new Error(
+        `Repository created but ${failed.length} file(s) failed to upload:\n${failed.join('\n')}`
+      );
+    }
 
     // Show success message
     alert(`Success! Your repository has been created.\n\nVisit: ${repoData.html_url}\n\nTo get started:\n1. Clone the repository\n2. Run: npm install\n3. Run: npm run dev`);
@@ -80,6 +85,5 @@ export async function createGitHubRepo(files: FileOutput): Promise<void> {
   } catch (error) {
     console.error('Failed to create GitHub repo:', error);
     alert('Failed to create GitHub repository: ' + (error instanceof Error ? error.message : String(error)));
-    sessionStorage.removeItem('github-pat');
   }
 }
