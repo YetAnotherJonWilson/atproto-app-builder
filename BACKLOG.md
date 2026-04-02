@@ -7,7 +7,6 @@ Pick one item from "Up Next" before starting a coding session.
 
 <!-- Move one item here when you start working on it -->
 
-- [ ] Lexicon discovery production fixes & browse enhancements — see `.specs/active/lexicon-discovery-production.md` (pending production verification)
 
 ### Layout Migration (sequential phases)
 
@@ -60,6 +59,7 @@ Pick one item from "Up Next" before starting a coding session.
 
 <!-- Move completed items here with date -->
 
+- [x] Lexicon discovery production fixes & browse enhancements — see `.specs/done/lexicon-discovery-production.md` 4/1/26
 - [x] LexiStats Lexicon Chooser integration — see `.specs/done/lexistats-chooser-integration.md` 3/28/26
 
 - [x] Generator view-driven pages + block types + nav menu — see `.specs/done/generator-view-driven-pages.md` 3/23/26

@@ -1,6 +1,6 @@
 # Spec: Lexicon Discovery — Production Fixes & Browse Enhancements
 
-**Status:** in-progress
+**Status:** done
 **Date:** 2026-04-01
 
 ## What
@@ -43,7 +43,7 @@ The LexiStats "Popular" tab was added in PR #9 and is already merged. The follow
   - This works because LexiStats serves `access-control-allow-origin: *` (confirmed 2026-04-01)
   - The Vite dev proxy for `/lexistats` is removed (no longer needed)
 
-- [ ] **Production verification**
+- [x] **Production verification**
   - After deploying, verify on `thelexfiles.com`: search returns results, Popular tab loads lexicons, schema resolution works when clicking a result
   - Verify with DevTools Network tab that requests go to the correct endpoints and return valid JSON
 
