@@ -65,10 +65,11 @@ export function renderWorkspaceLayout(): string {
 export function wireWorkspaceLayout(): void {
   const wizardState = getWizardState();
 
-  // Wire sidebar section click handlers
-  document.querySelectorAll('.sidebar-header').forEach((header) => {
-    header.addEventListener('click', () => {
-      const target = (header as HTMLElement).dataset.target as SectionName;
+  // Wire sidebar section click handlers (header and items)
+  document.querySelectorAll('.sidebar-header, .sidebar-items').forEach((el) => {
+    el.addEventListener('click', () => {
+      const section = (el as HTMLElement).closest('.sidebar-section');
+      const target = section?.querySelector<HTMLElement>('.sidebar-header')?.dataset.target as SectionName;
       if (target) switchSection(target);
     });
   });

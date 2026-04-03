@@ -378,6 +378,20 @@ describe('GeneratePanel — review section', () => {
     expect(html).toContain('com.thelexfiles.alice.post');
   });
 
+  it('shows adopted NSID without requiring domain', () => {
+    const rt = makeRecordType({
+      name: 'post',
+      displayName: 'Post',
+      source: 'adopted',
+      adoptedNsid: 'app.bsky.feed.post',
+    });
+    setupState({ recordTypes: [rt] });
+
+    const html = renderGeneratePanel();
+    expect(html).toContain('app.bsky.feed.post');
+    expect(html).not.toContain('[domain].post');
+  });
+
   it('shows lexicon preview in details element', () => {
     const rt = makeRecordType({ name: 'post', displayName: 'Post' });
     setupState({ domain: 'example.com', recordTypes: [rt] });

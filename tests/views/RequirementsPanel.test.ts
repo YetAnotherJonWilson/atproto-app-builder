@@ -1093,6 +1093,91 @@ describe('data type combobox and seeding', () => {
   });
 });
 
+// ── Enter key in combobox ──────────────────────────────────────────────
+
+describe('combobox Enter key', () => {
+  beforeEach(() => {
+    setWizardState(initializeWizardState());
+    localStorage.clear();
+  });
+
+  function mountPanel(): void {
+    document.body.innerHTML = `
+      <div id="workspace-panel-body">${renderRequirementsPanel()}</div>
+      <div class="sidebar-section" data-section="requirements">
+        <span class="badge">0</span>
+        <div class="sidebar-items"><div class="sidebar-item-empty">None yet</div></div>
+      </div>
+      <div class="sidebar-section" data-section="data">
+        <span class="badge">0</span>
+        <div class="sidebar-items"><div class="sidebar-item-empty">None yet</div></div>
+      </div>
+    `;
+    wireRequirementsPanel();
+  }
+
+  function openDataCombobox(): HTMLInputElement {
+    document.getElementById('req-add-btn')!.click();
+    selectType('do');
+    document.getElementById('req-do-add-data')!.click();
+    return document.getElementById('req-do-item-input') as HTMLInputElement;
+  }
+
+  function pressEnter(input: HTMLInputElement): void {
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  }
+
+  it('creates a new item when Enter is pressed and Create option is visible', () => {
+    mountPanel();
+    const input = openDataCombobox();
+    input.value = 'movie';
+    input.dispatchEvent(new Event('input'));
+
+    const dropdown = document.getElementById('req-do-item-dropdown')!;
+    expect(dropdown.querySelector('.combobox-create')).not.toBeNull();
+
+    pressEnter(input);
+
+    const chips = document.querySelectorAll('.item-chip');
+    expect(chips).toHaveLength(1);
+    expect(chips[0].textContent).toContain('movie');
+  });
+
+  it('selects existing item when Enter is pressed and no Create option', () => {
+    const state = getWizardState();
+    state.recordTypes = [
+      { id: 'rt-1', name: '', displayName: 'book', description: '', fields: [], source: 'new' as const },
+    ];
+    mountPanel();
+    const input = openDataCombobox();
+    input.value = 'book';
+    input.dispatchEvent(new Event('input'));
+
+    const dropdown = document.getElementById('req-do-item-dropdown')!;
+    expect(dropdown.querySelector('.combobox-create')).toBeNull();
+
+    pressEnter(input);
+
+    const chips = document.querySelectorAll('.item-chip');
+    expect(chips).toHaveLength(1);
+    expect(chips[0].textContent).toContain('book');
+  });
+
+  it('does nothing when Enter is pressed with dropdown hidden', () => {
+    mountPanel();
+    const input = openDataCombobox();
+    // Empty input — no dropdown shown
+    input.dispatchEvent(new Event('focus'));
+    const dropdown = document.getElementById('req-do-item-dropdown')!;
+    expect(dropdown.style.display).toBe('none');
+
+    pressEnter(input);
+
+    const chips = document.querySelectorAll('.item-chip');
+    expect(chips).toHaveLength(0);
+  });
+});
+
 // ── Data sidebar updates ──────────────────────────────────────────────
 
 describe('updateDataSidebar', () => {

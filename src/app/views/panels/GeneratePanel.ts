@@ -14,6 +14,14 @@ import { publishLexicons } from '../../services/LexiconPublisher';
 import type { RecordType } from '../../../types/wizard';
 import type { PublishResult } from '../../services/LexiconPublisher';
 
+/** Display NSID for a record type, using adoptedNsid, domain, or fallback. */
+function displayNsid(rt: RecordType, domain: string): string {
+  if (rt.source === 'adopted' && rt.adoptedNsid) return rt.adoptedNsid;
+  if (domain) return computeRecordTypeNsid(rt, domain);
+  if (rt.namespaceOption) return computeRecordTypeNsid(rt);
+  return `[domain].${rt.name}`;
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────
 
 function escapeHtml(str: string): string {
@@ -116,9 +124,7 @@ function renderReviewSection(): string {
     recordTypesValue = '0';
   } else {
     const items = recordTypes.map((rt) => {
-      const nsid = domain
-        ? computeRecordTypeNsid(rt, domain)
-        : (rt.namespaceOption ? computeRecordTypeNsid(rt) : `[domain].${rt.name}`);
+      const nsid = displayNsid(rt, domain);
       return `${escapeHtml(rt.displayName || rt.name)} (${escapeHtml(nsid)})`;
     });
     recordTypesValue = `${recordTypes.length} &mdash; ${items.join(', ')}`;
@@ -128,9 +134,7 @@ function renderReviewSection(): string {
   let lexiconPreviews = '';
   if (recordTypes.length > 0) {
     lexiconPreviews = recordTypes.map((rt) => {
-      const nsid = domain
-        ? computeRecordTypeNsid(rt, domain)
-        : (rt.namespaceOption ? computeRecordTypeNsid(rt) : `[domain].${rt.name}`);
+      const nsid = displayNsid(rt, domain);
       const lexicon = generateRecordLexicon(rt, domain || '', recordTypes);
       return `<details>
   <summary>${escapeHtml(nsid)}</summary>

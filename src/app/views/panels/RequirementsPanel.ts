@@ -1199,6 +1199,14 @@ function wireItemCombobox(itemType: 'data' | 'widget'): void {
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       closeItemCombobox();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (!dropdown || dropdown.style.display === 'none') return;
+      // Prefer the "Create" option if visible, otherwise select the first match
+      const target =
+        dropdown.querySelector<HTMLElement>('.combobox-create') ??
+        dropdown.querySelector<HTMLElement>('.combobox-item');
+      if (target) target.dispatchEvent(new MouseEvent('mousedown'));
     }
   });
 }
