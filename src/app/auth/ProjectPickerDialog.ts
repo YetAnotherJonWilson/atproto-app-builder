@@ -150,6 +150,10 @@ function wirePickerEvents(projects: ProjectSummary[]): void {
     if (!selectedRkey) return;
     try {
       const record = await loadProject(selectedRkey);
+      // Ensure loaded project opens the wizard workspace
+      if (record.wizardState.currentStep < 2) {
+        record.wizardState.currentStep = 2;
+      }
       setWizardState(record.wizardState);
       setActiveProjectRkey(record.rkey);
       saveWizardState(record.wizardState); // Update localStorage
@@ -251,11 +255,14 @@ function showDeleteConfirmation(rkey: string, name: string): void {
     confirmBtn.disabled = true;
     try {
       await deleteProject(rkey);
-      // If deleted project was active, clear tracking
+      // If deleted project was active, clear tracking and reset state
       if (getActiveProjectRkey() === rkey) {
         setActiveProjectRkey(null);
         setLastPdsSaveTimestamp(null);
         clearPdsContentSnapshot();
+        const freshState = initializeWizardState();
+        setWizardState(freshState);
+        saveWizardState(freshState);
       }
       // Refresh the picker
       closePicker();
