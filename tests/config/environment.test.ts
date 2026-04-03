@@ -8,7 +8,7 @@ describe('createConfig', () => {
     expect(config.environment).toBe('development');
     expect(config.isDev).toBe(true);
     expect(config.oauth.redirectUri).toBe('http://127.0.0.1:8080');
-    expect(config.oauth.scope).toBe('atproto transition:generic');
+    expect(config.oauth.scope).toBe('atproto repo:com.thelexfiles.appwizard.project');
     expect(config.oauth.handleResolver).toBe('https://bsky.social');
     expect(config.app.baseUrl).toBe('http://127.0.0.1:8080');
     expect(config.app.name).toBe('AT Protocol App Wizard');
@@ -28,7 +28,7 @@ describe('createConfig', () => {
     const params = new URLSearchParams(url.search);
 
     expect(params.get('redirect_uri')).toBe('http://127.0.0.1:8080');
-    expect(params.get('scope')).toBe('atproto transition:generic');
+    expect(params.get('scope')).toBe('atproto repo:com.thelexfiles.appwizard.project');
   });
 
   it('applies oauth overrides while keeping other defaults', () => {
@@ -37,7 +37,7 @@ describe('createConfig', () => {
     });
 
     expect(config.oauth.redirectUri).toBe('http://test.local');
-    expect(config.oauth.scope).toBe('atproto transition:generic');
+    expect(config.oauth.scope).toBe('atproto repo:com.thelexfiles.appwizard.project');
     expect(config.oauth.handleResolver).toBe('https://bsky.social');
     expect(config.app.name).toBe('AT Protocol App Wizard');
   });
@@ -82,6 +82,6 @@ describe('createConfig', () => {
     expect(config.oauth.redirectUri).toBe('https://prod.example.com');
     expect(config.oauth.clientId).toBe('https://prod.example.com/client-metadata.json');
     expect(config.app.baseUrl).toBe('https://prod.example.com');
-    expect(config.oauth.scope).toBe('atproto transition:generic');
+    expect(config.oauth.scope).toBe('atproto repo:com.thelexfiles.appwizard.project');
   });
 });

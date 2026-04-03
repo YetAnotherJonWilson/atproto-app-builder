@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { generateEnvironmentTs } from '../../src/generator/config/Environment';
 
 describe('generateEnvironmentTs', () => {
-  const result = generateEnvironmentTs();
+  const result = generateEnvironmentTs('atproto repo:com.example.app.post');
 
   it('exports getOAuthConfig function', () => {
     expect(result).toContain('export function getOAuthConfig()');

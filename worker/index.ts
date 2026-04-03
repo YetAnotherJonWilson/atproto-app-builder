@@ -5,6 +5,8 @@
  * All other requests fall through to the static app assets.
  */
 
+import { APP_WIZARD_SCOPE, COMPAT_SCOPE } from '../src/shared/scopes';
+
 interface Env {
   ASSETS: Fetcher;
   PDS_HANDLE: string;
@@ -46,7 +48,11 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname === '/client-metadata.json') {
-      return handleClientMetadata(url);
+      return handleClientMetadata(url, APP_WIZARD_SCOPE);
+    }
+
+    if (url.pathname === '/client-metadata-compat.json') {
+      return handleClientMetadata(url, COMPAT_SCOPE);
     }
 
     if (url.pathname === '/api/publish' && request.method === 'POST') {
@@ -72,16 +78,16 @@ export default {
   },
 } satisfies ExportedHandler<Env>;
 
-function handleClientMetadata(url: URL): Response {
+function handleClientMetadata(url: URL, scope: string): Response {
   const origin = `${url.protocol}//${url.host}`;
   const metadata = {
-    client_id: `${origin}/client-metadata.json`,
+    client_id: `${origin}${url.pathname}`,
     client_name: 'AT Protocol App Wizard',
     client_uri: origin,
     redirect_uris: [origin],
     grant_types: ['authorization_code', 'refresh_token'],
     response_types: ['code'],
-    scope: 'atproto transition:generic',
+    scope,
     token_endpoint_auth_method: 'none',
     application_type: 'web',
     dpop_bound_access_tokens: true,

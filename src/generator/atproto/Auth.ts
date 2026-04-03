@@ -49,18 +49,49 @@ export async function initOAuthClient(): Promise<void> {
   }
 }
 
+function isScopeRejection(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const msg = err.message ?? '';
+  return msg.includes('invalid_client_metadata') && /unsupported.scope/i.test(msg);
+}
+
 /**
- * Sign in with AT Protocol handle
+ * Sign in with AT Protocol handle.
+ * Falls back to transition:generic scope if the PDS rejects granular scopes.
  */
 export async function signIn(handle: string): Promise<void> {
   if (!handle) {
     throw new Error('Handle is required');
   }
 
-  await oauthClient.signIn(handle, {
+  const signInOptions = {
     state: JSON.stringify({ returnTo: window.location.href }),
     signal: new AbortController().signal,
-  });
+  };
+
+  try {
+    await oauthClient.signIn(handle, signInOptions);
+  } catch (err) {
+    if (!isScopeRejection(err)) throw err;
+
+    // Older PDS doesn't support granular scopes — retry with compat client
+    const config = getOAuthConfig();
+    let compatClient: BrowserOAuthClient;
+
+    if (config.isDev) {
+      compatClient = new BrowserOAuthClient({
+        handleResolver: config.handleResolver,
+        clientMetadata: atprotoLoopbackClientMetadata(config.compatClientId),
+      });
+    } else {
+      compatClient = await BrowserOAuthClient.load({
+        clientId: config.compatClientId,
+        handleResolver: config.handleResolver,
+      });
+    }
+
+    await compatClient.signIn(handle, signInOptions);
+  }
 }
 
 /**
@@ -91,31 +122,34 @@ export async function restoreSession(): Promise<SessionRestoreResult | null> {
 }
 
 /**
- * Get the current user's profile information
+ * Get the current user's profile information.
+ * Uses unauthenticated fetch since getProfile is a public endpoint.
  */
 export async function getUserProfile(): Promise<UserProfile> {
   if (!session) {
     throw new Error('No active session');
   }
 
-  const agent = new Agent(session);
+  const did = session.sub;
 
   try {
-    const profile = await agent.app.bsky.actor.getProfile({
-      actor: session.sub,
-    });
-
+    // getProfile is public via the AppView — no auth needed
+    const res = await fetch(
+      \`https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=\${encodeURIComponent(did)}\`,
+    );
+    if (!res.ok) throw new Error(\`\${res.status}\`);
+    const data = await res.json() as { displayName?: string; handle: string };
     return {
-      displayName: profile.data.displayName ?? '',
-      handle: profile.data.handle,
-      did: session.sub,
+      displayName: data.displayName ?? '',
+      handle: data.handle,
+      did,
     };
-  } catch (error) {
+  } catch {
     // Fallback for loopback mode
     return {
       displayName: '',
-      handle: session.sub,
-      did: session.sub,
+      handle: did,
+      did,
     };
   }
 }

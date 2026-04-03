@@ -3,13 +3,15 @@
  * Produces src/config/environment.ts with dev/prod OAuth switching.
  */
 
-export function generateEnvironmentTs(): string {
+export function generateEnvironmentTs(scope: string): string {
   return `const DEV_REDIRECT_URI = 'http://127.0.0.1:8080';
-const SCOPE = 'atproto transition:generic';
+const SCOPE = '${scope}';
+const COMPAT_SCOPE = 'atproto transition:generic';
 const HANDLE_RESOLVER = 'https://bsky.social';
 
 export interface OAuthConfig {
   clientId: string;
+  compatClientId: string;
   redirectUri: string;
   scope: string;
   handleResolver: string;
@@ -27,6 +29,7 @@ function buildLoopbackClientId(redirectUri: string, scope: string): string {
 function buildDevConfig(): OAuthConfig {
   return {
     clientId: buildLoopbackClientId(DEV_REDIRECT_URI, SCOPE),
+    compatClientId: buildLoopbackClientId(DEV_REDIRECT_URI, COMPAT_SCOPE),
     redirectUri: DEV_REDIRECT_URI,
     scope: SCOPE,
     handleResolver: HANDLE_RESOLVER,
@@ -38,6 +41,7 @@ function buildProdConfig(): OAuthConfig {
   const origin = window.location.origin;
   return {
     clientId: import.meta.env.VITE_OAUTH_CLIENT_ID || \`\${origin}/client-metadata.json\`,
+    compatClientId: \`\${origin}/client-metadata-compat.json\`,
     redirectUri: import.meta.env.VITE_OAUTH_REDIRECT_URI || origin,
     scope: SCOPE,
     handleResolver: HANDLE_RESOLVER,

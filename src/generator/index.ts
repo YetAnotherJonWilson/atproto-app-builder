@@ -5,6 +5,7 @@
 import type { WizardState, AppConfig, View, Block } from '../types/wizard';
 import type { FileOutput } from '../types/generation';
 import { toPascalCase, toCamelCase } from '../utils';
+import { buildScopeFromNsids } from '../shared/scopes';
 
 // Config generators
 import { generatePackageJson } from './config/PackageJson';
@@ -95,10 +96,15 @@ export function generateAllFiles(wizardState: WizardState, appConfig: AppConfig)
 
   const firstViewId = viewEntries.length > 0 ? viewEntries[0].viewId : 'home';
 
+  // ── Compute OAuth scope from record types ─────────────────────────
+
+  const nsids = recordTypes.map(rt => computeRecordTypeNsid(rt, domain));
+  const scope = buildScopeFromNsids(nsids);
+
   // ── Root files ─────────────────────────────────────────────────────
 
   files['package.json'] = generatePackageJson(appInfo);
-  files['vite.config.ts'] = generateViteConfig(appInfo.appName);
+  files['vite.config.ts'] = generateViteConfig(appInfo.appName, scope);
   files['tsconfig.json'] = generateTsConfig();
   files['.env.example'] = generateEnvExample();
   files['index.html'] = generateIndexHtml(appInfo);
@@ -113,7 +119,7 @@ export function generateAllFiles(wizardState: WizardState, appConfig: AppConfig)
 
   // ── AT Protocol layer ──────────────────────────────────────────────
 
-  files['src/config/environment.ts'] = generateEnvironmentTs();
+  files['src/config/environment.ts'] = generateEnvironmentTs(scope);
   files['src/atproto/auth.ts'] = generateAuthTs();
   files['src/atproto/types.ts'] = generateTypesTs(recordTypes, domain);
   files['src/atproto/api.ts'] = generateApiTs(recordTypes, domain);

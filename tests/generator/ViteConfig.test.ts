@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { generateViteConfig } from '../../src/generator/config/ViteConfig';
 
 describe('generateViteConfig', () => {
-  const result = generateViteConfig('My Test App');
+  const result = generateViteConfig('My Test App', 'atproto repo:com.example.app.post');
 
   it('contains clientMetadataPlugin', () => {
     expect(result).toContain('clientMetadataPlugin');
@@ -25,7 +25,12 @@ describe('generateViteConfig', () => {
   });
 
   it('writes client-metadata.json to outDir', () => {
-    expect(result).toContain("resolve(outDir, 'client-metadata.json')");
+    expect(result).toContain("resolve(outDir, filename)");
+    expect(result).toContain("writeMetadata('client-metadata.json'");
+  });
+
+  it('writes client-metadata-compat.json for fallback', () => {
+    expect(result).toContain("writeMetadata('client-metadata-compat.json', 'atproto transition:generic')");
   });
 
   it('warns when VITE_APP_URL is not set', () => {
@@ -43,7 +48,7 @@ describe('generateViteConfig', () => {
   });
 
   it('escapes special characters in app name', () => {
-    const withQuotes = generateViteConfig("App's Name");
+    const withQuotes = generateViteConfig("App's Name", 'atproto');
     expect(withQuotes).toContain("client_name: 'App\\'s Name'");
   });
 });

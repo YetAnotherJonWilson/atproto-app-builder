@@ -1,5 +1,6 @@
+import { APP_WIZARD_SCOPE, COMPAT_SCOPE } from '../shared/scopes';
+
 const DEV_REDIRECT_URI = 'http://127.0.0.1:8080';
-const DEV_SCOPE = 'atproto transition:generic';
 const HANDLE_RESOLVER = 'https://bsky.social';
 const APP_NAME = 'AT Protocol App Wizard';
 
@@ -8,6 +9,7 @@ export type Environment = 'development' | 'production';
 export interface OAuthConfig {
   redirectUri: string;
   clientId: string;
+  compatClientId: string;
   scope: string;
   handleResolver: string;
 }
@@ -33,7 +35,7 @@ function buildLoopbackClientId(redirectUri: string, scope: string): string {
 }
 
 function buildDevConfig(): Config {
-  const scope = DEV_SCOPE;
+  const scope = APP_WIZARD_SCOPE;
   const redirectUri = DEV_REDIRECT_URI;
 
   return {
@@ -42,6 +44,7 @@ function buildDevConfig(): Config {
     oauth: {
       redirectUri,
       clientId: buildLoopbackClientId(redirectUri, scope),
+      compatClientId: buildLoopbackClientId(redirectUri, COMPAT_SCOPE),
       scope,
       handleResolver: HANDLE_RESOLVER,
     },
@@ -64,7 +67,8 @@ function buildProdConfig(): Config {
     oauth: {
       redirectUri,
       clientId,
-      scope: DEV_SCOPE,
+      compatClientId: `${origin}/client-metadata-compat.json`,
+      scope: APP_WIZARD_SCOPE,
       handleResolver: HANDLE_RESOLVER,
     },
     app: {

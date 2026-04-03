@@ -67,14 +67,45 @@ export async function restoreSession(): Promise<boolean> {
   return false;
 }
 
+function isScopeRejection(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const msg = err.message ?? '';
+  return msg.includes('invalid_client_metadata') && /unsupported.scope/i.test(msg);
+}
+
 export async function signIn(handle: string): Promise<void> {
   if (!handle) {
     throw new Error('Please enter your handle');
   }
-  await oauthClient.signIn(handle, {
+
+  const signInOptions = {
     state: JSON.stringify({ returnTo: window.location.href }),
     signal: new AbortController().signal,
-  });
+  };
+
+  try {
+    await oauthClient.signIn(handle, signInOptions);
+  } catch (err) {
+    if (!isScopeRejection(err)) throw err;
+
+    // Older PDS doesn't support granular scopes — retry with compat client
+    const config = getConfig();
+    let compatClient: BrowserOAuthClient;
+
+    if (config.isDev) {
+      compatClient = new BrowserOAuthClient({
+        handleResolver: config.oauth.handleResolver,
+        clientMetadata: atprotoLoopbackClientMetadata(config.oauth.compatClientId),
+      });
+    } else {
+      compatClient = await BrowserOAuthClient.load({
+        clientId: config.oauth.compatClientId,
+        handleResolver: config.oauth.handleResolver,
+      });
+    }
+
+    await compatClient.signIn(handle, signInOptions);
+  }
 }
 
 export async function signOut(): Promise<void> {
@@ -89,23 +120,26 @@ export async function getUserProfile(): Promise<UserProfile> {
     throw new Error('No active session');
   }
 
-  const agent = new Agent(session as any);
+  const did = session.sub;
 
   try {
-    const profile = await agent.app.bsky.actor.getProfile({
-      actor: session.sub,
-    });
+    // getProfile is public via the AppView — no auth needed
+    const res = await fetch(
+      `https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${encodeURIComponent(did)}`,
+    );
+    if (!res.ok) throw new Error(`${res.status}`);
+    const data = await res.json() as { displayName?: string; handle: string };
     return {
-      displayName: profile.data.displayName ?? '',
-      handle: profile.data.handle,
-      did: session.sub,
+      displayName: data.displayName ?? '',
+      handle: data.handle,
+      did,
     };
   } catch {
     // Fallback for loopback/dev mode where profile API may not be available
     return {
       displayName: '',
-      handle: session.sub,
-      did: session.sub,
+      handle: did,
+      did,
     };
   }
 }
