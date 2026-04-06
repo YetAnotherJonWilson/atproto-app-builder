@@ -90,9 +90,9 @@ function escapeHtml(str: string): string {
 function getRequirementShortText(req: Requirement): string {
   switch (req.type) {
     case 'know':
-      return truncate(req.text ?? '', 40);
+      return truncate(req.text ?? '', 80);
     case 'do':
-      return truncate(req.description ?? '', 40);
+      return truncate(req.description ?? '', 80);
     case 'navigate':
       switch (req.navType) {
         case 'menu':

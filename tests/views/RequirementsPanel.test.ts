@@ -16,6 +16,18 @@ import {
 } from '../../src/app/state/WizardState';
 import type { Requirement, RecordType, NonDataElement, View } from '../../src/types/wizard';
 
+// jsdom lacks HTMLDialogElement.showModal/close — polyfill for tests
+if (!HTMLDialogElement.prototype.showModal) {
+  HTMLDialogElement.prototype.showModal = function () {
+    this.setAttribute('open', '');
+  };
+}
+if (!HTMLDialogElement.prototype.close) {
+  HTMLDialogElement.prototype.close = function () {
+    this.removeAttribute('open');
+  };
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────
 
 function makeRequirement(
@@ -631,7 +643,7 @@ describe('wireRequirementsPanel (DOM)', () => {
     expect(state.requirements[0].dataTypeIds).toHaveLength(1);
   });
 
-  it('deleting a requirement removes it from state and re-renders', () => {
+  it('deleting a requirement removes it from state and re-renders', async () => {
     const req = makeRequirement({ type: 'know', text: 'something' });
     const state = getWizardState();
     state.requirements = [req];
@@ -640,7 +652,11 @@ describe('wireRequirementsPanel (DOM)', () => {
     const deleteBtn = document.querySelector('.req-delete-btn') as HTMLElement;
     deleteBtn.click();
 
-    expect(getWizardState().requirements).toHaveLength(0);
+    // Confirm the delete dialog
+    await vi.waitFor(() => expect(document.querySelector('#confirm-yes')).not.toBeNull());
+    (document.querySelector('#confirm-yes') as HTMLElement).click();
+    await vi.waitFor(() => expect(getWizardState().requirements).toHaveLength(0));
+
     expect(document.body.innerHTML).toContain('Build a Decentralized Web App');
   });
 
@@ -953,7 +969,7 @@ describe('data type combobox and seeding', () => {
     expect(updated.requirements[0].dataTypeIds).toEqual([updated.recordTypes[1].id]);
   });
 
-  it('deleting a "do" requirement does not delete its RecordType', () => {
+  it('deleting a "do" requirement does not delete its RecordType', async () => {
     const state = getWizardState();
     state.recordTypes = [{
       id: 'rt-book',
@@ -973,8 +989,11 @@ describe('data type combobox and seeding', () => {
 
     (document.querySelector('.req-delete-btn') as HTMLElement).click();
 
+    await vi.waitFor(() => expect(document.querySelector('#confirm-yes')).not.toBeNull());
+    (document.querySelector('#confirm-yes') as HTMLElement).click();
+    await vi.waitFor(() => expect(getWizardState().requirements).toHaveLength(0));
+
     const updated = getWizardState();
-    expect(updated.requirements).toHaveLength(0);
     expect(updated.recordTypes).toHaveLength(1);
     expect(updated.recordTypes[0].displayName).toBe('book');
   });
@@ -1493,7 +1512,7 @@ describe('widget and mixed interactions', () => {
 
   // ── Deleting ────────────────────────────────────────────────────────
 
-  it('deleting a widget requirement preserves the NonDataElement', () => {
+  it('deleting a widget requirement preserves the NonDataElement', async () => {
     const state = getWizardState();
     state.nonDataElements = [{ id: 'el-1', name: 'Timer' }];
     state.requirements = [{
@@ -1505,8 +1524,12 @@ describe('widget and mixed interactions', () => {
     mountPanel();
 
     (document.querySelector('.req-delete-btn') as HTMLElement).click();
+
+    await vi.waitFor(() => expect(document.querySelector('#confirm-yes')).not.toBeNull());
+    (document.querySelector('#confirm-yes') as HTMLElement).click();
+    await vi.waitFor(() => expect(getWizardState().requirements).toHaveLength(0));
+
     const updated = getWizardState();
-    expect(updated.requirements).toHaveLength(0);
     expect(updated.nonDataElements).toHaveLength(1);
     expect(updated.nonDataElements[0].name).toBe('Timer');
   });

@@ -29,6 +29,7 @@ import { toCamelCase } from '../../../utils/text';
 import type { RecordType, NamespaceOption } from '../../../types/wizard';
 import type { LexiconSchema } from '../../../types/generation';
 import { deleteRecordType } from '../../operations/RecordTypeOps';
+import { showConfirmDialog } from '../../dialogs/ConfirmDialog';
 
 // ── Module-level state ────────────────────────────────────────────────
 
@@ -313,6 +314,10 @@ async function tryAutoFillUsername(): Promise<void> {
     const profile = await getUserProfile();
     if (profile?.handle && formState && !formState.lexUsername) {
       formState.lexUsername = profile.handle.split('.')[0];
+      // Keep snapshot in sync so auto-fill doesn't mark form dirty
+      if (savedFormSnapshot && !savedFormSnapshot.lexUsername) {
+        savedFormSnapshot.lexUsername = formState.lexUsername;
+      }
       // Update the username input if it exists and is empty
       const input = document.getElementById(
         'dt-username',
@@ -1250,9 +1255,10 @@ function wireFieldsSection(rt: RecordType): void {
 
 // ── Action handlers ───────────────────────────────────────────────────
 
-function handleBackToGrid(): void {
+async function handleBackToGrid(): Promise<void> {
   if (detailMode === 'create' && isFormDirty()) {
-    if (!confirm('You have unsaved changes. Discard?')) return;
+    const confirmed = await showConfirmDialog('You have unsaved changes. Discard?');
+    if (!confirmed) return;
   }
   activeDetailRecordId = null;
   formState = null;
@@ -1374,7 +1380,7 @@ async function handleSelectResult(nsid: string): Promise<void> {
   }
 }
 
-function handleAdopt(): void {
+async function handleAdopt(): Promise<void> {
   const rt = getActiveRecordType();
   if (!rt || !selectedSchema || !selectedNsid) return;
 
@@ -1385,12 +1391,10 @@ function handleAdopt(): void {
   const hasExistingData =
     rt.name.length > 0 || rt.fields.length > 0 || rt.namespaceOption;
   if (hasExistingData) {
-    if (
-      !confirm(
-        'Adopting this lexicon will replace your current name, namespace, and fields. Continue?',
-      )
-    )
-      return;
+    const confirmed = await showConfirmDialog(
+      'Adopting this lexicon will replace your current name, namespace, and fields. Continue?',
+    );
+    if (!confirmed) return;
   }
 
   const state = getWizardState();
@@ -1431,11 +1435,11 @@ function handleAdopt(): void {
   rerenderPanel();
 }
 
-function handleChangeAdopted(): void {
-  if (
-    !confirm('Stop using this lexicon? Your imported fields will be cleared.')
-  )
-    return;
+async function handleChangeAdopted(): Promise<void> {
+  const confirmed = await showConfirmDialog(
+    'Stop using this lexicon? Your imported fields will be cleared.',
+  );
+  if (!confirmed) return;
 
   const rt = getActiveRecordType();
   if (!rt) return;

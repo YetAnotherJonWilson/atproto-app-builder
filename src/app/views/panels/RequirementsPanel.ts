@@ -18,6 +18,7 @@
 import { getWizardState, saveWizardState } from '../../state/WizardState';
 import { generateId, makeSystemCreatedAtField } from '../../../utils/id';
 import { updateAccordionSummaries } from '../WorkspaceLayout';
+import { showConfirmDialog } from '../../dialogs/ConfirmDialog';
 import type {
   Requirement,
   RequirementType,
@@ -1347,7 +1348,12 @@ function saveRequirement(): void {
   rerenderPanel();
 }
 
-function deleteRequirement(id: string): void {
+async function deleteRequirement(id: string): Promise<void> {
+  const confirmed = await showConfirmDialog(
+    'Are you sure you want to delete this requirement?',
+  );
+  if (!confirmed) return;
+
   const wizardState = getWizardState();
   wizardState.requirements = wizardState.requirements.filter(
     (r) => r.id !== id,
