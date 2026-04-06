@@ -354,5 +354,102 @@ button.danger:hover {
   width: auto;
   margin: 0;
 }
+
+/* ── Inlay primitives ──────────────────────────────────────────────── */
+
+.inlay-root {
+  font-family: system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  --inlay-text-primary: #111;
+  --inlay-text-body: #444;
+  --inlay-text-secondary: #999;
+}
+
+org-atsui-stack {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  box-sizing: border-box;
+  gap: 12px;
+}
+org-atsui-stack[gap="none"]   { gap: 0; }
+org-atsui-stack[gap="small"]  { gap: 6px; }
+org-atsui-stack[gap="medium"] { gap: 12px; }
+org-atsui-stack[gap="large"]  { gap: 24px; }
+org-atsui-stack[inset] { padding: 12px; }
+
+org-atsui-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 12px;
+}
+org-atsui-row[gap="none"]   { gap: 0; }
+org-atsui-row[gap="small"]  { gap: 6px; }
+org-atsui-row[gap="medium"] { gap: 12px; }
+org-atsui-row[gap="large"]  { gap: 24px; }
+
+org-atsui-title {
+  display: block;
+  overflow-wrap: break-word;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--inlay-text-primary, #111);
+}
+
+org-atsui-heading {
+  display: block;
+  overflow-wrap: break-word;
+  font-weight: 600;
+  color: var(--inlay-text-primary, #111);
+}
+
+org-atsui-text {
+  display: block;
+  overflow-wrap: break-word;
+  color: var(--inlay-text-body, #444);
+}
+
+org-atsui-caption {
+  display: block;
+  overflow-wrap: break-word;
+  font-size: 0.8125rem;
+  color: var(--inlay-text-secondary, #999);
+}
+
+org-atsui-fill {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+org-atsui-stack[variant="infoBox"] {
+  background: #f7f8fa;
+  border-left: 3px solid #6b7280;
+  padding: 12px 16px;
+  border-radius: 4px;
+}
+
+org-atsui-stack[variant="banner"] {
+  background: #1e293b;
+  padding: 24px;
+  border-radius: 8px;
+}
+
+org-atsui-stack[variant="banner"] org-atsui-title {
+  color: #fff;
+  font-size: 1.75rem;
+}
+
+org-atsui-stack[variant="banner"] org-atsui-caption {
+  color: #cbd5e1;
+}
 `;
 }

@@ -97,11 +97,33 @@ export interface NonDataElement {
 
 export type BlockType = 'menu' | 'list' | 'detail' | 'form' | 'table' | 'card' | 'text';
 
+export type TextVariant = 'paragraph' | 'heading' | 'section' | 'infoBox' | 'banner';
+
+// ── Content nodes (block content editor) ────────────────────────────
+
+export type ContentNodeType = 'heading' | 'paragraph' | 'caption' | 'infoBox' | 'banner' | 'image';
+
+export interface HeadingNode { type: 'heading'; text: string }
+export interface ParagraphNode { type: 'paragraph'; text: string }
+export interface CaptionNode { type: 'caption'; text: string }
+export interface InfoBoxNode { type: 'infoBox'; text: string }
+export interface BannerNode { type: 'banner'; text: string }
+export interface ImageNode { type: 'image'; src: string; alt?: string }
+
+export type ContentNode =
+  | HeadingNode
+  | ParagraphNode
+  | CaptionNode
+  | InfoBoxNode
+  | BannerNode
+  | ImageNode;
+
 export interface Block {
   id: string;
   name: string; // user-given name, e.g. "Post Feed", "About Section"
   requirementIds: string[]; // ordered list of Requirement ids
   blockType?: BlockType; // determines generator component rendering
+  contentNodes?: ContentNode[]; // ordered content for text blocks
 }
 
 export interface View {
@@ -120,6 +142,7 @@ export interface Requirement {
   // 'know' type
   text?: string;
   content?: string;
+  textVariant?: TextVariant;
   // 'do' type
   description?: string; // free-text user story
   dataTypeIds?: string[]; // links to RecordTypes (multiple allowed)

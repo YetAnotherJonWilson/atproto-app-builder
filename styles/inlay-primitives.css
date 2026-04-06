@@ -1,0 +1,151 @@
+/**
+ * Inlay primitive styles — matches inlay.at's host styling.
+ *
+ * Custom elements render as org-atsui-* tags. Styles are split into
+ * structural (layout/display) and visual (colors/fonts/spacing),
+ * matching the host-primitives.css / host-theme.css separation in inlay.at.
+ */
+
+/* ── Root defaults (applied to containers holding Inlay content) ──── */
+
+.inlay-root {
+  font-family: system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  --inlay-text-primary: #111;
+  --inlay-text-body: #444;
+  --inlay-text-secondary: #999;
+}
+
+/* ── Stack ─────────────────────────────────────────────────────────── */
+
+org-atsui-stack {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  box-sizing: border-box;
+  gap: 12px; /* default: medium */
+}
+
+org-atsui-stack[gap="none"]   { gap: 0; }
+org-atsui-stack[gap="small"]  { gap: 6px; }
+org-atsui-stack[gap="medium"] { gap: 12px; }
+org-atsui-stack[gap="large"]  { gap: 24px; }
+
+org-atsui-stack[align="start"]   { align-items: flex-start; }
+org-atsui-stack[align="center"]  { align-items: center; }
+org-atsui-stack[align="end"]     { align-items: flex-end; }
+org-atsui-stack[align="stretch"] { align-items: stretch; }
+
+org-atsui-stack[justify="start"]   { justify-content: flex-start; }
+org-atsui-stack[justify="center"]  { justify-content: center; }
+org-atsui-stack[justify="end"]     { justify-content: flex-end; }
+org-atsui-stack[justify="between"] { justify-content: space-between; }
+
+org-atsui-stack[inset] {
+  padding: 12px;
+}
+
+/* ── Row ───────────────────────────────────────────────────────────── */
+
+org-atsui-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 12px; /* default: medium */
+}
+
+org-atsui-row[gap="none"]   { gap: 0; }
+org-atsui-row[gap="small"]  { gap: 6px; }
+org-atsui-row[gap="medium"] { gap: 12px; }
+org-atsui-row[gap="large"]  { gap: 24px; }
+
+org-atsui-row[align="start"]   { align-items: flex-start; }
+org-atsui-row[align="center"]  { align-items: center; }
+org-atsui-row[align="end"]     { align-items: flex-end; }
+org-atsui-row[align="stretch"] { align-items: stretch; }
+
+/* ── Title ─────────────────────────────────────────────────────────── */
+
+org-atsui-title {
+  display: block;
+  overflow-wrap: break-word;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--inlay-text-primary, #111);
+}
+
+/* ── Heading ───────────────────────────────────────────────────────── */
+
+org-atsui-heading {
+  display: block;
+  overflow-wrap: break-word;
+  font-weight: 600;
+  color: var(--inlay-text-primary, #111);
+}
+
+/* ── Text ──────────────────────────────────────────────────────────── */
+
+org-atsui-text {
+  display: block;
+  overflow-wrap: break-word;
+  color: var(--inlay-text-body, #444);
+}
+
+/* ── Caption ───────────────────────────────────────────────────────── */
+
+org-atsui-caption {
+  display: block;
+  overflow-wrap: break-word;
+  font-size: 0.8125rem;
+  color: var(--inlay-text-secondary, #999);
+}
+
+/* ── Fill ──────────────────────────────────────────────────────────── */
+
+org-atsui-fill {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* ── Variant treatments (Info Box, Banner) ─────────────────────────── */
+
+org-atsui-stack[variant="infoBox"] {
+  background: #f7f8fa;
+  border-left: 3px solid #6b7280;
+  padding: 12px 16px;
+  border-radius: 4px;
+}
+
+org-atsui-stack[variant="banner"] {
+  background: #1e293b;
+  padding: 24px;
+  border-radius: 8px;
+}
+
+org-atsui-stack[variant="banner"] org-atsui-title {
+  color: #fff;
+  font-size: 1.75rem;
+}
+
+org-atsui-stack[variant="banner"] org-atsui-caption {
+  color: #cbd5e1;
+}
+
+/* ── Error element ─────────────────────────────────────────────────── */
+
+.inlay-error {
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 0.875rem;
+}

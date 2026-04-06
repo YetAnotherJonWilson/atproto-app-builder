@@ -236,15 +236,10 @@ function renderTypeFields(
 ): string {
   if (type === 'know') {
     const val = existing?.text ?? '';
-    const content = existing?.content ?? '';
     return `
       <div class="form-group">
         <label>Description</label>
         <textarea id="req-know-text" placeholder="e.g. I need to know how this app works">${escapeHtml(val)}</textarea>
-      </div>
-      <div class="form-group">
-        <label>Content</label>
-        <textarea id="req-know-content" placeholder="e.g. An overview of features and how to get started">${escapeHtml(content)}</textarea>
       </div>
     `;
   }
@@ -1371,14 +1366,9 @@ function buildRequirementFromForm(
     const textarea = document.getElementById(
       'req-know-text',
     ) as HTMLTextAreaElement | null;
-    const contentEl = document.getElementById(
-      'req-know-content',
-    ) as HTMLTextAreaElement | null;
     const text = textarea?.value.trim() ?? '';
-    const content = contentEl?.value.trim() ?? '';
     if (!text) return null;
     base.text = text;
-    if (content) base.content = content;
   } else if (type === 'do') {
     const descEl = document.getElementById(
       'req-do-description',

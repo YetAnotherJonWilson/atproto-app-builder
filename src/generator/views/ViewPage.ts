@@ -6,9 +6,11 @@
  * call their NavMenu component; all other blocks render as placeholders.
  */
 
-import type { View, Block, Requirement, WizardState } from '../../types/wizard';
+import type { View, Block, WizardState } from '../../types/wizard';
 import { toPascalCase, toCamelCase } from '../../utils';
 import { generatePlaceholderHtml } from '../components/Placeholder';
+import { buildContentNodeTree } from '../../inlay/text-variants';
+import { compileToHtml } from '../inlay/compile';
 
 interface ViewBlockInfo {
   block: Block;
@@ -65,8 +67,41 @@ export function generateViewPage(
   ${b.componentFunction}(${varName}, router);
   container.appendChild(${varName});
 `;
+      } else if (b.block.blockType === 'text') {
+        // Inlay text block — compile-time rendering from contentNodes
+        const tree = b.block.contentNodes?.length
+          ? buildContentNodeTree(b.block.contentNodes)
+          : null;
+        if (tree) {
+          const inlayHtml = compileToHtml(tree);
+          const escapedHtml = inlayHtml.replace(/`/g, '\\`').replace(/\$/g, '\\$');
+          body += `
+  // Block: ${b.block.name} (text — Inlay)
+  const ${varName} = document.createElement('section');
+  ${varName}.className = 'block inlay-root';
+  ${varName}.innerHTML = \`${escapedHtml}\`;
+  container.appendChild(${varName});
+`;
+        } else {
+          // Text block with no know requirements — fallback to placeholder
+          const placeholderHtml = generatePlaceholderHtml(
+            b.block,
+            requirements,
+            recordTypes.map(r => ({ id: r.id, displayName: r.displayName })),
+            nonDataElements,
+            views
+          );
+          const escapedHtml = placeholderHtml.replace(/`/g, '\\`').replace(/\$/g, '\\$');
+          body += `
+  // Block: ${b.block.name} (text) — placeholder fallback
+  const ${varName} = document.createElement('section');
+  ${varName}.className = 'block block-placeholder';
+  ${varName}.innerHTML = \`${escapedHtml}\`;
+  container.appendChild(${varName});
+`;
+        }
       } else {
-        // Placeholder
+        // Placeholder for non-text blocks
         const placeholderHtml = generatePlaceholderHtml(
           b.block,
           requirements,

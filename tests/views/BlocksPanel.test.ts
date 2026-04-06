@@ -236,21 +236,14 @@ describe('BlocksPanel — form interaction', () => {
     expect(form?.innerHTML).toContain('block-name-input');
   });
 
-  it('shows all requirements in available list', () => {
+  it('shows content editor when add button is clicked', () => {
     const addBtn = document.getElementById('blocks-add-btn') as HTMLButtonElement;
     addBtn.click();
 
-    const availList = document.getElementById('block-available-list');
-    const items = availList?.querySelectorAll('.available-item');
-    expect(items?.length).toBe(2);
-  });
-
-  it('shows placeholder text when no chips selected', () => {
-    const addBtn = document.getElementById('blocks-add-btn') as HTMLButtonElement;
-    addBtn.click();
-
-    const chips = document.getElementById('block-selected-chips');
-    expect(chips?.textContent).toContain('Click requirements below to add them');
+    const nodesList = document.getElementById('content-nodes-list');
+    expect(nodesList).toBeTruthy();
+    const addContentBtn = document.getElementById('content-add-btn');
+    expect(addContentBtn).toBeTruthy();
   });
 
   it('disables save button initially', () => {
@@ -261,45 +254,34 @@ describe('BlocksPanel — form interaction', () => {
     expect(saveBtn.disabled).toBe(true);
   });
 
-  it('adds chip when requirement is clicked', () => {
+  it('enables save button when name is entered', () => {
     const addBtn = document.getElementById('blocks-add-btn') as HTMLButtonElement;
     addBtn.click();
 
-    const items = document.querySelectorAll('#block-available-list .available-item');
-    (items[0] as HTMLElement).click();
+    const nameInput = document.getElementById('block-name-input') as HTMLInputElement;
+    nameInput.value = 'About Section';
+    nameInput.dispatchEvent(new Event('input'));
 
-    const chips = document.querySelectorAll('.chip');
-    expect(chips.length).toBe(1);
-    expect(chips[0].textContent).toContain('App description');
+    const saveBtn = document.getElementById('block-save-btn') as HTMLButtonElement;
+    expect(saveBtn.disabled).toBe(false);
   });
 
-  it('marks selected item in available list', () => {
+  it('adds content node via dropdown', () => {
     const addBtn = document.getElementById('blocks-add-btn') as HTMLButtonElement;
     addBtn.click();
 
-    const items = document.querySelectorAll('#block-available-list .available-item');
-    (items[0] as HTMLElement).click();
+    // Open dropdown and select Heading
+    const addContentBtn = document.getElementById('content-add-btn') as HTMLButtonElement;
+    addContentBtn.click();
+    const option = document.querySelector('.content-add-option[data-node-type="heading"]') as HTMLElement;
+    option.click();
 
-    const refreshedItems = document.querySelectorAll('#block-available-list .available-item');
-    expect(refreshedItems[0].classList.contains('selected')).toBe(true);
+    const cards = document.querySelectorAll('.content-node-card');
+    expect(cards.length).toBe(1);
+    expect(cards[0].querySelector('.content-node-type-label')?.textContent).toBe('Heading');
   });
 
-  it('removes chip when clicked again in available list', () => {
-    const addBtn = document.getElementById('blocks-add-btn') as HTMLButtonElement;
-    addBtn.click();
-
-    // Select
-    const items = document.querySelectorAll('#block-available-list .available-item');
-    (items[0] as HTMLElement).click();
-    // Deselect
-    const refreshedItems = document.querySelectorAll('#block-available-list .available-item');
-    (refreshedItems[0] as HTMLElement).click();
-
-    const chips = document.querySelectorAll('.chip');
-    expect(chips.length).toBe(0);
-  });
-
-  it('saves block with name and selected requirements', () => {
+  it('saves text block with content nodes and auto-creates requirement', () => {
     const addBtn = document.getElementById('blocks-add-btn') as HTMLButtonElement;
     addBtn.click();
 
@@ -308,19 +290,30 @@ describe('BlocksPanel — form interaction', () => {
     nameInput.value = 'About Section';
     nameInput.dispatchEvent(new Event('input'));
 
-    // Select a requirement
-    const items = document.querySelectorAll('#block-available-list .available-item');
-    (items[0] as HTMLElement).click();
+    // Add a heading node
+    const addContentBtn = document.getElementById('content-add-btn') as HTMLButtonElement;
+    addContentBtn.click();
+    const option = document.querySelector('.content-add-option[data-node-type="heading"]') as HTMLElement;
+    option.click();
+
+    // Type text into the node
+    const textarea = document.querySelector('.content-node-text') as HTMLTextAreaElement;
+    textarea.value = 'Welcome';
 
     // Save
     const saveBtn = document.getElementById('block-save-btn') as HTMLButtonElement;
-    expect(saveBtn.disabled).toBe(false);
     saveBtn.click();
 
     const state = getWizardState();
     expect(state.blocks.length).toBe(1);
     expect(state.blocks[0].name).toBe('About Section');
-    expect(state.blocks[0].requirementIds).toEqual([reqs[0].id]);
+    expect(state.blocks[0].blockType).toBe('text');
+    expect(state.blocks[0].contentNodes).toEqual([{ type: 'heading', text: 'Welcome' }]);
+    // Auto-created requirement
+    expect(state.blocks[0].requirementIds.length).toBe(1);
+    const autoReq = state.requirements.find(r => r.id === state.blocks[0].requirementIds[0]);
+    expect(autoReq?.type).toBe('know');
+    expect(autoReq?.text).toBe('About Section');
   });
 
   it('closes form after save', () => {
@@ -330,9 +323,6 @@ describe('BlocksPanel — form interaction', () => {
     const nameInput = document.getElementById('block-name-input') as HTMLInputElement;
     nameInput.value = 'Test Block';
     nameInput.dispatchEvent(new Event('input'));
-
-    const items = document.querySelectorAll('#block-available-list .available-item');
-    (items[0] as HTMLElement).click();
 
     const saveBtn = document.getElementById('block-save-btn') as HTMLButtonElement;
     saveBtn.click();
@@ -537,14 +527,14 @@ describe('BlocksPanel — multi-assignment', () => {
     expect(html).not.toContain('Unassigned Requirements');
   });
 
-  it('shows requirement in available list when creating new block', () => {
+  it('opens content editor when creating new block', () => {
     renderAndWire();
     const addBtn = document.getElementById('blocks-add-btn') as HTMLButtonElement;
     addBtn.click();
 
-    // All requirements should be in the available list, even assigned ones
-    const items = document.querySelectorAll('#block-available-list .available-item');
-    expect(items.length).toBe(2);
+    // New block form opens in content editor mode
+    const nodesList = document.getElementById('content-nodes-list');
+    expect(nodesList).toBeTruthy();
   });
 });
 
@@ -591,7 +581,7 @@ describe('BlocksPanel — quick-create', () => {
 
     const state = getWizardState();
     expect(state.blocks.length).toBe(1);
-    expect(state.blocks[0].name).toBe('Paragraph'); // first option for know type
+    expect(state.blocks[0].name).toBe('App description'); // named from requirement text
     expect(state.blocks[0].requirementIds).toEqual([reqs[0].id]);
   });
 });

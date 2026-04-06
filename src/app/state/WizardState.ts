@@ -2,7 +2,7 @@
  * Wizard state management - initialization, persistence, and retrieval
  */
 
-import type { WizardState, LoadedState } from '../../types/wizard';
+import type { WizardState, LoadedState, ContentNode, TextVariant } from '../../types/wizard';
 import { generateId } from '../../utils/id';
 
 const STORAGE_KEY = 'atproto-wizard-state';
@@ -180,6 +180,62 @@ export function setWizardState(state: WizardState): void {
       }
       if (!rt.recordKeyType) {
         rt.recordKeyType = 'tid';
+      }
+    }
+  }
+  // Migrate: seed contentNodes on text blocks from linked know requirements'
+  // legacy fields (textVariant/text/content). Must run BEFORE requirement cleanup.
+  if (state.blocks && state.requirements) {
+    for (const block of state.blocks) {
+      if (block.blockType !== 'text') continue;
+      if (block.contentNodes) continue; // already migrated
+
+      const nodes: ContentNode[] = [];
+      for (const rid of block.requirementIds) {
+        const req = state.requirements.find(r => r.id === rid);
+        if (!req || req.type !== 'know' || !req.text) continue;
+
+        const variant: TextVariant = req.textVariant ?? 'paragraph';
+        switch (variant) {
+          case 'paragraph':
+            nodes.push({ type: 'paragraph', text: req.text });
+            if (req.content) nodes.push({ type: 'paragraph', text: req.content });
+            break;
+          case 'heading':
+            nodes.push({ type: 'heading', text: req.text });
+            if (req.content) nodes.push({ type: 'paragraph', text: req.content });
+            break;
+          case 'section':
+            nodes.push({ type: 'heading', text: req.text });
+            if (req.content) nodes.push({ type: 'paragraph', text: req.content });
+            break;
+          case 'infoBox':
+            nodes.push({ type: 'infoBox', text: req.text });
+            if (req.content) nodes.push({ type: 'paragraph', text: req.content });
+            break;
+          case 'banner':
+            nodes.push({ type: 'banner', text: req.text });
+            if (req.content) nodes.push({ type: 'caption', text: req.content });
+            break;
+        }
+      }
+      block.contentNodes = nodes;
+    }
+  }
+
+  // Migrate: clean up legacy content/textVariant on know requirements
+  // (runs after block seeding so blocks can read legacy fields first)
+  if (state.requirements) {
+    for (const req of state.requirements) {
+      if (req.type !== 'know') continue;
+      const legacy = req as unknown as Record<string, unknown>;
+
+      if (req.content) {
+        req.text = `${req.text ?? ''} — ${req.content}`;
+        delete legacy.content;
+      }
+      if (legacy.textVariant !== undefined) {
+        delete legacy.textVariant;
       }
     }
   }

@@ -600,16 +600,12 @@ describe('wireRequirementsPanel (DOM)', () => {
     const textarea = document.getElementById('req-know-text') as HTMLTextAreaElement;
     textarea.value = 'how this works';
     textarea.dispatchEvent(new Event('input'));
-    const contentArea = document.getElementById('req-know-content') as HTMLTextAreaElement;
-    contentArea.value = 'A quick-start guide';
-    contentArea.dispatchEvent(new Event('input'));
     (document.querySelector('.req-save-btn') as HTMLElement).click();
 
     const state = getWizardState();
     expect(state.requirements).toHaveLength(1);
     expect(state.requirements[0].type).toBe('know');
     expect(state.requirements[0].text).toBe('how this works');
-    expect(state.requirements[0].content).toBe('A quick-start guide');
     expect(document.body.innerHTML).toContain('how this works');
   });
 

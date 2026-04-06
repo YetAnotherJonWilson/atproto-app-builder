@@ -18,27 +18,32 @@ import {
   getDisplayText,
   getSidebarText,
 } from './RequirementsPanel';
-import type { Block, BlockType, Requirement } from '../../../types/wizard';
+import type { Block, BlockType, Requirement, ContentNode, ContentNodeType } from '../../../types/wizard';
+import { renderToDOM } from '../../../inlay/host-runtime';
+import { buildContentNodeTree } from '../../../inlay/text-variants';
 
 // ── Module-level state ────────────────────────────────────────────────
 
 let editingBlockId: string | null = null;
 let selectedReqIds: string[] = [];
+let editingContentNodes: ContentNode[] = [];
+let isContentEditorMode = false;
 
 // ── Quick-create name options by requirement type ─────────────────────
 
 interface QuickNameOption {
   label: string;
   blockType?: BlockType;
+  contentNodeType?: ContentNodeType;
 }
 
 const QUICK_NAMES: Record<string, QuickNameOption[]> = {
   know: [
-    { label: 'Paragraph', blockType: 'text' },
-    { label: 'Section', blockType: 'text' },
-    { label: 'Heading', blockType: 'text' },
-    { label: 'Info Box', blockType: 'text' },
-    { label: 'Banner', blockType: 'text' },
+    { label: 'Paragraph', blockType: 'text', contentNodeType: 'paragraph' },
+    { label: 'Section', blockType: 'text', contentNodeType: 'heading' },
+    { label: 'Heading', blockType: 'text', contentNodeType: 'heading' },
+    { label: 'Info Box', blockType: 'text', contentNodeType: 'infoBox' },
+    { label: 'Banner', blockType: 'text', contentNodeType: 'banner' },
   ],
   'do-data': [
     { label: 'Form', blockType: 'form' },
@@ -182,25 +187,48 @@ function renderBlockCard(block: Block): string {
 
   const showReorder = validReqs.length > 1;
 
-  const reqItems = validReqs
-    .map((req, i) => {
-      const reorderHtml = showReorder
-        ? `<span class="reorder-btns">
-            <button class="block-reorder-up" data-block-id="${block.id}" data-req-index="${i}"
-              title="Move up"${i === 0 ? ' disabled' : ''}>&#9650;</button>
-            <button class="block-reorder-down" data-block-id="${block.id}" data-req-index="${i}"
-              title="Move down"${i === validReqs.length - 1 ? ' disabled' : ''}>&#9660;</button>
-          </span>`
-        : '';
+  // Check if this is a text block with content nodes for Inlay preview
+  const hasInlayPreview = block.blockType === 'text' && (block.contentNodes?.length ?? 0) > 0;
 
-      return `<li class="block-card-req">
-        <span class="req-order">${i + 1}</span>
-        <span class="req-type-badge">${getTypeLabel(req)}</span>
-        <span>${escapeHtml(getRequirementShortText(req))}</span>
-        ${reorderHtml}
-      </li>`;
-    })
-    .join('');
+  // Inlay preview container — filled in by wireBlocksPanel via DOM rendering
+  const previewHtml = hasInlayPreview
+    ? `<div class="block-card-inlay-preview inlay-root" data-block-id="${block.id}"></div>`
+    : '';
+
+  // For text blocks with contentNodes, show a "Fulfills" badge instead of the
+  // full requirement list. Non-text blocks keep the old requirement list.
+  let footerHtml: string;
+  if (hasInlayPreview && validReqs.length > 0) {
+    const fulfillsText = validReqs
+      .filter(r => r.type === 'know')
+      .map(r => escapeHtml(truncate(r.text ?? '', 50)))
+      .join(', ');
+    footerHtml = fulfillsText
+      ? `<div class="block-card-fulfills">Fulfills: ${fulfillsText}</div>`
+      : '';
+  } else {
+    const showReorder = validReqs.length > 1;
+    const reqItems = validReqs
+      .map((req, i) => {
+        const reorderHtml = showReorder
+          ? `<span class="reorder-btns">
+              <button class="block-reorder-up" data-block-id="${block.id}" data-req-index="${i}"
+                title="Move up"${i === 0 ? ' disabled' : ''}>&#9650;</button>
+              <button class="block-reorder-down" data-block-id="${block.id}" data-req-index="${i}"
+                title="Move down"${i === validReqs.length - 1 ? ' disabled' : ''}>&#9660;</button>
+            </span>`
+          : '';
+
+        return `<li class="block-card-req">
+          <span class="req-order">${i + 1}</span>
+          <span class="req-type-badge">${getTypeLabel(req)}</span>
+          <span>${escapeHtml(getRequirementShortText(req))}</span>
+          ${reorderHtml}
+        </li>`;
+      })
+      .join('');
+    footerHtml = `<ul class="block-card-requirements">${reqItems}</ul>`;
+  }
 
   return `<div class="block-card" data-block-id="${block.id}">
     <div class="block-card-header">
@@ -210,7 +238,8 @@ function renderBlockCard(block: Block): string {
         <button class="block-delete-btn" data-block-id="${block.id}" title="Delete">&#10005;</button>
       </div>
     </div>
-    <ul class="block-card-requirements">${reqItems}</ul>
+    ${previewHtml}
+    ${footerHtml}
   </div>`;
 }
 
@@ -227,7 +256,7 @@ function renderUnassignedSection(unassigned: Requirement[]): string {
             <button class="quick-btn" data-req-id="${req.id}">+ Block</button>
             <div class="quick-create-dropdown" data-req-id="${req.id}">
               ${(quickNames ?? [])
-                .map((n) => `<button class="quick-create-option" data-name="${escapeHtml(n.label)}"${n.blockType ? ` data-block-type="${n.blockType}"` : ''} data-req-id="${req.id}">${escapeHtml(n.label)}</button>`)
+                .map((n) => `<button class="quick-create-option" data-name="${escapeHtml(n.label)}"${n.blockType ? ` data-block-type="${n.blockType}"` : ''}${n.contentNodeType ? ` data-content-node-type="${n.contentNodeType}"` : ''} data-req-id="${req.id}">${escapeHtml(n.label)}</button>`)
                 .join('')}
             </div>
           </div>`;
@@ -254,6 +283,110 @@ function renderUnassignedSection(unassigned: Requirement[]): string {
 }
 
 function renderInlineForm(): string {
+  if (isContentEditorMode) {
+    return renderContentEditorForm();
+  }
+  return renderChipSelectorForm();
+}
+
+// ── Content editor form (text blocks) ───────────────────────────────
+
+const CONTENT_NODE_TYPE_LABELS: { value: ContentNodeType; label: string }[] = [
+  { value: 'heading', label: 'Heading' },
+  { value: 'paragraph', label: 'Paragraph' },
+  { value: 'caption', label: 'Caption' },
+  { value: 'infoBox', label: 'Info Box' },
+  { value: 'banner', label: 'Banner' },
+];
+
+function renderContentEditorForm(): string {
+  const block = editingBlockId
+    ? getWizardState().blocks.find((b) => b.id === editingBlockId)
+    : null;
+
+  const nameValue = block ? escapeHtml(block.name) : '';
+
+  // Show linked requirement as fulfills badge
+  let fulfillsHtml = '';
+  if (block && block.requirementIds.length > 0) {
+    const { requirements } = getWizardState();
+    const linked = block.requirementIds
+      .map(id => requirements.find(r => r.id === id))
+      .filter((r): r is Requirement => r !== undefined && r.type === 'know')
+      .map(r => escapeHtml(truncate(r.text ?? '', 60)));
+    if (linked.length > 0) {
+      fulfillsHtml = `<div class="form-hint" style="margin-bottom:8px;">Fulfills: ${linked.join(', ')}</div>`;
+    }
+  }
+
+  // Render content node cards
+  const nodesHtml = editingContentNodes.length > 0
+    ? editingContentNodes.map((node, i) => renderContentNodeCard(node, i)).join('')
+    : '<div class="form-hint">No content yet. Click &ldquo;+ Add Content&rdquo; to get started.</div>';
+
+  const saveDisabled = !nameValue;
+
+  return `
+    <div class="form-group">
+      <label for="block-name-input">Block Name</label>
+      <input type="text" id="block-name-input"
+        placeholder="e.g., About This App, Welcome Section"
+        value="${nameValue}">
+    </div>
+    ${fulfillsHtml}
+    <div class="form-group">
+      <label>Content</label>
+      <div class="content-nodes-list" id="content-nodes-list">
+        ${nodesHtml}
+      </div>
+      <div class="content-add-wrapper">
+        <button class="quick-btn" id="content-add-btn">+ Add Content</button>
+        <div class="quick-create-dropdown" id="content-add-dropdown">
+          ${CONTENT_NODE_TYPE_LABELS.map(t =>
+            `<button class="quick-create-option content-add-option" data-node-type="${t.value}">${escapeHtml(t.label)}</button>`
+          ).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="content-editor-preview inlay-root" id="content-editor-preview"></div>
+    <div class="form-footer">
+      <button class="btn-primary" id="block-save-btn"${saveDisabled ? ' disabled' : ''}>
+        ${editingBlockId ? 'Update Block' : 'Save Block'}
+      </button>
+      <button class="btn-ghost" id="block-cancel-btn">Cancel</button>
+    </div>`;
+}
+
+function renderContentNodeCard(node: ContentNode, index: number): string {
+  const isFirst = index === 0;
+  const isLast = index === editingContentNodes.length - 1;
+  const showReorder = editingContentNodes.length > 1;
+
+  const typeLabel = CONTENT_NODE_TYPE_LABELS.find(t => t.value === node.type)?.label
+    ?? node.type.toUpperCase();
+  const textValue = node.type === 'image' ? '' : escapeHtml(node.text);
+
+  const reorderHtml = showReorder
+    ? `<button class="content-node-up" data-node-index="${index}" title="Move up"${isFirst ? ' disabled' : ''}>&#9650;</button>
+       <button class="content-node-down" data-node-index="${index}" title="Move down"${isLast ? ' disabled' : ''}>&#9660;</button>`
+    : '';
+
+  return `<div class="content-node-card" data-node-index="${index}">
+    <div class="content-node-header">
+      <span class="content-node-type-label">${escapeHtml(typeLabel)}</span>
+      <span class="content-node-actions">
+        ${reorderHtml}
+        <button class="content-node-remove" data-node-index="${index}" title="Remove">&#10005;</button>
+      </span>
+    </div>
+    <textarea class="content-node-text" data-node-index="${index}" rows="2"
+      placeholder="Enter ${typeLabel.toLowerCase()} text...">${textValue}</textarea>
+  </div>`;
+}
+
+// ── Chip selector form (non-text blocks) ────────────────────────────
+
+function renderChipSelectorForm(): string {
   const { requirements } = getWizardState();
   const block = editingBlockId
     ? getWizardState().blocks.find((b) => b.id === editingBlockId)
@@ -317,6 +450,9 @@ function renderInlineForm(): string {
 // ── Wire ──────────────────────────────────────────────────────────────
 
 export function wireBlocksPanel(): void {
+  // Render Inlay previews into placeholder containers
+  renderInlayPreviews();
+
   // Add button
   const addBtn = document.getElementById('blocks-add-btn');
   addBtn?.addEventListener('click', openNewForm);
@@ -386,7 +522,8 @@ function handleUnassignedClick(e: Event): void {
     const name = option.dataset.name!;
     const reqId = option.dataset.reqId!;
     const blockType = option.dataset.blockType as BlockType | undefined;
-    quickCreateBlock(name, reqId, blockType);
+    const contentNodeType = option.dataset.contentNodeType as ContentNodeType | undefined;
+    quickCreateBlock(name, reqId, blockType, contentNodeType);
     return;
   }
 
@@ -420,6 +557,8 @@ function handleEscapeKey(e: KeyboardEvent): void {
 function openNewForm(): void {
   editingBlockId = null;
   selectedReqIds = [];
+  editingContentNodes = [];
+  isContentEditorMode = true; // new blocks default to content editor (text block)
   showForm();
 }
 
@@ -432,6 +571,15 @@ function openEditForm(blockId: string): void {
   const { requirements } = getWizardState();
   const validIds = new Set(requirements.map((r) => r.id));
   selectedReqIds = block.requirementIds.filter((id) => validIds.has(id));
+
+  // Text blocks use content editor; others use chip selector
+  if (block.blockType === 'text') {
+    isContentEditorMode = true;
+    editingContentNodes = block.contentNodes ? block.contentNodes.map(n => ({ ...n })) : [];
+  } else {
+    isContentEditorMode = false;
+    editingContentNodes = [];
+  }
   showForm();
 }
 
@@ -469,6 +617,8 @@ function hideForm(): void {
 
   editingBlockId = null;
   selectedReqIds = [];
+  editingContentNodes = [];
+  isContentEditorMode = false;
 }
 
 function wireForm(): void {
@@ -476,6 +626,134 @@ function wireForm(): void {
   const nameInput = document.getElementById('block-name-input') as HTMLInputElement | null;
   nameInput?.addEventListener('input', updateSaveButtonState);
 
+  if (isContentEditorMode) {
+    wireContentEditorForm();
+  } else {
+    wireChipSelectorForm();
+  }
+
+  // Save button
+  const saveBtn = document.getElementById('block-save-btn');
+  saveBtn?.addEventListener('click', saveBlock);
+
+  // Cancel button
+  const cancelBtn = document.getElementById('block-cancel-btn');
+  cancelBtn?.addEventListener('click', () => {
+    hideForm();
+  });
+}
+
+function wireContentEditorForm(): void {
+  const nodesList = document.getElementById('content-nodes-list');
+  nodesList?.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+
+    // Remove button
+    const removeBtn = target.closest('.content-node-remove') as HTMLElement | null;
+    if (removeBtn) {
+      const idx = parseInt(removeBtn.dataset.nodeIndex!, 10);
+      editingContentNodes.splice(idx, 1);
+      refreshFormContents();
+      return;
+    }
+
+    // Move up
+    const upBtn = target.closest('.content-node-up') as HTMLElement | null;
+    if (upBtn && !(upBtn as HTMLButtonElement).disabled) {
+      const idx = parseInt(upBtn.dataset.nodeIndex!, 10);
+      if (idx > 0) {
+        [editingContentNodes[idx - 1], editingContentNodes[idx]] =
+          [editingContentNodes[idx], editingContentNodes[idx - 1]];
+        refreshFormContents();
+      }
+      return;
+    }
+
+    // Move down
+    const downBtn = target.closest('.content-node-down') as HTMLElement | null;
+    if (downBtn && !(downBtn as HTMLButtonElement).disabled) {
+      const idx = parseInt(downBtn.dataset.nodeIndex!, 10);
+      if (idx < editingContentNodes.length - 1) {
+        [editingContentNodes[idx], editingContentNodes[idx + 1]] =
+          [editingContentNodes[idx + 1], editingContentNodes[idx]];
+        refreshFormContents();
+      }
+      return;
+    }
+  });
+
+  // Text input — update node text on input and refresh preview
+  nodesList?.addEventListener('input', (e) => {
+    const target = e.target as HTMLElement;
+    if (target.classList.contains('content-node-text')) {
+      const idx = parseInt(target.dataset.nodeIndex!, 10);
+      const node = editingContentNodes[idx];
+      if (node && node.type !== 'image') {
+        node.text = (target as HTMLTextAreaElement).value;
+        renderContentEditorPreview();
+      }
+    }
+  });
+
+  // Enter to confirm (blur) textarea; Shift+Enter for newline
+  nodesList?.addEventListener('keydown', (e) => {
+    const target = e.target as HTMLElement;
+    if (target.classList.contains('content-node-text') && e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      (target as HTMLTextAreaElement).blur();
+    }
+  });
+
+  // Add content button — toggle dropdown
+  const addBtn = document.getElementById('content-add-btn');
+  addBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const dropdown = document.getElementById('content-add-dropdown');
+    dropdown?.classList.toggle('open');
+  });
+
+  // Add content dropdown options
+  const dropdown = document.getElementById('content-add-dropdown');
+  dropdown?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const option = (e.target as HTMLElement).closest('.content-add-option') as HTMLElement | null;
+    if (!option) return;
+    const nodeType = option.dataset.nodeType as ContentNodeType;
+    if (nodeType === 'image') {
+      editingContentNodes.push({ type: 'image', src: '', alt: '' });
+    } else {
+      editingContentNodes.push({ type: nodeType, text: '' });
+    }
+    dropdown.classList.remove('open');
+    refreshFormContents();
+    // Focus the newly added content node's textarea (query fresh DOM after re-render)
+    const freshList = document.getElementById('content-nodes-list');
+    const lastTextarea = freshList?.querySelector('.content-node-card:last-child .content-node-text') as HTMLTextAreaElement | null;
+    lastTextarea?.focus();
+  });
+
+  // Render live preview
+  renderContentEditorPreview();
+}
+
+function renderContentEditorPreview(): void {
+  const container = document.getElementById('content-editor-preview');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const nonEmptyNodes = editingContentNodes.filter(n =>
+    n.type === 'image' ? !!n.src : !!n.text
+  );
+  if (nonEmptyNodes.length === 0) return;
+
+  const tree = buildContentNodeTree(nonEmptyNodes);
+  if (!tree) return;
+
+  const dom = renderToDOM(tree);
+  container.appendChild(dom);
+}
+
+function wireChipSelectorForm(): void {
   // Available list — click to toggle selection
   const availList = document.getElementById('block-available-list');
   availList?.addEventListener('click', (e) => {
@@ -492,16 +770,6 @@ function wireForm(): void {
     if (!removeBtn) return;
     const reqId = removeBtn.dataset.reqId!;
     toggleRequirementSelection(reqId);
-  });
-
-  // Save button
-  const saveBtn = document.getElementById('block-save-btn');
-  saveBtn?.addEventListener('click', saveBlock);
-
-  // Cancel button
-  const cancelBtn = document.getElementById('block-cancel-btn');
-  cancelBtn?.addEventListener('click', () => {
-    hideForm();
   });
 }
 
@@ -523,6 +791,17 @@ function refreshFormContents(): void {
   const nameInput = document.getElementById('block-name-input') as HTMLInputElement | null;
   const currentName = nameInput?.value ?? '';
 
+  // For content editor, sync textarea values to state before re-render
+  if (isContentEditorMode) {
+    document.querySelectorAll('.content-node-text').forEach(el => {
+      const idx = parseInt((el as HTMLElement).dataset.nodeIndex!, 10);
+      const node = editingContentNodes[idx];
+      if (node && node.type !== 'image') {
+        node.text = (el as HTMLTextAreaElement).value;
+      }
+    });
+  }
+
   form.innerHTML = renderInlineForm();
 
   // Restore name
@@ -541,8 +820,12 @@ function updateSaveButtonState(): void {
   if (!nameInput || !saveBtn) return;
 
   const hasName = nameInput.value.trim().length > 0;
-  const hasReqs = selectedReqIds.length > 0;
-  saveBtn.disabled = !(hasName && hasReqs);
+  if (isContentEditorMode) {
+    // Content editor only requires a name — content can be empty
+    saveBtn.disabled = !hasName;
+  } else {
+    saveBtn.disabled = !(hasName && selectedReqIds.length > 0);
+  }
 }
 
 // ── CRUD operations ──────────────────────────────────────────────────
@@ -552,25 +835,66 @@ function saveBlock(): void {
   if (!nameInput) return;
 
   const name = nameInput.value.trim();
-  if (!name || selectedReqIds.length === 0) return;
+  if (!name) return;
+
+  // Sync textarea values one final time for content editor
+  if (isContentEditorMode) {
+    document.querySelectorAll('.content-node-text').forEach(el => {
+      const idx = parseInt((el as HTMLElement).dataset.nodeIndex!, 10);
+      const node = editingContentNodes[idx];
+      if (node && node.type !== 'image') {
+        node.text = (el as HTMLTextAreaElement).value;
+      }
+    });
+  }
 
   const state = getWizardState();
 
-  if (editingBlockId) {
-    // Update existing block
-    const block = state.blocks.find((b) => b.id === editingBlockId);
-    if (block) {
-      block.name = name;
-      block.requirementIds = [...selectedReqIds];
+  if (isContentEditorMode) {
+    if (editingBlockId) {
+      // Update existing text block
+      const block = state.blocks.find((b) => b.id === editingBlockId);
+      if (block) {
+        block.name = name;
+        block.contentNodes = [...editingContentNodes];
+      }
+    } else {
+      // Create new text block from scratch
+      // Auto-create a know requirement if none is linked
+      const reqId = generateId();
+      state.requirements.push({
+        id: reqId,
+        type: 'know',
+        text: name,
+      });
+
+      const block: Block = {
+        id: generateId(),
+        name,
+        requirementIds: [reqId],
+        blockType: 'text',
+        contentNodes: [...editingContentNodes],
+      };
+      state.blocks.push(block);
     }
   } else {
-    // Create new block
-    const block: Block = {
-      id: generateId(),
-      name,
-      requirementIds: [...selectedReqIds],
-    };
-    state.blocks.push(block);
+    // Chip selector mode (non-text blocks)
+    if (selectedReqIds.length === 0) return;
+
+    if (editingBlockId) {
+      const block = state.blocks.find((b) => b.id === editingBlockId);
+      if (block) {
+        block.name = name;
+        block.requirementIds = [...selectedReqIds];
+      }
+    } else {
+      const block: Block = {
+        id: generateId(),
+        name,
+        requirementIds: [...selectedReqIds],
+      };
+      state.blocks.push(block);
+    }
   }
 
   saveWizardState(state);
@@ -585,13 +909,30 @@ function deleteBlock(blockId: string): void {
   rerender();
 }
 
-function quickCreateBlock(name: string, reqId: string, blockType?: BlockType): void {
+function quickCreateBlock(fallbackName: string, reqId: string, blockType?: BlockType, contentNodeType?: ContentNodeType): void {
   const state = getWizardState();
+  const req = state.requirements.find(r => r.id === reqId);
+
+  // Use the requirement's title as the block name, falling back to the dropdown label
+  const name = req ? getRequirementShortText(req) : fallbackName;
+
+  // Build contentNodes from the linked requirement's text
+  let contentNodes: ContentNode[] | undefined;
+  if (contentNodeType) {
+    const text = req?.text ?? '';
+    if (contentNodeType === 'image') {
+      contentNodes = [{ type: 'image', src: '', alt: text }];
+    } else {
+      contentNodes = [{ type: contentNodeType, text }];
+    }
+  }
+
   const block: Block = {
     id: generateId(),
     name,
     requirementIds: [reqId],
     ...(blockType && { blockType }),
+    ...(contentNodes && { contentNodes }),
   };
   state.blocks.push(block);
   saveWizardState(state);
@@ -633,6 +974,27 @@ function toggleQuickDropdown(reqId: string): void {
 function closeAllDropdowns(): void {
   document.querySelectorAll('.quick-create-dropdown.open').forEach((d) => {
     d.classList.remove('open');
+  });
+}
+
+// ── Inlay preview rendering ──────────────────────────────────────────
+
+function renderInlayPreviews(): void {
+  const containers = document.querySelectorAll('.block-card-inlay-preview');
+  const { blocks } = getWizardState();
+
+  containers.forEach(container => {
+    const blockId = (container as HTMLElement).dataset.blockId;
+    if (!blockId) return;
+
+    const block = blocks.find(b => b.id === blockId);
+    if (!block?.contentNodes?.length) return;
+
+    const tree = buildContentNodeTree(block.contentNodes);
+    if (!tree) return;
+
+    const dom = renderToDOM(tree);
+    container.appendChild(dom);
   });
 }
 
