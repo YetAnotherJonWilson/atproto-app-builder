@@ -1,6 +1,6 @@
 # Spec: Block Content Editor
 
-**Status:** ready
+**Status:** done
 **Date:** 2026-04-04
 
 ## What

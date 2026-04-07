@@ -1,6 +1,6 @@
 # Spec: Scoped AT Protocol OAuth Permissions
 
-**Status:** ready
+**Status:** done
 **Date:** 2026-04-02
 
 ## What

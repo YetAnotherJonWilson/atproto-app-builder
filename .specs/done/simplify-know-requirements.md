@@ -1,6 +1,6 @@
 # Spec: Simplify Know Requirements
 
-**Status:** ready
+**Status:** done
 **Date:** 2026-04-04
 
 ## What

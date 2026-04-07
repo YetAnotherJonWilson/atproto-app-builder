@@ -1,6 +1,6 @@
 # Spec: Redesign "Do" Requirement Form — Description + Pick-Then-Type Items
 
-**Status:** ready
+**Status:** done
 **Date:** 2026-03-24
 
 ## What

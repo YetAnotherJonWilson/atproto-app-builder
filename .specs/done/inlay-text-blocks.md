@@ -1,6 +1,6 @@
 # Spec: Inlay Text Blocks (Option A — Static Primitives)
 
-**Status:** draft
+**Status:** done
 **Date:** 2026-04-04
 
 ## What

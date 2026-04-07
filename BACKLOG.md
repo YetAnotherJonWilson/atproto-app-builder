@@ -38,7 +38,7 @@ Pick one item from "Up Next" before starting a coding session.
 
 ### Post-Migration Features
 
-- [ ] PDS state persistence (multi-project save/load) — see `.specs/active/pds-state-persistence.md`
+- [x] PDS state persistence (multi-project save/load) — see `.specs/done/pds-state-persistence.md`
 - [ ] Block-to-component rendering (real list/form/detail/etc.) — see `.specs/active/block-component-rendering.md`
 - [ ] Wizard walkthrough / guided tour — see `.specs/active/wizard-walkthrough.md`
 - [ ] Wireframe / mockup preview view — see `.specs/active/wireframe-preview-view.md`
@@ -59,6 +59,12 @@ Pick one item from "Up Next" before starting a coding session.
 
 <!-- Move completed items here with date -->
 
+- [x] Inlay text blocks (static primitives) — see `.specs/done/inlay-text-blocks.md` 4/7/26
+- [x] Simplify know requirements — see `.specs/done/simplify-know-requirements.md` 4/7/26
+- [x] Scoped AT Protocol OAuth permissions — see `.specs/done/scoped-atproto-permissions.md` 4/7/26
+- [x] PDS state persistence (multi-project save/load) — see `.specs/done/pds-state-persistence.md` 4/7/26
+- [x] Do requirement redesign — see `.specs/done/do-requirement-redesign.md` 4/7/26
+- [x] Block content editor — see `.specs/done/block-content-editor.md` 4/7/26
 - [x] Record type name collision disambiguation — see `.specs/done/duplicate-name-disambiguation.md` 4/7/26
 - [x] Lexicon discovery production fixes & browse enhancements — see `.specs/done/lexicon-discovery-production.md` 4/1/26
 - [x] LexiStats Lexicon Chooser integration — see `.specs/done/lexistats-chooser-integration.md` 3/28/26

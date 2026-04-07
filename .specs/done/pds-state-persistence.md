@@ -1,6 +1,6 @@
 # Spec: PDS State Persistence (Multi-Project)
 
-**Status:** ready
+**Status:** done
 **Date:** 2026-03-25
 
 ## What
