@@ -59,6 +59,7 @@ Pick one item from "Up Next" before starting a coding session.
 
 <!-- Move completed items here with date -->
 
+- [x] Record type name collision disambiguation — see `.specs/done/duplicate-name-disambiguation.md` 4/7/26
 - [x] Lexicon discovery production fixes & browse enhancements — see `.specs/done/lexicon-discovery-production.md` 4/1/26
 - [x] LexiStats Lexicon Chooser integration — see `.specs/done/lexistats-chooser-integration.md` 3/28/26
 

@@ -25,7 +25,8 @@ import {
   findByNsid,
 } from '../../services/LexiStats';
 import type { LexiStatEntry } from '../../services/LexiStats';
-import { toCamelCase } from '../../../utils/text';
+import { toCamelCase, toPascalCase } from '../../../utils/text';
+import { showPromptDialog } from '../../dialogs/PromptDialog';
 import type { RecordType, NamespaceOption } from '../../../types/wizard';
 import type { LexiconSchema } from '../../../types/generation';
 import { deleteRecordType } from '../../operations/RecordTypeOps';
@@ -1380,12 +1381,141 @@ async function handleSelectResult(nsid: string): Promise<void> {
   }
 }
 
+/**
+ * Check whether another record type has already adopted the given NSID.
+ * Returns the conflicting record, or undefined if no duplicate exists.
+ */
+export function findDuplicateNsidAdoption(
+  nsid: string,
+  currentRecordId: string,
+  allRecords: ReadonlyArray<Pick<RecordType, 'id' | 'adoptedNsid' | 'displayName'>>,
+): Pick<RecordType, 'id' | 'adoptedNsid' | 'displayName'> | undefined {
+  return allRecords.find(
+    r => r.id !== currentRecordId && r.adoptedNsid === nsid,
+  );
+}
+
+/**
+ * Pure computation: detect name collisions and compute disambiguated names.
+ *
+ * - If no collision, returns lastSegment unchanged with no renames.
+ * - If collision with a custom record, only the adopted record is prefixed.
+ * - If collision with another adopted record, both are prefixed using their
+ *   respective second-to-last NSID segments.
+ * - If auto-disambiguation still collides, sets needsPrompt = true.
+ *
+ * Does not mutate any records — returns renames to be applied by the caller.
+ */
+export function resolveNameCollision(
+  lastSegment: string,
+  newNsid: string,
+  newRecordId: string,
+  allRecords: ReadonlyArray<Pick<RecordType, 'id' | 'name' | 'source' | 'adoptedNsid'>>,
+): {
+  candidateName: string;
+  needsPrompt: boolean;
+  renames: Array<{ id: string; newName: string }>;
+} {
+  const others = allRecords.filter(r => r.id !== newRecordId);
+  const collisions = others.filter(
+    r => r.name.toLowerCase() === lastSegment.toLowerCase(),
+  );
+
+  if (collisions.length === 0) {
+    return { candidateName: lastSegment, needsPrompt: false, renames: [] };
+  }
+
+  // Build a disambiguated name for the new record using second-to-last segment
+  const nsidParts = newNsid.split('.');
+  const prefix = nsidParts.length >= 2 ? nsidParts[nsidParts.length - 2] : '';
+  const candidateName = prefix
+    ? toCamelCase(prefix) + toPascalCase(lastSegment)
+    : lastSegment;
+
+  // Compute renames for colliding adopted records
+  const renames: Array<{ id: string; newName: string }> = [];
+  for (const collision of collisions) {
+    if (collision.source === 'adopted' && collision.adoptedNsid) {
+      const collParts = collision.adoptedNsid.split('.');
+      const collPrefix = collParts.length >= 2 ? collParts[collParts.length - 2] : '';
+      const collSegment = collParts[collParts.length - 1];
+      if (collPrefix) {
+        renames.push({
+          id: collision.id,
+          newName: toCamelCase(collPrefix) + toPascalCase(collSegment),
+        });
+      }
+    }
+    // Custom records (source='new') keep their name unchanged — no rename entry
+  }
+
+  // Check if our candidate name still collides after all proposed renames
+  const renameMap = new Map(renames.map(r => [r.id, r.newName]));
+  const allNamesAfterRename = others.map(r =>
+    (renameMap.get(r.id) ?? r.name).toLowerCase(),
+  );
+  const needsPrompt = allNamesAfterRename.includes(candidateName.toLowerCase());
+
+  return { candidateName, needsPrompt, renames };
+}
+
+/** Apply resolveNameCollision result, prompting the user if auto-disambiguation fails. */
+async function disambiguateRecordName(
+  lastSegment: string,
+  newNsid: string,
+  newRecordId: string,
+  allRecords: RecordType[],
+): Promise<string | null> {
+  const result = resolveNameCollision(lastSegment, newNsid, newRecordId, allRecords);
+
+  // Apply renames to existing records
+  for (const rename of result.renames) {
+    const record = allRecords.find(r => r.id === rename.id);
+    if (record) record.name = rename.newName;
+  }
+
+  if (!result.needsPrompt) return result.candidateName;
+
+  // Collect existing names for validation
+  const takenNames = new Set(
+    allRecords
+      .filter(r => r.id !== newRecordId)
+      .map(r => r.name.toLowerCase()),
+  );
+
+  // Fallback: prompt the user for a custom name with inline validation
+  const customName = await showPromptDialog(
+    `The auto-generated name "${result.candidateName}" is already in use. Please enter a unique name for this record type.`,
+    result.candidateName,
+    'e.g., myCustomPost',
+    (value) => {
+      const normalized = toCamelCase(value).toLowerCase();
+      if (takenNames.has(normalized)) {
+        return `"${toCamelCase(value)}" is already in use. Choose a different name.`;
+      }
+      return null;
+    },
+  );
+  if (!customName) return null;
+  return toCamelCase(customName);
+}
+
 async function handleAdopt(): Promise<void> {
   const rt = getActiveRecordType();
   if (!rt || !selectedSchema || !selectedNsid) return;
 
   const mainDef = selectedSchema.defs?.main;
   if (mainDef?.type !== 'record') return;
+
+  // Block adopting an NSID that another record type already uses
+  const state = getWizardState();
+  const duplicate = findDuplicateNsidAdoption(selectedNsid, rt.id, state.recordTypes);
+  if (duplicate) {
+    await showConfirmDialog(
+      `Another data type ("${duplicate.displayName}") already uses ${selectedNsid}. Each lexicon can only be adopted once.`,
+    );
+    return;
+  }
 
   // Check if confirmation is needed
   const hasExistingData =
@@ -1397,15 +1527,19 @@ async function handleAdopt(): Promise<void> {
     if (!confirmed) return;
   }
 
-  const state = getWizardState();
-
   rt.source = 'adopted';
   rt.adoptedNsid = selectedNsid;
   rt.adoptedSchema = selectedSchema;
 
-  // Extract name from NSID (last segment)
+  // Extract name from NSID and disambiguate if needed
   const nsidParts = selectedNsid.split('.');
-  rt.name = nsidParts[nsidParts.length - 1];
+  const lastSegment = nsidParts[nsidParts.length - 1];
+
+  const resolvedName = await disambiguateRecordName(
+    lastSegment, selectedNsid, rt.id, state.recordTypes,
+  );
+  if (resolvedName === null) return; // User cancelled the prompt
+  rt.name = resolvedName;
 
   rt.description = mainDef.description ?? '';
   rt.recordKeyType = (mainDef.key as 'tid' | 'any') ?? 'tid';
