@@ -20,15 +20,10 @@
       -webkit-text-stroke: 0.4px currentColor;
     }
   }
-  @font-face {
-    font-family: fira-sans;
-    src: url(../fonts/FiraSans/FiraSans-Medium.woff2) format('woff2');
-  }
-
   :root {
-    --ff-body: 'fira-sans', sans-serif;
+    --ff-body: 'Fira Sans', sans-serif;
     --ff-heading: 'dirty-ego', serif;
-    --ff-heading-2: 'fira-sans', sans-serif;
+    --ff-heading-2: 'Fira Sans', sans-serif;
 
     --fs-400: 1rem;
     --fs-500: 1.25rem;
