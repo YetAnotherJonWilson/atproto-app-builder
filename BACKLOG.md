@@ -39,7 +39,8 @@ Pick one item from "Up Next" before starting a coding session.
 ### Post-Migration Features
 
 - [x] PDS state persistence (multi-project save/load) — see `.specs/done/pds-state-persistence.md`
-- [ ] Block-to-component rendering (real list/form/detail/etc.) — see `.specs/active/block-component-rendering.md`
+- [ ] Rename blocks to components (prerequisite refactor) — see `.specs/active/rename-blocks-to-components.md`
+- [ ] Inlay template components (Option B — render community Inlay components) — see `.specs/active/inlay-template-components.md`
 - [ ] Wizard walkthrough / guided tour — see `.specs/active/wizard-walkthrough.md`
 - [ ] Wireframe / mockup preview view — see `.specs/active/wireframe-preview-view.md`
 - [ ] Generated code view — see `.specs/active/generated-code-view.md`
