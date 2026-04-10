@@ -1,133 +1,57 @@
 /**
- * Step navigation for the wizard
+ * Wizard entry and exit — transitions between the landing page and the
+ * wizard workspace. The wizard no longer has linear step navigation; see
+ * `WorkspaceLayout.switchSection` and `HistoryManager` for in-wizard
+ * navigation.
  */
 
 import { getWizardState, saveWizardState } from '../state/WizardState';
-import { collectCurrentStepData } from '../state/DataCollector';
-import { validateCurrentStep } from '../validation/StepValidator';
 import { renderCurrentStep } from '../views/StepRenderer';
-import { generateApp } from '../export/OutputGenerator';
-import { pushStepToHistory, guardedLeaveWizard } from './HistoryManager';
-import { transitionToWizard } from '../views/WorkspaceLayout';
+import { transitionToWizard, transitionToLanding } from '../views/WorkspaceLayout';
 import { promptForAppName } from '../dialogs/AppNameDialog';
+import {
+  pushSectionToHistory,
+  pushLandingToHistory,
+  guardedLeaveWizard,
+} from './HistoryManager';
 
-const STEP_NAMES = [
-  'App Information',
-  'Record Types',
-  'Record Fields',
-  'Query Methods',
-  'Procedure Methods',
-  'App Configuration',
-  'Generate App',
-];
-
-export async function goToNextStep(): Promise<void> {
-  const wizardState = getWizardState();
-  const errors = validateCurrentStep();
-
-  if (errors.length > 0) {
-    alert('Please fix the following errors:\n\n' + errors.join('\n'));
-    return;
-  }
-
-  collectCurrentStepData();
-
-  if (wizardState.currentStep === 0) {
-    // Prompt for app name before entering the wizard (if not already set)
-    if (!wizardState.appInfo.appName.trim()) {
-      const name = await promptForAppName();
-      if (!name) return; // User cancelled
-      wizardState.appInfo.appName = name;
-    }
-
-    // Animated transition from landing to wizard
-    transitionToWizard(() => {
-      wizardState.currentStep = 2;
-      saveWizardState(wizardState);
-      renderCurrentStep();
-      pushStepToHistory(wizardState.currentStep);
-      updateProgressBar();
-    });
-    return;
-  }
-
-  if (wizardState.currentStep < 7) {
-    wizardState.currentStep++;
-    if (wizardState.currentStep >= 2) {
-      saveWizardState(wizardState);
-    }
-    renderCurrentStep();
-    pushStepToHistory(wizardState.currentStep);
-    updateProgressBar();
-    window.scrollTo(0, 0);
-  } else {
-    // Final step - generate app
-    generateApp();
-  }
-}
-
-export function goToPreviousStep(): void {
+/**
+ * Transition from the landing page into the wizard workspace.
+ * Prompts for an app name if one hasn't been set yet.
+ */
+export async function enterWizard(): Promise<void> {
   const wizardState = getWizardState();
 
-  if (wizardState.currentStep <= 0) return;
+  if (wizardState.currentStep >= 2) return; // already in wizard
 
-  // Step 2 → 0: guard against leaving wizard with unsaved progress
-  if (wizardState.currentStep === 2) {
-    collectCurrentStepData();
-    guardedLeaveWizard(() => {
-      wizardState.currentStep = 0;
-      renderCurrentStep();
-      pushStepToHistory(0);
-      updateProgressBar();
-      window.scrollTo(0, 0);
-    });
-    return;
+  if (!wizardState.appInfo.appName.trim()) {
+    const name = await promptForAppName();
+    if (!name) return; // user cancelled
+    wizardState.appInfo.appName = name;
   }
 
-  collectCurrentStepData();
-  wizardState.currentStep--;
-  if (wizardState.currentStep >= 2) {
+  transitionToWizard(() => {
+    wizardState.currentStep = 2;
     saveWizardState(wizardState);
-  }
-  renderCurrentStep();
-  pushStepToHistory(wizardState.currentStep);
-  updateProgressBar();
-  window.scrollTo(0, 0);
+    renderCurrentStep();
+    pushSectionToHistory(wizardState.activeSection);
+  });
 }
 
-export function updateProgressBar(): void {
+/**
+ * Transition from the wizard back to the landing page, gated by the
+ * leave-wizard confirmation dialog if the state is non-empty.
+ */
+export function leaveWizard(): void {
   const wizardState = getWizardState();
-  const progress = ((wizardState.currentStep - 1) / 6) * 100;
+  if (wizardState.currentStep === 0) return;
 
-  const progressFill = document.getElementById('wizard-progress-fill');
-  if (progressFill) {
-    progressFill.style.width = progress + '%';
-  }
-
-  const progressText = document.getElementById('wizard-progress-text');
-  if (progressText) {
-    progressText.textContent = `Step ${wizardState.currentStep} of 7: ${
-      STEP_NAMES[wizardState.currentStep - 1]
-    }`;
-  }
-
-  // Update button states
-  const backBtn = document.getElementById('wizard-back') as HTMLButtonElement;
-  if (backBtn) {
-    backBtn.disabled = wizardState.currentStep === 0;
-    backBtn.style.display = wizardState.currentStep > 0 ? '' : 'none';
-  }
-
-  const nextBtn = document.getElementById('wizard-next');
-  if (nextBtn) {
-    if (wizardState.currentStep === 0) {
-      nextBtn.textContent = 'Start Building \u2192';
-    } else if (wizardState.currentStep === 7) {
-      nextBtn.textContent = 'Generate App';
-    } else {
-      nextBtn.textContent = 'Next';
-    }
-    nextBtn.classList.toggle('wizard-solo', wizardState.currentStep === 0);
-  }
-
+  guardedLeaveWizard(() => {
+    transitionToLanding(() => {
+      wizardState.currentStep = 0;
+      saveWizardState(wizardState);
+      renderCurrentStep();
+      pushLandingToHistory();
+    });
+  });
 }

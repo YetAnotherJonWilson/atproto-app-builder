@@ -8,7 +8,6 @@ import { handleFieldFormSubmit, updateFieldTypeOptions } from '../operations/Fie
 import { handleQueryFormSubmit } from '../operations/QueryOps';
 import { handleProcedureFormSubmit, updateProcedureOutputOptions } from '../operations/ProcedureOps';
 import { renderCurrentStep } from '../views/StepRenderer';
-import { updateProgressBar } from '../navigation/StepNavigation';
 import { confirmLeaveWizard, cancelLeaveWizard } from '../navigation/HistoryManager';
 
 export function setupDialogHandlers(): void {
@@ -135,7 +134,6 @@ function setupResumeDialog(): void {
     continueBtn.addEventListener('click', () => {
       dialog?.close();
       renderCurrentStep();
-      updateProgressBar();
     });
   }
   if (startFreshBtn) {
@@ -144,7 +142,6 @@ function setupResumeDialog(): void {
       setWizardState(initializeWizardState());
       dialog?.close();
       renderCurrentStep();
-      updateProgressBar();
     });
   }
   if (cancelBtn) {

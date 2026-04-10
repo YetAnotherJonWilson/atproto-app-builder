@@ -48,11 +48,21 @@ export function setLastPdsSaveTimestamp(ts: string | null): void {
 }
 
 /**
- * Serialize the content-bearing fields of a WizardState (excluding lastSaved)
- * into a stable string for comparison.
+ * Serialize the content-bearing fields of a WizardState into a stable
+ * string for comparison. Excludes UI/navigation state that changes
+ * during normal browsing without affecting the saved project:
+ * `lastSaved`, `currentStep`, `activeSection`, `currentRecordTypeIndex`,
+ * `hasSeenWelcome`.
  */
 export function getContentFingerprint(state: WizardState): string {
-  const { lastSaved: _, ...content } = state;
+  const {
+    lastSaved: _lastSaved,
+    currentStep: _currentStep,
+    activeSection: _activeSection,
+    currentRecordTypeIndex: _currentRecordTypeIndex,
+    hasSeenWelcome: _hasSeenWelcome,
+    ...content
+  } = state;
   return JSON.stringify(content);
 }
 

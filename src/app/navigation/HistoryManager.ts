@@ -1,89 +1,96 @@
 /**
- * Browser history management for wizard step navigation
- * Enables back/forward button support and URL-based step navigation
+ * Browser history management for section-based wizard navigation.
+ *
+ * URL scheme:
+ *   /                        → landing page
+ *   /wizard?section=<name>   → wizard on the given section
+ *
+ * Each sidebar section switch pushes a new history entry. Browser back/
+ * forward cycles through visited sections and eventually returns to the
+ * landing page. Back navigation from the wizard to the landing page is
+ * gated by the `guardedLeaveWizard` confirmation dialog when the wizard
+ * has meaningful state.
+ *
+ * Legacy `?step=N` URLs (from before Phase 7) are silently redirected to
+ * the canonical `?section=<name>` form via `history.replaceState`.
  */
 
-import { getWizardState, saveWizardState, hasMeaningfulState } from '../state/WizardState';
-import { collectCurrentStepData } from '../state/DataCollector';
+import {
+  getWizardState,
+  saveWizardState,
+  hasMeaningfulState,
+} from '../state/WizardState';
 import { renderCurrentStep } from '../views/StepRenderer';
-import { updateProgressBar } from './StepNavigation';
+import {
+  switchSection,
+  transitionToWizard,
+  transitionToLanding,
+} from '../views/WorkspaceLayout';
+import type { SectionName } from '../../types/wizard';
 
-const STEP_PARAM = 'step';
+const SECTION_PARAM = 'section';
+const VALID_SECTIONS: readonly SectionName[] = [
+  'requirements',
+  'data',
+  'components',
+  'views',
+  'generate',
+];
+const DEFAULT_SECTION: SectionName = 'requirements';
 
-interface HistoryState {
-  step: number;
-}
+type LocationTarget =
+  | { kind: 'landing' }
+  | { kind: 'wizard'; section: SectionName | null };
 
-/**
- * Get the step number from the current URL
- * Landing page (/) returns 0, wizard steps (/wizard?step=N) return 1-7
- */
-export function getStepFromURL(): number | null {
+/** Parse the current URL into a location target. */
+function parseLocation(): LocationTarget {
   const { pathname, search } = window.location;
-
-  if (pathname.startsWith('/wizard')) {
-    const params = new URLSearchParams(search);
-    const stepParam = params.get(STEP_PARAM);
-    if (stepParam !== null) {
-      const step = parseInt(stepParam, 10);
-      if (!isNaN(step) && step >= 2 && step <= 7) {
-        return step;
-      }
-    }
-    return 2;
+  if (!pathname.startsWith('/wizard')) {
+    return { kind: 'landing' };
   }
-
-  return 0;
+  const params = new URLSearchParams(search);
+  const sectionParam = params.get(SECTION_PARAM);
+  const section = isValidSection(sectionParam) ? sectionParam : null;
+  return { kind: 'wizard', section };
 }
 
-/**
- * Update the URL to reflect the current step
- * Step 0 → /, Steps 1-7 → /wizard?step=N
- * Uses replaceState for initial load, pushState for navigation
- */
-export function updateURLForStep(step: number, replace: boolean = false): void {
-  const url = step === 0
-    ? '/'
-    : `/wizard?${STEP_PARAM}=${step}`;
-
-  const historyState: HistoryState = { step };
-
-  if (replace) {
-    window.history.replaceState(historyState, '', url);
-  } else {
-    window.history.pushState(historyState, '', url);
-  }
+function isValidSection(value: string | null): value is SectionName {
+  return value !== null && (VALID_SECTIONS as readonly string[]).includes(value);
 }
 
-/**
- * Navigate to a specific step (used by popstate handler)
- * This bypasses validation since we're going back to a previously visited step
- */
-function navigateToStep(step: number): void {
-  const wizardState = getWizardState();
-
-  // Collect data from current step before navigating away
-  collectCurrentStepData();
-
-  // Update wizard state
-  wizardState.currentStep = step;
-  saveWizardState(wizardState);
-
-  // Render the new step
-  renderCurrentStep();
-  updateProgressBar();
-  window.scrollTo(0, 0);
+/** Resolve a section from a URL parse, falling back to saved state or default. */
+function resolveSection(fromUrl: SectionName | null): SectionName {
+  if (fromUrl) return fromUrl;
+  const saved = getWizardState().activeSection;
+  return saved ?? DEFAULT_SECTION;
 }
 
-/**
- * Warn users before closing/refreshing when they have meaningful wizard data
- */
-function handleBeforeUnload(event: BeforeUnloadEvent): void {
-  const wizardState = getWizardState();
-  if (wizardState.currentStep >= 2 && hasMeaningfulState(wizardState)) {
-    event.preventDefault();
-  }
+/** Build the canonical URL for a wizard section. */
+function sectionUrl(section: SectionName): string {
+  return `/wizard?${SECTION_PARAM}=${section}`;
 }
+
+/** Push a new history entry for the given section. */
+export function pushSectionToHistory(section: SectionName): void {
+  window.history.pushState({ section }, '', sectionUrl(section));
+}
+
+/** Replace the current history entry with the given section (no new entry). */
+export function replaceSectionInHistory(section: SectionName): void {
+  window.history.replaceState({ section }, '', sectionUrl(section));
+}
+
+/** Push a new history entry for the landing page. */
+export function pushLandingToHistory(): void {
+  window.history.pushState({ landing: true }, '', '/');
+}
+
+/** Replace the current history entry with the landing URL. */
+export function replaceLandingInHistory(): void {
+  window.history.replaceState({ landing: true }, '', '/');
+}
+
+// --- Leave-wizard confirmation dialog ---
 
 /** Stored callback for when user confirms leaving the wizard */
 let leaveWizardCallback: (() => void) | null = null;
@@ -119,57 +126,72 @@ export function cancelLeaveWizard(): void {
   leaveWizardCallback = null;
 }
 
-/**
- * Handle browser back/forward navigation
- */
-function handlePopState(event: PopStateEvent): void {
-  const state = event.state as HistoryState | null;
-  const targetStep = state?.step ?? getStepFromURL() ?? 0;
+// --- popstate handler ---
+
+function handlePopState(_event: PopStateEvent): void {
+  const target = parseLocation();
   const wizardState = getWizardState();
 
-  // Intercept wizard→landing back-navigation
-  if (targetStep === 0 && wizardState.currentStep >= 2 && hasMeaningfulState(wizardState)) {
-    // Push current step back to undo the browser back
-    updateURLForStep(wizardState.currentStep, false);
-    guardedLeaveWizard(() => {
-      navigateToStep(0);
-      updateURLForStep(0, true);
+  if (target.kind === 'landing') {
+    if (wizardState.currentStep >= 2) {
+      // URL just became "/" because the user pressed back from a wizard
+      // section. Immediately push the current section URL to "undo" that
+      // navigation, so a cancel leaves the user where they were.
+      pushSectionToHistory(wizardState.activeSection);
+      guardedLeaveWizard(() => {
+        transitionToLanding(() => {
+          wizardState.currentStep = 0;
+          saveWizardState(wizardState);
+          renderCurrentStep();
+          pushLandingToHistory();
+        });
+      });
+    }
+    return;
+  }
+
+  // target.kind === 'wizard'
+  const targetSection = resolveSection(target.section);
+
+  if (wizardState.currentStep < 2) {
+    // History forward from landing into the wizard.
+    transitionToWizard(() => {
+      wizardState.currentStep = 2;
+      wizardState.activeSection = targetSection;
+      saveWizardState(wizardState);
+      renderCurrentStep();
     });
     return;
   }
 
-  navigateToStep(targetStep);
+  // Already in the wizard — switch sections without pushing history
+  // (the URL change already happened via popstate).
+  switchSection(targetSection, { skipHistory: true });
 }
 
 /**
- * Initialize history management
- * Should be called once during app initialization
+ * Initialize history management.
+ * Must be called once during app initialization, before renderCurrentStep().
+ *
+ * Parses the current URL, syncs `currentStep` and `activeSection` in state,
+ * and stamps the canonical URL via `history.replaceState`. Handles legacy
+ * `?step=N` URLs and invalid/missing `?section` values by falling back to
+ * the saved section or the default.
  */
 export function initializeHistoryManager(): void {
-  // Listen for browser back/forward navigation
   window.addEventListener('popstate', handlePopState);
 
-  // Warn before browser close/refresh when wizard has meaningful data
-  // window.addEventListener('beforeunload', handleBeforeUnload);
-
-  // Check if URL contains a step parameter and sync state
-  const urlStep = getStepFromURL();
+  const target = parseLocation();
   const wizardState = getWizardState();
 
-  if (urlStep !== null && urlStep !== wizardState.currentStep) {
-    // URL has a step that differs from saved state - use URL step
-    wizardState.currentStep = urlStep;
-    saveWizardState(wizardState);
+  if (target.kind === 'landing') {
+    wizardState.currentStep = 0;
+    replaceLandingInHistory();
+  } else {
+    const section = resolveSection(target.section);
+    wizardState.currentStep = 2;
+    wizardState.activeSection = section;
+    replaceSectionInHistory(section);
   }
-
-  // Set initial history state (replace current state, don't push)
-  updateURLForStep(wizardState.currentStep, true);
-}
-
-/**
- * Push a new step to browser history
- * Called when navigating via Next/Back buttons
- */
-export function pushStepToHistory(step: number): void {
-  updateURLForStep(step, false);
+  saveWizardState(wizardState);
 }

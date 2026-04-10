@@ -9,20 +9,11 @@ import {
   getWizardState,
   hasMeaningfulState,
 } from '../state/WizardState';
-import {
-  goToNextStep,
-  goToPreviousStep,
-  updateProgressBar,
-} from '../navigation/StepNavigation';
+import { enterWizard, leaveWizard } from '../navigation/StepNavigation';
 import { renderCurrentStep } from '../views/StepRenderer';
 import { setupDialogHandlers } from '../dialogs/DialogHandlers';
 import { setupWizardOps } from './WizardOps';
-import {
-  initializeHistoryManager,
-  pushStepToHistory,
-  guardedLeaveWizard,
-} from '../navigation/HistoryManager';
-import { transitionToLanding } from '../views/WorkspaceLayout';
+import { initializeHistoryManager } from '../navigation/HistoryManager';
 import {
   initOAuthClient,
   isOAuthCallback,
@@ -79,30 +70,22 @@ export function initializeApp(): void {
   // Initialize browser history management for step navigation
   initializeHistoryManager();
 
-  // Wire up navigation buttons
+  // Wire up the landing-page "Start Building" button. The back button
+  // (#wizard-back) is hidden in HTML and unused in the sidebar layout;
+  // it will be removed in Phase 8.
   const nextBtn = document.getElementById('wizard-next');
-  const backBtn = document.getElementById('wizard-back');
   if (nextBtn) {
-    nextBtn.addEventListener('click', goToNextStep);
-  }
-  if (backBtn) {
-    backBtn.addEventListener('click', goToPreviousStep);
+    nextBtn.addEventListener('click', () => {
+      void enterWizard();
+    });
   }
 
   // Wire up logo/title click to navigate back to landing page from wizard
   const headerTitle = document.querySelector('.header-title');
   if (headerTitle) {
     headerTitle.addEventListener('click', () => {
-      const wizardState = getWizardState();
-      if (wizardState.currentStep >= 2) {
-        guardedLeaveWizard(() => {
-          transitionToLanding(() => {
-            wizardState.currentStep = 0;
-            renderCurrentStep();
-            updateProgressBar();
-            pushStepToHistory(0);
-          });
-        });
+      if (getWizardState().currentStep >= 2) {
+        leaveWizard();
       }
     });
   }
@@ -278,7 +261,6 @@ export function initializeApp(): void {
 
   // Render the initial step
   renderCurrentStep();
-  updateProgressBar();
 }
 
 async function initAuth(): Promise<void> {

@@ -14,6 +14,7 @@
 import template from './workspace.html?raw';
 import { getWizardState, saveWizardState } from '../state/WizardState';
 import { updateSaveButtonVisibility, wireSaveButtons } from '../services/PdsSaveController';
+import { pushSectionToHistory } from '../navigation/HistoryManager';
 import type { SectionName } from '../../types/wizard';
 import {
   renderRequirementsPanel,
@@ -86,12 +87,13 @@ export function wireWorkspaceLayout(): void {
   if (narrowQuery) {
     narrowQuery.addEventListener('change', () => {
       const section = getWizardState().activeSection || 'requirements';
-      switchSection(section);
+      switchSection(section, { skipHistory: true });
     });
   }
 
-  // Render the active panel
-  switchSection(wizardState.activeSection || 'requirements');
+  // Render the active panel (initial render — URL is already correct,
+  // so skip the history push)
+  switchSection(wizardState.activeSection || 'requirements', { skipHistory: true });
 
   // Keep progress fill in sync on resize
   window.addEventListener('resize', updateProgressFill);
@@ -142,11 +144,18 @@ function showWelcomeDialog(): void {
 }
 
 /**
- * Switch the active section in both sidebar and accordion, and render the panel
- * into the currently visible container only.
+ * Switch the active section in both sidebar and accordion, and render the
+ * panel into the currently visible container only. Pushes a new history
+ * entry (URL `/wizard?section=<name>`) unless `skipHistory` is set — used
+ * by initial render and popstate-driven calls where the URL is already
+ * correct.
  */
-export function switchSection(section: SectionName): void {
+export function switchSection(
+  section: SectionName,
+  opts: { skipHistory?: boolean } = {},
+): void {
   const wizardState = getWizardState();
+  const sectionChanged = wizardState.activeSection !== section;
   wizardState.activeSection = section;
   saveWizardState(wizardState);
 
@@ -223,6 +232,12 @@ export function switchSection(section: SectionName): void {
 
   updateProgressFill();
   updateAccordionSummaries();
+
+  // Push history entry only when the section actually changed and the
+  // caller hasn't opted out (initial render, popstate, breakpoint change).
+  if (sectionChanged && !opts.skipHistory) {
+    pushSectionToHistory(section);
+  }
 }
 
 /**

@@ -22,7 +22,7 @@ import {
 } from '../state/WizardState';
 import { switchSection, updateAppNameInputs, transitionToWizard } from '../views/WorkspaceLayout';
 import { renderCurrentStep } from '../views/StepRenderer';
-import { updateProgressBar } from '../navigation/StepNavigation';
+import { replaceSectionInHistory } from '../navigation/HistoryManager';
 import { updateSaveButtonVisibility } from '../services/PdsSaveController';
 
 let dialogEl: HTMLDialogElement | null = null;
@@ -35,9 +35,15 @@ export function setupProjectPicker(): void {
 }
 
 /**
- * Try to show the project picker after login. Skips if user has no saved projects.
+ * Try to show the project picker after login. Skipped when:
+ * - the user has no saved projects, or
+ * - a project is already loaded (active rkey set) — in that case the user
+ *   has already chosen what to work on and shouldn't be interrupted.
+ *   This happens on session-restore page loads and deep-links into a
+ *   specific wizard section.
  */
 export async function showPostLoginPicker(): Promise<void> {
+  if (getActiveProjectRkey()) return;
   try {
     const projects = await listProjects();
     if (projects.length > 0) {
@@ -297,22 +303,25 @@ function closePicker(): void {
 function reloadUI(): void {
   const state = getWizardState();
   if (state.currentStep >= 2) {
+    const section = state.activeSection || 'requirements';
     // Check if workspace layout is already rendered (i.e. we're already in the wizard)
     const workspaceExists = document.getElementById('workspace-panel-body');
     if (workspaceExists) {
-      // Already in wizard — just re-render current section
-      switchSection(state.activeSection || 'requirements');
+      // Already in wizard — re-render the active section. switchSection
+      // won't push history because state.activeSection was just overwritten
+      // to the loaded value, so we sync the URL explicitly.
+      switchSection(section, { skipHistory: true });
+      replaceSectionInHistory(section);
     } else {
       // Still on landing page — transition to wizard and render workspace
       transitionToWizard(() => {
         renderCurrentStep();
-        updateProgressBar();
+        replaceSectionInHistory(section);
       });
     }
   } else {
     // On landing/early steps
     renderCurrentStep();
-    updateProgressBar();
   }
   updateAppNameInputs();
   updateSaveButtonVisibility();
