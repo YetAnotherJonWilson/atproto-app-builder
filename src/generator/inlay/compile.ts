@@ -1,7 +1,7 @@
 /**
  * Compile-time Inlay renderer — serializes element trees to HTML strings.
  *
- * Used by the generator to produce final HTML output for text blocks.
+ * Used by the generator to produce final HTML output for text components.
  * No Inlay runtime ships in the generated app.
  */
 

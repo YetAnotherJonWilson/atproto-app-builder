@@ -39,7 +39,6 @@ Pick one item from "Up Next" before starting a coding session.
 ### Post-Migration Features
 
 - [x] PDS state persistence (multi-project save/load) — see `.specs/done/pds-state-persistence.md`
-- [ ] Rename blocks to components (prerequisite refactor) — see `.specs/active/rename-blocks-to-components.md`
 - [ ] Inlay template components (Option B — render community Inlay components) — see `.specs/active/inlay-template-components.md`
 - [ ] Wizard walkthrough / guided tour — see `.specs/active/wizard-walkthrough.md`
 - [ ] Wireframe / mockup preview view — see `.specs/active/wireframe-preview-view.md`
@@ -60,6 +59,7 @@ Pick one item from "Up Next" before starting a coding session.
 
 <!-- Move completed items here with date -->
 
+- [x] Rename blocks to components (prerequisite refactor) — see `.specs/done/rename-blocks-to-components.md` 4/9/26
 - [x] Inlay text blocks (static primitives) — see `.specs/done/inlay-text-blocks.md` 4/7/26
 - [x] Simplify know requirements — see `.specs/done/simplify-know-requirements.md` 4/7/26
 - [x] Scoped AT Protocol OAuth permissions — see `.specs/done/scoped-atproto-permissions.md` 4/7/26

@@ -95,11 +95,11 @@ export interface NonDataElement {
   name: string; // human-readable label, e.g. "Timer"
 }
 
-export type BlockType = 'menu' | 'list' | 'detail' | 'form' | 'table' | 'card' | 'text';
+export type ComponentType = 'menu' | 'list' | 'detail' | 'form' | 'table' | 'card' | 'text';
 
 export type TextVariant = 'paragraph' | 'heading' | 'section' | 'infoBox' | 'banner';
 
-// ── Content nodes (block content editor) ────────────────────────────
+// ── Content nodes (component content editor) ────────────────────────────
 
 export type ContentNodeType = 'heading' | 'paragraph' | 'caption' | 'infoBox' | 'banner' | 'image';
 
@@ -118,18 +118,18 @@ export type ContentNode =
   | BannerNode
   | ImageNode;
 
-export interface Block {
+export interface Component {
   id: string;
   name: string; // user-given name, e.g. "Post Feed", "About Section"
   requirementIds: string[]; // ordered list of Requirement ids
-  blockType?: BlockType; // determines generator component rendering
-  contentNodes?: ContentNode[]; // ordered content for text blocks
+  componentType?: ComponentType; // determines generator component rendering
+  contentNodes?: ContentNode[]; // ordered content for text components
 }
 
 export interface View {
   id: string;
   name: string; // user-given name, e.g. "Home", "Profile", "Settings"
-  blockIds: string[]; // ordered list of Block ids placed on this view
+  componentIds: string[]; // ordered list of Component ids placed on this view
 }
 
 export type NavType = 'direct' | 'menu' | 'forward-back';
@@ -176,7 +176,7 @@ export interface WizardState {
   appConfig: AppConfig;
   requirements: Requirement[];
   nonDataElements: NonDataElement[];
-  blocks: Block[];
+  components: Component[];
   views: View[];
   hasGenerated: boolean;
   hasSeenWelcome: boolean;

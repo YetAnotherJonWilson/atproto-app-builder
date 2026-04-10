@@ -76,8 +76,8 @@ describe('getDisplayText', () => {
   it('returns "ViewA → ViewB" for direct navigate type with view IDs', () => {
     const state = getWizardState();
     state.views = [
-      { id: 'v1', name: 'Home', blockIds: [] },
-      { id: 'v2', name: 'Detail', blockIds: [] },
+      { id: 'v1', name: 'Home', componentIds: [] },
+      { id: 'v2', name: 'Detail', componentIds: [] },
     ];
     const req = makeRequirement({ type: 'navigate', navType: 'direct', fromView: 'v1', toView: 'v2' });
     expect(getDisplayText(req)).toBe('Home → Detail');
@@ -85,7 +85,7 @@ describe('getDisplayText', () => {
 
   it('returns "[deleted view]" when a referenced view no longer exists', () => {
     const state = getWizardState();
-    state.views = [{ id: 'v1', name: 'Home', blockIds: [] }];
+    state.views = [{ id: 'v1', name: 'Home', componentIds: [] }];
     const req = makeRequirement({ type: 'navigate', navType: 'direct', fromView: 'v1', toView: 'gone' });
     expect(getDisplayText(req)).toBe('Home → [deleted view]');
   });
@@ -98,8 +98,8 @@ describe('getDisplayText', () => {
   it('returns "Navigation menu: ViewA, ViewB" for menu with manual items', () => {
     const state = getWizardState();
     state.views = [
-      { id: 'v1', name: 'Home', blockIds: [] },
-      { id: 'v2', name: 'Profile', blockIds: [] },
+      { id: 'v1', name: 'Home', componentIds: [] },
+      { id: 'v2', name: 'Profile', componentIds: [] },
     ];
     const req = makeRequirement({
       type: 'navigate', navType: 'menu',
@@ -134,8 +134,8 @@ describe('getDisplayText', () => {
   it('handles navigate with no navType as direct link', () => {
     const state = getWizardState();
     state.views = [
-      { id: 'v1', name: 'Home', blockIds: [] },
-      { id: 'v2', name: 'Detail', blockIds: [] },
+      { id: 'v1', name: 'Home', componentIds: [] },
+      { id: 'v2', name: 'Detail', componentIds: [] },
     ];
     const req = makeRequirement({ type: 'navigate', fromView: 'v1', toView: 'v2' });
     expect(getDisplayText(req)).toBe('Home → Detail');
@@ -177,8 +177,8 @@ describe('getSidebarText', () => {
   it('returns "Nav: ViewA → ViewB" for direct navigate with view IDs', () => {
     const state = getWizardState();
     state.views = [
-      { id: 'v1', name: 'Home', blockIds: [] },
-      { id: 'v2', name: 'Detail', blockIds: [] },
+      { id: 'v1', name: 'Home', componentIds: [] },
+      { id: 'v2', name: 'Detail', componentIds: [] },
     ];
     const req = makeRequirement({ type: 'navigate', navType: 'direct', fromView: 'v1', toView: 'v2' });
     expect(getSidebarText(req)).toBe('Nav: Home → Detail');
@@ -192,8 +192,8 @@ describe('getSidebarText', () => {
   it('returns "Nav: menu, ViewA, ViewB" for menu with manual items', () => {
     const state = getWizardState();
     state.views = [
-      { id: 'v1', name: 'Home', blockIds: [] },
-      { id: 'v2', name: 'Profile', blockIds: [] },
+      { id: 'v1', name: 'Home', componentIds: [] },
+      { id: 'v2', name: 'Profile', componentIds: [] },
     ];
     const req = makeRequirement({
       type: 'navigate', navType: 'menu',
@@ -410,8 +410,8 @@ describe('wireRequirementsPanel (DOM)', () => {
   it('navigate Direct Link populates selects when views exist', () => {
     const state = getWizardState();
     state.views = [
-      { id: 'v1', name: 'Home', blockIds: [] },
-      { id: 'v2', name: 'Profile', blockIds: [] },
+      { id: 'v1', name: 'Home', componentIds: [] },
+      { id: 'v2', name: 'Profile', componentIds: [] },
     ];
     mountPanel();
     document.getElementById('req-add-btn')!.click();
@@ -442,8 +442,8 @@ describe('wireRequirementsPanel (DOM)', () => {
   it('changing nav type to menu shows include-all toggle and checkbox lists when views exist', () => {
     const state = getWizardState();
     state.views = [
-      { id: 'v1', name: 'Home', blockIds: [] },
-      { id: 'v2', name: 'Profile', blockIds: [] },
+      { id: 'v1', name: 'Home', componentIds: [] },
+      { id: 'v2', name: 'Profile', componentIds: [] },
     ];
     mountPanel();
     document.getElementById('req-add-btn')!.click();
@@ -1894,9 +1894,9 @@ describe('do requirement field migration', () => {
 describe('navigate requirements with views', () => {
   function makeViews(): View[] {
     return [
-      { id: 'v1', name: 'Home', blockIds: [] },
-      { id: 'v2', name: 'Profile', blockIds: [] },
-      { id: 'v3', name: 'Settings', blockIds: [] },
+      { id: 'v1', name: 'Home', componentIds: [] },
+      { id: 'v2', name: 'Profile', componentIds: [] },
+      { id: 'v3', name: 'Settings', componentIds: [] },
     ];
   }
 
@@ -2188,8 +2188,8 @@ describe('navigate requirements with views', () => {
   it('menu with includeAllViews reflects views at render time', () => {
     const state = initializeWizardState();
     state.views = [
-      { id: 'v1', name: 'Home', blockIds: [] },
-      { id: 'v2', name: 'Profile', blockIds: [] },
+      { id: 'v1', name: 'Home', componentIds: [] },
+      { id: 'v2', name: 'Profile', componentIds: [] },
     ];
     state.requirements = [
       { id: 'req-menu', type: 'navigate', navType: 'menu', menuIncludeAllViews: true },
@@ -2197,7 +2197,7 @@ describe('navigate requirements with views', () => {
     setWizardState(state);
 
     // Add a new view
-    state.views.push({ id: 'v3', name: 'Settings', blockIds: [] });
+    state.views.push({ id: 'v3', name: 'Settings', componentIds: [] });
 
     // Display text should show "all views" (derived, not stored)
     expect(getDisplayText(state.requirements[0])).toBe('Navigation menu: all views');

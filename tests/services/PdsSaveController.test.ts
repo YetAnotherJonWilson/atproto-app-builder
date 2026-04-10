@@ -23,7 +23,7 @@ vi.mock('../../src/app/state/WizardState', () => ({
     recordTypes: [],
     queryMethods: [],
     procedureMethods: [],
-    blocks: [],
+    components: [],
     views: [],
     currentStep: 2,
     hasGenerated: false,

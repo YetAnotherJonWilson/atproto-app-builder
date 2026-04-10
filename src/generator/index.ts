@@ -2,7 +2,7 @@
  * Main generator module - orchestrates all file generation
  */
 
-import type { WizardState, AppConfig, View, Block } from '../types/wizard';
+import type { WizardState, AppConfig, View, Component } from '../types/wizard';
 import type { FileOutput } from '../types/generation';
 import { toPascalCase, toCamelCase } from '../utils';
 import { buildScopeFromNsids } from '../shared/scopes';
@@ -60,32 +60,32 @@ function buildUniqueNames(
   return result;
 }
 
-// ── Identify blocks that are actually assigned to views ───────────────
+// ── Identify components that are actually assigned to views ──────────
 
-function getAssignedBlocks(views: View[], allBlocks: Block[]): Block[] {
+function getAssignedComponents(views: View[], allComponents: Component[]): Component[] {
   const assignedIds = new Set<string>();
   for (const view of views) {
-    for (const blockId of view.blockIds) {
-      assignedIds.add(blockId);
+    for (const componentId of view.componentIds) {
+      assignedIds.add(componentId);
     }
   }
-  return allBlocks.filter(b => assignedIds.has(b.id));
+  return allComponents.filter(c => assignedIds.has(c.id));
 }
 
 // ── Main generation entry point ──────────────────────────────────────
 
 export function generateAllFiles(wizardState: WizardState, appConfig: AppConfig): FileOutput {
   const files: FileOutput = {};
-  const { appInfo, recordTypes, views, blocks } = wizardState;
+  const { appInfo, recordTypes, views, components } = wizardState;
   const domain = appInfo.domain;
 
   // Build unique PascalCase filenames and camelCase slugs for views
   const viewFileNames = buildUniqueNames(views, toPascalCase);   // id → PascalCase
   const viewSlugs = buildUniqueNames(views, toCamelCase);        // id → camelCase
 
-  // Build unique PascalCase filenames for assigned blocks
-  const assignedBlocks = getAssignedBlocks(views, blocks);
-  const blockFileNames = buildUniqueNames(assignedBlocks, toPascalCase);
+  // Build unique PascalCase filenames for assigned components
+  const assignedComponents = getAssignedComponents(views, components);
+  const componentFileNames = buildUniqueNames(assignedComponents, toPascalCase);
 
   // Build view entries for the Router
   const viewEntries = views.map(v => ({
@@ -125,14 +125,14 @@ export function generateAllFiles(wizardState: WizardState, appConfig: AppConfig)
   files['src/atproto/api.ts'] = generateApiTs(recordTypes, domain);
   files['src/atproto/session.ts'] = generateSessionManagerTs(recordTypes);
 
-  // ── NavMenu components (for menu-type blocks) ──────────────────────
+  // ── NavMenu components (for menu-type components) ─────────────────
 
-  const menuBlocks = assignedBlocks.filter(b => b.blockType === 'menu');
-  for (const block of menuBlocks) {
-    const fileName = blockFileNames.get(block.id)!;
+  const menuComponents = assignedComponents.filter(c => c.componentType === 'menu');
+  for (const component of menuComponents) {
+    const fileName = componentFileNames.get(component.id)!;
     const functionName = `render${fileName}`;
     files[`src/components/${fileName}.ts`] = generateNavMenuComponent(
-      block,
+      component,
       wizardState.requirements,
       views,
       viewSlugs,
@@ -146,26 +146,26 @@ export function generateAllFiles(wizardState: WizardState, appConfig: AppConfig)
     const fileName = viewFileNames.get(view.id)!;
     const functionName = `render${fileName}View`;
 
-    // Resolve blocks assigned to this view
-    const viewBlocks = view.blockIds
-      .map(id => blocks.find(b => b.id === id))
-      .filter((b): b is Block => b != null)
-      .map(block => {
-        if (block.blockType === 'menu') {
-          const compFileName = blockFileNames.get(block.id)!;
+    // Resolve components assigned to this view
+    const viewComponents = view.componentIds
+      .map(id => components.find(c => c.id === id))
+      .filter((c): c is Component => c != null)
+      .map(component => {
+        if (component.componentType === 'menu') {
+          const compFileName = componentFileNames.get(component.id)!;
           return {
-            block,
+            component,
             componentFile: compFileName,
             componentFunction: `render${compFileName}`,
           };
         }
-        return { block };
+        return { component };
       });
 
     files[`src/views/${fileName}.ts`] = generateViewPage(
       view,
       functionName,
-      viewBlocks,
+      viewComponents,
       wizardState
     );
   }

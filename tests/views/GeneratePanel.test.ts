@@ -82,7 +82,7 @@ describe('GeneratePanel — initial render', () => {
     expect(html).toContain('Review');
     expect(html).toContain('Record Types');
     expect(html).toContain('Views');
-    expect(html).toContain('Blocks');
+    expect(html).toContain('Components');
     expect(html).toContain('Requirements');
   });
 
@@ -426,9 +426,9 @@ describe('GeneratePanel — review section', () => {
     expect(html).toContain('Home');
   });
 
-  it('shows blocks count', () => {
+  it('shows components count', () => {
     const state = initializeWizardState();
-    state.blocks = [
+    state.components = [
       { id: 'b1', name: 'Nav', requirementIds: [] },
       { id: 'b2', name: 'Feed', requirementIds: [] },
     ];

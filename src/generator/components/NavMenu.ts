@@ -1,12 +1,12 @@
 /**
  * NavMenu component generator
  *
- * Generates a navigation menu component for blocks with blockType: 'menu'.
- * Menu items are derived from the block's navigate requirement or fall back
+ * Generates a navigation menu component for components with componentType: 'menu'.
+ * Menu items are derived from the component's navigate requirement or fall back
  * to all views.
  */
 
-import type { Block, Requirement, View } from '../../types/wizard';
+import type { Component, Requirement, View } from '../../types/wizard';
 import { toPascalCase, toCamelCase } from '../../utils';
 
 interface NavMenuItem {
@@ -15,18 +15,18 @@ interface NavMenuItem {
 }
 
 /**
- * Derive the menu items for a nav menu block.
- * Looks for a navigate requirement with navType: 'menu' inside the block.
+ * Derive the menu items for a nav menu component.
+ * Looks for a navigate requirement with navType: 'menu' inside the component.
  * Falls back to all views if none found.
  */
 function getMenuItems(
-  block: Block,
+  component: Component,
   requirements: Requirement[],
   views: View[],
   viewSlugMap: Map<string, string>
 ): NavMenuItem[] {
-  // Find the navigate-menu requirement in this block
-  const navReq = block.requirementIds
+  // Find the navigate-menu requirement in this component
+  const navReq = component.requirementIds
     .map(id => requirements.find(r => r.id === id))
     .find(r => r?.type === 'navigate' && r.navType === 'menu');
 
@@ -51,24 +51,24 @@ function getMenuItems(
 }
 
 /**
- * Generate a NavMenu component file for a menu-type block.
- * The function name is unique per block (e.g., renderMainMenu).
+ * Generate a NavMenu component file for a menu-type component.
+ * The function name is unique per component (e.g., renderMainMenu).
  */
 export function generateNavMenuComponent(
-  block: Block,
+  component: Component,
   requirements: Requirement[],
   views: View[],
   viewSlugMap: Map<string, string>,
   functionName: string
 ): string {
-  const items = getMenuItems(block, requirements, views, viewSlugMap);
+  const items = getMenuItems(component, requirements, views, viewSlugMap);
 
   const itemsLiteral = items
     .map(item => `    { label: '${item.label.replace(/'/g, "\\'")}', viewId: '${item.viewId}' }`)
     .join(',\n');
 
   return `/**
- * Navigation menu component — ${block.name}
+ * Navigation menu component — ${component.name}
  */
 
 import type { Router } from '../router';

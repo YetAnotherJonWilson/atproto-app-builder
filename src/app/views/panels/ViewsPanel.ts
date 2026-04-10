@@ -2,22 +2,22 @@
  * Views panel — workspace content for the Views section.
  *
  * Views are the pages of the generated app. Each view holds an ordered list
- * of block ids. A block can belong to multiple views (multi-assignment).
+ * of component ids. A component can belong to multiple views (multi-assignment).
  *
  * Panel states:
- *   A — Normal: view grid + unassigned blocks section
- *   B — Form open: inline form with chip-based block selector
+ *   A — Normal: view grid + unassigned components section
+ *   B — Form open: inline form with chip-based component selector
  */
 
 import { getWizardState, saveWizardState } from '../../state/WizardState';
 import { generateId } from '../../../utils/id';
 import { updateAccordionSummaries, isNarrowViewport, switchSection } from '../WorkspaceLayout';
-import type { View, Block } from '../../../types/wizard';
+import type { View, Component } from '../../../types/wizard';
 
 // ── Module-level state ────────────────────────────────────────────────
 
 let editingViewId: string | null = null;
-let selectedBlockIds: string[] = [];
+let selectedComponentIds: string[] = [];
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
@@ -34,24 +34,24 @@ function truncate(text: string, max: number): string {
   return text.slice(0, max - 1) + '…';
 }
 
-function getUnassignedBlocks(): Block[] {
-  const { views, blocks } = getWizardState();
+function getUnassignedComponents(): Component[] {
+  const { views, components } = getWizardState();
   const assignedIds = new Set<string>();
   for (const view of views) {
-    for (const bid of view.blockIds) {
-      assignedIds.add(bid);
+    for (const cid of view.componentIds) {
+      assignedIds.add(cid);
     }
   }
-  return blocks.filter((b) => !assignedIds.has(b.id));
+  return components.filter((c) => !assignedIds.has(c.id));
 }
 
 // ── Render ────────────────────────────────────────────────────────────
 
 export function renderViewsPanel(): string {
-  const { views, blocks } = getWizardState();
+  const { views, components } = getWizardState();
 
   const desc = `<div class="workspace-desc">
-    Views are the pages of your app. Assign blocks to each view to define
+    Views are the pages of your app. Assign components to each view to define
     what content appears on each screen.
   </div>`;
 
@@ -63,7 +63,7 @@ export function renderViewsPanel(): string {
     ? `<div class="view-grid" id="views-grid">${views.map((v) => renderViewCard(v, views.length)).join('')}</div>`
     : '';
 
-  const unassigned = getUnassignedBlocks();
+  const unassigned = getUnassignedComponents();
   const unassignedHtml = unassigned.length > 0
     ? renderUnassignedSection(unassigned)
     : '';
@@ -82,34 +82,34 @@ export function renderViewsPanel(): string {
 }
 
 function renderViewCard(view: View, totalViews: number): string {
-  const { blocks } = getWizardState();
-  const validBlocks = view.blockIds
-    .map((id) => blocks.find((b) => b.id === id))
-    .filter((b): b is Block => b !== undefined);
+  const { components } = getWizardState();
+  const validComponents = view.componentIds
+    .map((id) => components.find((c) => c.id === id))
+    .filter((c): c is Component => c !== undefined);
 
-  const showReorder = validBlocks.length > 1;
+  const showReorder = validComponents.length > 1;
   const showDelete = totalViews > 1;
 
-  const blockItems = validBlocks.length > 0
-    ? `<ul class="view-card-blocks">${validBlocks
-        .map((block, i) => {
+  const componentItems = validComponents.length > 0
+    ? `<ul class="view-card-components">${validComponents
+        .map((component, i) => {
           const reorderHtml = showReorder
             ? `<span class="reorder-btns">
-                <button class="view-reorder-up" data-view-id="${view.id}" data-block-index="${i}"
+                <button class="view-reorder-up" data-view-id="${view.id}" data-component-index="${i}"
                   title="Move up"${i === 0 ? ' disabled' : ''}>&#9650;</button>
-                <button class="view-reorder-down" data-view-id="${view.id}" data-block-index="${i}"
-                  title="Move down"${i === validBlocks.length - 1 ? ' disabled' : ''}>&#9660;</button>
+                <button class="view-reorder-down" data-view-id="${view.id}" data-component-index="${i}"
+                  title="Move down"${i === validComponents.length - 1 ? ' disabled' : ''}>&#9660;</button>
               </span>`
             : '';
 
-          return `<li class="view-card-block">
-            <span class="block-order">${i + 1}</span>
-            <span>${escapeHtml(block.name)}</span>
+          return `<li class="view-card-component">
+            <span class="component-order">${i + 1}</span>
+            <span>${escapeHtml(component.name)}</span>
             ${reorderHtml}
           </li>`;
         })
         .join('')}</ul>`
-    : `<div class="view-card-empty">No blocks assigned</div>`;
+    : `<div class="view-card-empty">No components assigned</div>`;
 
   const deleteBtn = showDelete
     ? `<button class="view-delete-btn" data-view-id="${view.id}" title="Delete">&#10005;</button>`
@@ -123,26 +123,26 @@ function renderViewCard(view: View, totalViews: number): string {
         ${deleteBtn}
       </div>
     </div>
-    ${blockItems}
+    ${componentItems}
   </div>`;
 }
 
-function renderUnassignedSection(unassigned: Block[]): string {
+function renderUnassignedSection(unassigned: Component[]): string {
   const items = unassigned
     .map(
-      (block) => `<li class="available-item">
-        <span class="avail-text">${escapeHtml(block.name)}</span>
+      (component) => `<li class="available-item">
+        <span class="avail-text">${escapeHtml(component.name)}</span>
       </li>`,
     )
     .join('');
 
   return `<div class="unassigned-section" id="views-unassigned">
     <div class="available-list-label">
-      Unassigned Blocks
+      Unassigned Components
       <span class="unassigned-count">&nbsp;&mdash; ${unassigned.length} remaining</span>
     </div>
     <div class="form-hint">
-      These blocks haven&rsquo;t been placed on any view yet.
+      These components haven&rsquo;t been placed on any view yet.
       Use &ldquo;+ New View&rdquo; above or edit an existing view to assign them.
     </div>
     <ul class="available-list">${items}</ul>
@@ -150,7 +150,7 @@ function renderUnassignedSection(unassigned: Block[]): string {
 }
 
 function renderInlineForm(): string {
-  const { blocks } = getWizardState();
+  const { components } = getWizardState();
   const view = editingViewId
     ? getWizardState().views.find((v) => v.id === editingViewId)
     : null;
@@ -158,31 +158,31 @@ function renderInlineForm(): string {
   const nameValue = view ? escapeHtml(view.name) : '';
 
   // Build chips
-  const chipsHtml = selectedBlockIds
-    .map((bid, i) => {
-      const block = blocks.find((b) => b.id === bid);
-      if (!block) return '';
-      return `<span class="chip" data-block-id="${bid}">
+  const chipsHtml = selectedComponentIds
+    .map((cid, i) => {
+      const component = components.find((c) => c.id === cid);
+      if (!component) return '';
+      return `<span class="chip" data-component-id="${cid}">
         <span class="chip-order">${i + 1}</span>
-        ${escapeHtml(block.name)}
-        <button class="chip-remove" data-block-id="${bid}">&#10005;</button>
+        ${escapeHtml(component.name)}
+        <button class="chip-remove" data-component-id="${cid}">&#10005;</button>
       </span>`;
     })
     .join('');
 
-  // Build available list — all blocks, mark selected
+  // Build available list — all components, mark selected
   let availItems: string;
-  if (blocks.length === 0) {
+  if (components.length === 0) {
     availItems = `<li class="available-item available-item-empty">
-      <span class="avail-text">No blocks created yet. You can assign blocks to this view later.</span>
+      <span class="avail-text">No components created yet. You can assign components to this view later.</span>
     </li>`;
   } else {
-    availItems = blocks
-      .map((block) => {
-        const isSelected = selectedBlockIds.includes(block.id);
-        return `<li class="available-item${isSelected ? ' selected' : ''}" data-block-id="${block.id}">
+    availItems = components
+      .map((component) => {
+        const isSelected = selectedComponentIds.includes(component.id);
+        return `<li class="available-item${isSelected ? ' selected' : ''}" data-component-id="${component.id}">
           <span class="avail-check"></span>
-          <span class="avail-text">${escapeHtml(block.name)}</span>
+          <span class="avail-text">${escapeHtml(component.name)}</span>
         </li>`;
       })
       .join('');
@@ -197,14 +197,14 @@ function renderInlineForm(): string {
       <div class="form-validation-msg" id="view-name-validation" style="display:none;"></div>
     </div>
     <div class="form-group">
-      <label>Blocks</label>
+      <label>Components</label>
       <div class="selected-chips" id="view-selected-chips">
-        ${chipsHtml || '<span class="chips-placeholder">Click blocks below to add them</span>'}
+        ${chipsHtml || '<span class="chips-placeholder">Click components below to add them</span>'}
       </div>
       <div class="form-hint">
-        Selected blocks will appear on the view in the order shown. Click &#10005; to remove.
+        Selected components will appear on the view in the order shown. Click &#10005; to remove.
       </div>
-      <div class="available-list-label">Available Blocks</div>
+      <div class="available-list-label">Available Components</div>
       <ul class="available-list" id="view-available-list">${availItems}</ul>
     </div>
     <div class="form-footer">
@@ -253,14 +253,14 @@ function handleGridClick(e: Event): void {
   // Reorder up
   const upBtn = target.closest('.view-reorder-up') as HTMLElement | null;
   if (upBtn && !(upBtn as HTMLButtonElement).disabled) {
-    reorderBlock(upBtn.dataset.viewId!, parseInt(upBtn.dataset.blockIndex!, 10), -1);
+    reorderComponent(upBtn.dataset.viewId!, parseInt(upBtn.dataset.componentIndex!, 10), -1);
     return;
   }
 
   // Reorder down
   const downBtn = target.closest('.view-reorder-down') as HTMLElement | null;
   if (downBtn && !(downBtn as HTMLButtonElement).disabled) {
-    reorderBlock(downBtn.dataset.viewId!, parseInt(downBtn.dataset.blockIndex!, 10), 1);
+    reorderComponent(downBtn.dataset.viewId!, parseInt(downBtn.dataset.componentIndex!, 10), 1);
     return;
   }
 }
@@ -269,7 +269,7 @@ function handleGridClick(e: Event): void {
 
 function openNewForm(): void {
   editingViewId = null;
-  selectedBlockIds = [];
+  selectedComponentIds = [];
   showForm();
 }
 
@@ -278,10 +278,10 @@ function openEditForm(viewId: string): void {
   if (!view) return;
 
   editingViewId = viewId;
-  // Filter out deleted block ids
-  const { blocks } = getWizardState();
-  const validIds = new Set(blocks.map((b) => b.id));
-  selectedBlockIds = view.blockIds.filter((id) => validIds.has(id));
+  // Filter out deleted component ids
+  const { components } = getWizardState();
+  const validIds = new Set(components.map((c) => c.id));
+  selectedComponentIds = view.componentIds.filter((id) => validIds.has(id));
   showForm();
 }
 
@@ -319,7 +319,7 @@ function hideForm(): void {
   if (addBtn) addBtn.style.display = '';
 
   editingViewId = null;
-  selectedBlockIds = [];
+  selectedComponentIds = [];
 }
 
 function wireForm(): void {
@@ -332,8 +332,8 @@ function wireForm(): void {
   availList?.addEventListener('click', (e) => {
     const item = (e.target as HTMLElement).closest('.available-item') as HTMLElement | null;
     if (!item || item.classList.contains('available-item-empty')) return;
-    const blockId = item.dataset.blockId!;
-    toggleBlockSelection(blockId);
+    const componentId = item.dataset.componentId!;
+    toggleComponentSelection(componentId);
   });
 
   // Chip remove buttons (delegation on chips container)
@@ -341,8 +341,8 @@ function wireForm(): void {
   chipsContainer?.addEventListener('click', (e) => {
     const removeBtn = (e.target as HTMLElement).closest('.chip-remove') as HTMLElement | null;
     if (!removeBtn) return;
-    const blockId = removeBtn.dataset.blockId!;
-    toggleBlockSelection(blockId);
+    const componentId = removeBtn.dataset.componentId!;
+    toggleComponentSelection(componentId);
   });
 
   // Save button
@@ -356,12 +356,12 @@ function wireForm(): void {
   });
 }
 
-function toggleBlockSelection(blockId: string): void {
-  const idx = selectedBlockIds.indexOf(blockId);
+function toggleComponentSelection(componentId: string): void {
+  const idx = selectedComponentIds.indexOf(componentId);
   if (idx >= 0) {
-    selectedBlockIds.splice(idx, 1);
+    selectedComponentIds.splice(idx, 1);
   } else {
-    selectedBlockIds.push(blockId);
+    selectedComponentIds.push(componentId);
   }
   refreshFormContents();
 }
@@ -435,14 +435,14 @@ function saveView(): void {
     const view = state.views.find((v) => v.id === editingViewId);
     if (view) {
       view.name = name;
-      view.blockIds = [...selectedBlockIds];
+      view.componentIds = [...selectedComponentIds];
     }
   } else {
     // Create new view
     const view: View = {
       id: generateId(),
       name,
-      blockIds: [...selectedBlockIds],
+      componentIds: [...selectedComponentIds],
     };
     state.views.push(view);
   }
@@ -460,18 +460,18 @@ function deleteView(viewId: string): void {
   rerender();
 }
 
-function reorderBlock(viewId: string, index: number, direction: -1 | 1): void {
+function reorderComponent(viewId: string, index: number, direction: -1 | 1): void {
   const state = getWizardState();
   const view = state.views.find((v) => v.id === viewId);
   if (!view) return;
 
   const newIndex = index + direction;
-  if (newIndex < 0 || newIndex >= view.blockIds.length) return;
+  if (newIndex < 0 || newIndex >= view.componentIds.length) return;
 
   // Swap
-  const temp = view.blockIds[index];
-  view.blockIds[index] = view.blockIds[newIndex];
-  view.blockIds[newIndex] = temp;
+  const temp = view.componentIds[index];
+  view.componentIds[index] = view.componentIds[newIndex];
+  view.componentIds[newIndex] = temp;
 
   saveWizardState(state);
   rerender();
@@ -491,9 +491,9 @@ export function updateViewsSidebar(): void {
   if (badge) badge.textContent = String(views.length);
 
   // Update has-items state: filled when user has meaningfully engaged
-  // (more than 1 view OR any view has blocks assigned)
+  // (more than 1 view OR any view has components assigned)
   const hasEngaged =
-    views.length > 1 || views.some((v) => v.blockIds.length > 0);
+    views.length > 1 || views.some((v) => v.componentIds.length > 0);
   if (hasEngaged) {
     section.classList.add('has-items');
   } else {

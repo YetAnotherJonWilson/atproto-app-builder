@@ -22,7 +22,7 @@ import {
   updateDataSidebar,
 } from './panels/RequirementsPanel';
 import { renderDataPanel, wireDataPanel, resetDetailState } from './panels/DataPanel';
-import { renderBlocksPanel, wireBlocksPanel, updateBlocksSidebar } from './panels/BlocksPanel';
+import { renderComponentsPanel, wireComponentsPanel, updateComponentsSidebar } from './panels/ComponentsPanel';
 import { renderViewsPanel, wireViewsPanel, updateViewsSidebar } from './panels/ViewsPanel';
 import { renderGeneratePanel, wireGeneratePanel, updateGenerateSidebar } from './panels/GeneratePanel';
 
@@ -35,7 +35,7 @@ const SECTION_CONFIG: Record<
     render: renderRequirementsPanel,
   },
   data: { title: 'Define Data', render: renderDataPanel },
-  components: { title: 'Blocks', render: renderBlocksPanel },
+  components: { title: 'Components', render: renderComponentsPanel },
   views: { title: 'Define Views', render: renderViewsPanel },
   generate: { title: 'Generate', render: renderGeneratePanel },
 };
@@ -203,8 +203,8 @@ export function switchSection(section: SectionName): void {
   } else if (section === 'data') {
     wireDataPanel();
   } else if (section === 'components') {
-    wireBlocksPanel();
-    updateBlocksSidebar();
+    wireComponentsPanel();
+    updateComponentsSidebar();
   } else if (section === 'views') {
     wireViewsPanel();
     updateViewsSidebar();
@@ -300,24 +300,24 @@ export function updateAccordionSummaries(): void {
     }
   }
 
-  // Blocks (components section)
+  // Components section
   const compSection = document.querySelector(
     '.accordion-section[data-section="components"]',
   );
   if (compSection) {
-    const blockCount = wizardState.blocks.length;
+    const componentCount = wizardState.components.length;
     const badge = compSection.querySelector('.accordion-badge');
-    if (badge) badge.textContent = String(blockCount);
+    if (badge) badge.textContent = String(componentCount);
 
     const summary = compSection.querySelector('.accordion-summary');
     if (summary) {
       summary.textContent =
-        blockCount === 0
+        componentCount === 0
           ? 'None yet'
-          : wizardState.blocks.map((b) => b.name).join(' · ');
+          : wizardState.components.map((c) => c.name).join(' · ');
     }
 
-    if (blockCount > 0) {
+    if (componentCount > 0) {
       compSection.classList.add('has-items');
     } else {
       compSection.classList.remove('has-items');
@@ -341,10 +341,10 @@ export function updateAccordionSummaries(): void {
           : wizardState.views.map((v) => v.name).join(' · ');
     }
 
-    // has-items: user has meaningfully engaged (more than 1 view OR any view has blocks)
+    // has-items: user has meaningfully engaged (more than 1 view OR any view has components)
     const hasEngaged =
       viewCount > 1 ||
-      wizardState.views.some((v) => v.blockIds.length > 0);
+      wizardState.views.some((v) => v.componentIds.length > 0);
     if (hasEngaged) {
       viewsSection.classList.add('has-items');
     } else {

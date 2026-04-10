@@ -115,7 +115,7 @@ function renderAppInfoSection(appInfo: { appName: string; domain: string; descri
 }
 
 function renderReviewSection(): string {
-  const { recordTypes, views, blocks, requirements, appInfo } = getWizardState();
+  const { recordTypes, views, components, requirements, appInfo } = getWizardState();
   const domain = appInfo.domain;
 
   // Record types with NSIDs
@@ -169,8 +169,8 @@ function renderReviewSection(): string {
       <div class="generate-review-value">${viewsValue}</div>
     </div>
     <div class="generate-review-item">
-      <div class="generate-review-label">Blocks</div>
-      <div class="generate-review-value">${blocks.length}</div>
+      <div class="generate-review-label">Components</div>
+      <div class="generate-review-value">${components.length}</div>
     </div>
     <div class="generate-review-item">
       <div class="generate-review-label">Requirements</div>

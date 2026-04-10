@@ -1,14 +1,15 @@
 /**
  * Placeholder component generator
  *
- * Generates placeholder HTML for blocks that are not yet real components.
- * Typed placeholders (blocks with a blockType) show the type label.
- * Generic placeholders (no blockType) show just requirement summaries.
+ * Generates placeholder HTML for components that are not yet real rendered
+ * components. Typed placeholders (components with a componentType) show the
+ * type label. Generic placeholders (no componentType) show just requirement
+ * summaries.
  */
 
-import type { Block, BlockType, Requirement, View } from '../../types/wizard';
+import type { Component, ComponentType, Requirement, View } from '../../types/wizard';
 
-const BLOCK_TYPE_LABELS: Record<BlockType, string> = {
+const COMPONENT_TYPE_LABELS: Record<ComponentType, string> = {
   menu: 'Menu',
   list: 'List',
   detail: 'Detail View',
@@ -58,31 +59,31 @@ function escapeHtml(str: string): string {
 }
 
 /**
- * Generate inline placeholder HTML for a block section.
+ * Generate inline placeholder HTML for a component section.
  * Returns the innerHTML string to set on the section element.
  */
 export function generatePlaceholderHtml(
-  block: Block,
+  component: Component,
   requirements: Requirement[],
   recordTypes: { id: string; displayName: string }[],
   nonDataElements: { id: string; name: string }[],
   views: View[]
 ): string {
-  const blockReqs = block.requirementIds
+  const componentReqs = component.requirementIds
     .map(id => requirements.find(r => r.id === id))
     .filter((r): r is Requirement => r != null);
 
-  const reqSummaries = blockReqs
+  const reqSummaries = componentReqs
     .map(req => `      <li>${escapeHtml(getRequirementSummary(req, recordTypes, nonDataElements, views))}</li>`)
     .join('\n');
 
-  const typeLabel = block.blockType ? BLOCK_TYPE_LABELS[block.blockType] : null;
+  const typeLabel = component.componentType ? COMPONENT_TYPE_LABELS[component.componentType] : null;
   const typeLabelHtml = typeLabel
     ? `\n    <div class="placeholder-type">${escapeHtml(typeLabel)}</div>`
     : '';
 
   return `
-    <h3>${escapeHtml(block.name)}</h3>${typeLabelHtml}
+    <h3>${escapeHtml(component.name)}</h3>${typeLabelHtml}
     <ul class="placeholder-requirements">
 ${reqSummaries}
     </ul>

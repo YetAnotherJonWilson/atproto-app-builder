@@ -165,20 +165,20 @@ button.danger:hover {
   background: #e0e0e0;
 }
 
-/* Block sections */
-.block {
+/* Component sections */
+.app-component {
   margin-bottom: 16px;
 }
 
-/* Placeholder blocks */
-.block-placeholder {
+/* Placeholder components */
+.app-component-placeholder {
   border: 2px dashed #ccc;
   border-radius: 8px;
   padding: 20px;
   background: #fafafa;
 }
 
-.block-placeholder h3 {
+.app-component-placeholder h3 {
   margin: 0 0 8px 0;
   color: #666;
   font-size: 16px;

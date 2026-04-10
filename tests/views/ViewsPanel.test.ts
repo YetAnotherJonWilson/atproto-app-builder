@@ -10,28 +10,28 @@ import {
   setWizardState,
   initializeWizardState,
 } from '../../src/app/state/WizardState';
-import type { Block, View } from '../../src/types/wizard';
+import type { Component, View } from '../../src/types/wizard';
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
-function makeBlock(
-  overrides: Partial<Block> & { name: string },
-): Block {
-  return { id: `block-${Date.now()}-${Math.random()}`, requirementIds: [], ...overrides };
+function makeComponent(
+  overrides: Partial<Component> & { name: string },
+): Component {
+  return { id: `component-${Date.now()}-${Math.random()}`, requirementIds: [], ...overrides };
 }
 
 function makeView(
   overrides: Partial<View> & { name: string },
 ): View {
-  return { id: `view-${Date.now()}-${Math.random()}`, blockIds: [], ...overrides };
+  return { id: `view-${Date.now()}-${Math.random()}`, componentIds: [], ...overrides };
 }
 
 function setupState(opts: {
-  blocks?: Block[];
+  components?: Component[];
   views?: View[];
 }): void {
   const state = initializeWizardState();
-  state.blocks = opts.blocks ?? [];
+  state.components = opts.components ?? [];
   if (opts.views !== undefined) {
     state.views = opts.views;
   }
@@ -57,7 +57,7 @@ describe('ViewsPanel — seeding', () => {
     const state = initializeWizardState();
     expect(state.views.length).toBe(1);
     expect(state.views[0].name).toBe('Home');
-    expect(state.views[0].blockIds).toEqual([]);
+    expect(state.views[0].componentIds).toEqual([]);
   });
 
   it('migrates old state without views by adding Home view', () => {
@@ -100,9 +100,9 @@ describe('ViewsPanel — initial state', () => {
     expect(html).toContain('Views are the pages of your app');
   });
 
-  it('shows "No blocks assigned" on Home card', () => {
+  it('shows "No components assigned" on Home card', () => {
     const html = renderViewsPanel();
-    expect(html).toContain('No blocks assigned');
+    expect(html).toContain('No components assigned');
   });
 
   it('does not show delete button when only 1 view exists', () => {
@@ -120,14 +120,14 @@ describe('ViewsPanel — initial state', () => {
 // ── View creation via form ────────────────────────────────────────────
 
 describe('ViewsPanel — form interaction', () => {
-  let blocks: Block[];
+  let components: Component[];
 
   beforeEach(() => {
-    blocks = [
-      makeBlock({ name: 'Nav Menu' }),
-      makeBlock({ name: 'Post Feed' }),
+    components = [
+      makeComponent({ name: 'Nav Menu' }),
+      makeComponent({ name: 'Post Feed' }),
     ];
-    setupState({ blocks });
+    setupState({ components });
     renderAndWire();
   });
 
@@ -140,7 +140,7 @@ describe('ViewsPanel — form interaction', () => {
     expect(form?.innerHTML).toContain('view-name-input');
   });
 
-  it('shows all blocks in available list', () => {
+  it('shows all components in available list', () => {
     const addBtn = document.getElementById('views-add-btn') as HTMLButtonElement;
     addBtn.click();
 
@@ -154,7 +154,7 @@ describe('ViewsPanel — form interaction', () => {
     addBtn.click();
 
     const chips = document.getElementById('view-selected-chips');
-    expect(chips?.textContent).toContain('Click blocks below to add them');
+    expect(chips?.textContent).toContain('Click components below to add them');
   });
 
   it('disables save button initially', () => {
@@ -165,7 +165,7 @@ describe('ViewsPanel — form interaction', () => {
     expect(saveBtn.disabled).toBe(true);
   });
 
-  it('adds chip when block is clicked', () => {
+  it('adds chip when component is clicked', () => {
     const addBtn = document.getElementById('views-add-btn') as HTMLButtonElement;
     addBtn.click();
 
@@ -201,7 +201,7 @@ describe('ViewsPanel — form interaction', () => {
     expect(chips.length).toBe(0);
   });
 
-  it('enables save button when name is entered (blocks optional)', () => {
+  it('enables save button when name is entered (components optional)', () => {
     const addBtn = document.getElementById('views-add-btn') as HTMLButtonElement;
     addBtn.click();
 
@@ -213,7 +213,7 @@ describe('ViewsPanel — form interaction', () => {
     expect(saveBtn.disabled).toBe(false);
   });
 
-  it('saves view with name and selected blocks', () => {
+  it('saves view with name and selected components', () => {
     const addBtn = document.getElementById('views-add-btn') as HTMLButtonElement;
     addBtn.click();
 
@@ -232,10 +232,10 @@ describe('ViewsPanel — form interaction', () => {
     expect(state.views.length).toBe(2);
     const profile = state.views.find((v) => v.name === 'Profile');
     expect(profile).toBeDefined();
-    expect(profile!.blockIds).toEqual([blocks[0].id]);
+    expect(profile!.componentIds).toEqual([components[0].id]);
   });
 
-  it('saves view with no blocks', () => {
+  it('saves view with no components', () => {
     const addBtn = document.getElementById('views-add-btn') as HTMLButtonElement;
     addBtn.click();
 
@@ -249,7 +249,7 @@ describe('ViewsPanel — form interaction', () => {
     const state = getWizardState();
     const settings = state.views.find((v) => v.name === 'Settings');
     expect(settings).toBeDefined();
-    expect(settings!.blockIds).toEqual([]);
+    expect(settings!.componentIds).toEqual([]);
   });
 
   it('closes form after save', () => {
@@ -323,16 +323,16 @@ describe('ViewsPanel — duplicate name validation', () => {
 // ── View editing ─────────────────────────────────────────────────────
 
 describe('ViewsPanel — editing', () => {
-  let blocks: Block[];
+  let components: Component[];
   let homeView: View;
 
   beforeEach(() => {
-    blocks = [
-      makeBlock({ name: 'Nav Menu' }),
-      makeBlock({ name: 'About Section' }),
+    components = [
+      makeComponent({ name: 'Nav Menu' }),
+      makeComponent({ name: 'About Section' }),
     ];
-    homeView = makeView({ name: 'Home', blockIds: [blocks[0].id] });
-    setupState({ blocks, views: [homeView] });
+    homeView = makeView({ name: 'Home', componentIds: [components[0].id] });
+    setupState({ components, views: [homeView] });
     renderAndWire();
   });
 
@@ -357,7 +357,7 @@ describe('ViewsPanel — editing', () => {
     nameInput.value = 'Dashboard';
     nameInput.dispatchEvent(new Event('input'));
 
-    // Add another block
+    // Add another component
     const items = document.querySelectorAll('#view-available-list .available-item');
     (items[1] as HTMLElement).click(); // About Section
 
@@ -367,7 +367,7 @@ describe('ViewsPanel — editing', () => {
     const state = getWizardState();
     expect(state.views.length).toBe(1);
     expect(state.views[0].name).toBe('Dashboard');
-    expect(state.views[0].blockIds).toEqual([blocks[0].id, blocks[1].id]);
+    expect(state.views[0].componentIds).toEqual([components[0].id, components[1].id]);
   });
 
   it('shows Update View label when editing', () => {
@@ -382,16 +382,16 @@ describe('ViewsPanel — editing', () => {
 // ── View deletion ────────────────────────────────────────────────────
 
 describe('ViewsPanel — deletion', () => {
-  let blocks: Block[];
+  let components: Component[];
   let views: View[];
 
   beforeEach(() => {
-    blocks = [makeBlock({ name: 'Post Feed' })];
+    components = [makeComponent({ name: 'Post Feed' })];
     views = [
       makeView({ name: 'Home' }),
-      makeView({ name: 'Profile', blockIds: [blocks[0].id] }),
+      makeView({ name: 'Profile', componentIds: [components[0].id] }),
     ];
-    setupState({ blocks, views });
+    setupState({ components, views });
     renderAndWire();
   });
 
@@ -404,13 +404,13 @@ describe('ViewsPanel — deletion', () => {
     expect(state.views[0].name).toBe('Home');
   });
 
-  it('does not delete blocks when view is deleted', () => {
+  it('does not delete components when view is deleted', () => {
     const deleteBtn = document.querySelector(`.view-delete-btn[data-view-id="${views[1].id}"]`) as HTMLButtonElement;
     deleteBtn.click();
 
     const state = getWizardState();
-    expect(state.blocks.length).toBe(1);
-    expect(state.blocks[0].name).toBe('Post Feed');
+    expect(state.components.length).toBe(1);
+    expect(state.components[0].name).toBe('Post Feed');
   });
 
   it('hides delete button when only 1 view remains', () => {
@@ -426,57 +426,57 @@ describe('ViewsPanel — deletion', () => {
 // ── Reordering ───────────────────────────────────────────────────────
 
 describe('ViewsPanel — reordering', () => {
-  let blocks: Block[];
+  let components: Component[];
   let view: View;
 
   beforeEach(() => {
-    blocks = [
-      makeBlock({ name: 'Nav Menu' }),
-      makeBlock({ name: 'Post Feed' }),
-      makeBlock({ name: 'About Section' }),
+    components = [
+      makeComponent({ name: 'Nav Menu' }),
+      makeComponent({ name: 'Post Feed' }),
+      makeComponent({ name: 'About Section' }),
     ];
     view = makeView({
       name: 'Home',
-      blockIds: [blocks[0].id, blocks[1].id, blocks[2].id],
+      componentIds: [components[0].id, components[1].id, components[2].id],
     });
-    setupState({ blocks, views: [view] });
+    setupState({ components, views: [view] });
     renderAndWire();
   });
 
-  it('moves block down when down button is clicked', () => {
+  it('moves component down when down button is clicked', () => {
     const downBtn = document.querySelector(
-      `.view-reorder-down[data-view-id="${view.id}"][data-block-index="0"]`,
+      `.view-reorder-down[data-view-id="${view.id}"][data-component-index="0"]`,
     ) as HTMLButtonElement;
     downBtn.click();
 
     const state = getWizardState();
-    expect(state.views[0].blockIds).toEqual([
-      blocks[1].id, blocks[0].id, blocks[2].id,
+    expect(state.views[0].componentIds).toEqual([
+      components[1].id, components[0].id, components[2].id,
     ]);
   });
 
-  it('moves block up when up button is clicked', () => {
+  it('moves component up when up button is clicked', () => {
     const upBtn = document.querySelector(
-      `.view-reorder-up[data-view-id="${view.id}"][data-block-index="1"]`,
+      `.view-reorder-up[data-view-id="${view.id}"][data-component-index="1"]`,
     ) as HTMLButtonElement;
     upBtn.click();
 
     const state = getWizardState();
-    expect(state.views[0].blockIds).toEqual([
-      blocks[1].id, blocks[0].id, blocks[2].id,
+    expect(state.views[0].componentIds).toEqual([
+      components[1].id, components[0].id, components[2].id,
     ]);
   });
 
   it('disables up button on first item', () => {
     const upBtn = document.querySelector(
-      `.view-reorder-up[data-view-id="${view.id}"][data-block-index="0"]`,
+      `.view-reorder-up[data-view-id="${view.id}"][data-component-index="0"]`,
     ) as HTMLButtonElement;
     expect(upBtn.disabled).toBe(true);
   });
 
   it('disables down button on last item', () => {
     const downBtn = document.querySelector(
-      `.view-reorder-down[data-view-id="${view.id}"][data-block-index="2"]`,
+      `.view-reorder-down[data-view-id="${view.id}"][data-component-index="2"]`,
     ) as HTMLButtonElement;
     expect(downBtn.disabled).toBe(true);
   });
@@ -485,83 +485,83 @@ describe('ViewsPanel — reordering', () => {
 // ── Multi-assignment ─────────────────────────────────────────────────
 
 describe('ViewsPanel — multi-assignment', () => {
-  it('allows same block in multiple views', () => {
-    const block = makeBlock({ name: 'Nav Menu' });
+  it('allows same component in multiple views', () => {
+    const component = makeComponent({ name: 'Nav Menu' });
     const views = [
-      makeView({ name: 'Home', blockIds: [block.id] }),
-      makeView({ name: 'Profile', blockIds: [block.id] }),
+      makeView({ name: 'Home', componentIds: [component.id] }),
+      makeView({ name: 'Profile', componentIds: [component.id] }),
     ];
-    setupState({ blocks: [block], views });
+    setupState({ components: [component], views });
 
     const html = renderViewsPanel();
     expect(html).toContain('Home');
     expect(html).toContain('Profile');
-    // Block should appear in both cards
+    // Component should appear in both cards
     const matches = html.match(/Nav Menu/g);
     expect(matches?.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('block in any view is not unassigned', () => {
-    const block = makeBlock({ name: 'Nav Menu' });
+  it('component in any view is not unassigned', () => {
+    const component = makeComponent({ name: 'Nav Menu' });
     const views = [
-      makeView({ name: 'Home', blockIds: [block.id] }),
+      makeView({ name: 'Home', componentIds: [component.id] }),
     ];
-    setupState({ blocks: [block], views });
+    setupState({ components: [component], views });
 
     const html = renderViewsPanel();
-    expect(html).not.toContain('Unassigned Blocks');
+    expect(html).not.toContain('Unassigned Components');
   });
 });
 
-// ── Deleted block handling ────────────────────────────────────────────
+// ── Deleted component handling ────────────────────────────────────────────
 
-describe('ViewsPanel — deleted block handling', () => {
-  it('filters out missing block ids from view cards', () => {
-    const block = makeBlock({ name: 'Still here' });
+describe('ViewsPanel — deleted component handling', () => {
+  it('filters out missing component ids from view cards', () => {
+    const component = makeComponent({ name: 'Still here' });
     const view = makeView({
       name: 'Home',
-      blockIds: [block.id, 'deleted-block-id'],
+      componentIds: [component.id, 'deleted-component-id'],
     });
-    setupState({ blocks: [block], views: [view] });
+    setupState({ components: [component], views: [view] });
 
     const html = renderViewsPanel();
     expect(html).toContain('Still here');
-    // Should show only 1 block order number
+    // Should show only 1 component order number
     expect(html).toContain('>1<');
     expect(html).not.toContain('>2<');
   });
 });
 
-// ── Unassigned blocks ─────────────────────────────────────────────────
+// ── Unassigned components ─────────────────────────────────────────────────
 
-describe('ViewsPanel — unassigned blocks', () => {
-  it('shows unassigned blocks section when blocks are not in any view', () => {
-    const blocks = [
-      makeBlock({ name: 'Nav Menu' }),
-      makeBlock({ name: 'Post Feed' }),
+describe('ViewsPanel — unassigned components', () => {
+  it('shows unassigned components section when components are not in any view', () => {
+    const components = [
+      makeComponent({ name: 'Nav Menu' }),
+      makeComponent({ name: 'Post Feed' }),
     ];
-    const view = makeView({ name: 'Home', blockIds: [blocks[0].id] });
-    setupState({ blocks, views: [view] });
+    const view = makeView({ name: 'Home', componentIds: [components[0].id] });
+    setupState({ components, views: [view] });
 
     const html = renderViewsPanel();
-    expect(html).toContain('Unassigned Blocks');
+    expect(html).toContain('Unassigned Components');
     expect(html).toContain('1 remaining');
     expect(html).toContain('Post Feed');
   });
 
-  it('hides unassigned section when all blocks are assigned', () => {
-    const blocks = [makeBlock({ name: 'Nav Menu' })];
-    const view = makeView({ name: 'Home', blockIds: [blocks[0].id] });
-    setupState({ blocks, views: [view] });
+  it('hides unassigned section when all components are assigned', () => {
+    const components = [makeComponent({ name: 'Nav Menu' })];
+    const view = makeView({ name: 'Home', componentIds: [components[0].id] });
+    setupState({ components, views: [view] });
 
     const html = renderViewsPanel();
-    expect(html).not.toContain('Unassigned Blocks');
+    expect(html).not.toContain('Unassigned Components');
   });
 });
 
-// ── No blocks exist ──────────────────────────────────────────────────
+// ── No components exist ──────────────────────────────────────────────────
 
-describe('ViewsPanel — no blocks exist', () => {
+describe('ViewsPanel — no components exist', () => {
   it('shows empty state message in available list when editing', () => {
     setupState({});
     renderAndWire();
@@ -573,7 +573,7 @@ describe('ViewsPanel — no blocks exist', () => {
     editBtn.click();
 
     const availList = document.getElementById('view-available-list');
-    expect(availList?.textContent).toContain('No blocks created yet');
+    expect(availList?.textContent).toContain('No components created yet');
   });
 });
 
@@ -605,7 +605,7 @@ describe('ViewsPanel — sidebar', () => {
     expect(items[1].textContent).toContain('Profile');
   });
 
-  it('does not add has-items when only seeded Home view with no blocks', () => {
+  it('does not add has-items when only seeded Home view with no components', () => {
     setupState({});
 
     document.body.innerHTML = `
@@ -641,10 +641,10 @@ describe('ViewsPanel — sidebar', () => {
     expect(section?.classList.contains('has-items')).toBe(true);
   });
 
-  it('adds has-items when a view has blocks assigned', () => {
-    const block = makeBlock({ name: 'Nav' });
-    const views = [makeView({ name: 'Home', blockIds: [block.id] })];
-    setupState({ blocks: [block], views });
+  it('adds has-items when a view has components assigned', () => {
+    const component = makeComponent({ name: 'Nav' });
+    const views = [makeView({ name: 'Home', componentIds: [component.id] })];
+    setupState({ components: [component], views });
 
     document.body.innerHTML = `
       <div class="sidebar-section" data-section="views">

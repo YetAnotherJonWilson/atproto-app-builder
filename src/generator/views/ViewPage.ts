@@ -2,21 +2,22 @@
  * View page generator
  *
  * Generates one TypeScript file per wizard View. Each file exports a render
- * function that composes the view's assigned blocks in order. Menu blocks
- * call their NavMenu component; all other blocks render as placeholders.
+ * function that composes the view's assigned components in order. Menu
+ * components call their NavMenu component; all other components render as
+ * placeholders.
  */
 
-import type { View, Block, WizardState } from '../../types/wizard';
+import type { View, Component, WizardState } from '../../types/wizard';
 import { toPascalCase, toCamelCase } from '../../utils';
 import { generatePlaceholderHtml } from '../components/Placeholder';
 import { buildContentNodeTree } from '../../inlay/text-variants';
 import { compileToHtml } from '../inlay/compile';
 
-interface ViewBlockInfo {
-  block: Block;
-  /** PascalCase component filename (without extension) for menu blocks */
+interface ViewComponentInfo {
+  component: Component;
+  /** PascalCase component filename (without extension) for menu components */
   componentFile?: string;
-  /** Function name to call for menu blocks */
+  /** Function name to call for menu components */
   componentFunction?: string;
 }
 
@@ -26,17 +27,17 @@ interface ViewBlockInfo {
 export function generateViewPage(
   view: View,
   viewFunctionName: string,
-  blocks: ViewBlockInfo[],
+  components: ViewComponentInfo[],
   wizardState: WizardState
 ): string {
   const { requirements, recordTypes, nonDataElements, views } = wizardState;
 
-  // Collect menu block imports
-  const menuImports = blocks
-    .filter(b => b.block.blockType === 'menu' && b.componentFile && b.componentFunction)
-    .map(b => `import { ${b.componentFunction} } from '../components/${b.componentFile}';`);
+  // Collect menu component imports
+  const menuImports = components
+    .filter(c => c.component.componentType === 'menu' && c.componentFile && c.componentFunction)
+    .map(c => `import { ${c.componentFunction} } from '../components/${c.componentFile}';`);
 
-  const hasMenuBlocks = menuImports.length > 0;
+  const hasMenuComponents = menuImports.length > 0;
 
   // Build import section
   let imports = `import type { Router } from '../router';\n`;
@@ -44,10 +45,10 @@ export function generateViewPage(
     imports += menuImports.join('\n') + '\n';
   }
 
-  // Build body — render each block as a section
+  // Build body — render each component as a section
   let body = '';
 
-  if (blocks.length === 0) {
+  if (components.length === 0) {
     body += `
   const empty = document.createElement('p');
   empty.className = 'view-empty';
@@ -55,37 +56,37 @@ export function generateViewPage(
   container.appendChild(empty);
 `;
   } else {
-    blocks.forEach((b, i) => {
-      const varName = `block${i}`;
+    components.forEach((c, i) => {
+      const varName = `component${i}`;
 
-      if (b.block.blockType === 'menu' && b.componentFunction) {
+      if (c.component.componentType === 'menu' && c.componentFunction) {
         // Real NavMenu component
         body += `
-  // Block: ${b.block.name} (menu)
+  // Component: ${c.component.name} (menu)
   const ${varName} = document.createElement('section');
-  ${varName}.className = 'block';
-  ${b.componentFunction}(${varName}, router);
+  ${varName}.className = 'app-component';
+  ${c.componentFunction}(${varName}, router);
   container.appendChild(${varName});
 `;
-      } else if (b.block.blockType === 'text') {
-        // Inlay text block — compile-time rendering from contentNodes
-        const tree = b.block.contentNodes?.length
-          ? buildContentNodeTree(b.block.contentNodes)
+      } else if (c.component.componentType === 'text') {
+        // Inlay text component — compile-time rendering from contentNodes
+        const tree = c.component.contentNodes?.length
+          ? buildContentNodeTree(c.component.contentNodes)
           : null;
         if (tree) {
           const inlayHtml = compileToHtml(tree);
           const escapedHtml = inlayHtml.replace(/`/g, '\\`').replace(/\$/g, '\\$');
           body += `
-  // Block: ${b.block.name} (text — Inlay)
+  // Component: ${c.component.name} (text — Inlay)
   const ${varName} = document.createElement('section');
-  ${varName}.className = 'block inlay-root';
+  ${varName}.className = 'app-component inlay-root';
   ${varName}.innerHTML = \`${escapedHtml}\`;
   container.appendChild(${varName});
 `;
         } else {
-          // Text block with no know requirements — fallback to placeholder
+          // Text component with no know requirements — fallback to placeholder
           const placeholderHtml = generatePlaceholderHtml(
-            b.block,
+            c.component,
             requirements,
             recordTypes.map(r => ({ id: r.id, displayName: r.displayName })),
             nonDataElements,
@@ -93,17 +94,17 @@ export function generateViewPage(
           );
           const escapedHtml = placeholderHtml.replace(/`/g, '\\`').replace(/\$/g, '\\$');
           body += `
-  // Block: ${b.block.name} (text) — placeholder fallback
+  // Component: ${c.component.name} (text) — placeholder fallback
   const ${varName} = document.createElement('section');
-  ${varName}.className = 'block block-placeholder';
+  ${varName}.className = 'app-component app-component-placeholder';
   ${varName}.innerHTML = \`${escapedHtml}\`;
   container.appendChild(${varName});
 `;
         }
       } else {
-        // Placeholder for non-text blocks
+        // Placeholder for non-text components
         const placeholderHtml = generatePlaceholderHtml(
-          b.block,
+          c.component,
           requirements,
           recordTypes.map(r => ({ id: r.id, displayName: r.displayName })),
           nonDataElements,
@@ -112,9 +113,9 @@ export function generateViewPage(
         // Escape backticks in the placeholder HTML for template literal
         const escapedHtml = placeholderHtml.replace(/`/g, '\\`').replace(/\$/g, '\\$');
         body += `
-  // Block: ${b.block.name}${b.block.blockType ? ` (${b.block.blockType})` : ''} — placeholder
+  // Component: ${c.component.name}${c.component.componentType ? ` (${c.component.componentType})` : ''} — placeholder
   const ${varName} = document.createElement('section');
-  ${varName}.className = 'block block-placeholder';
+  ${varName}.className = 'app-component app-component-placeholder';
   ${varName}.innerHTML = \`${escapedHtml}\`;
   container.appendChild(${varName});
 `;

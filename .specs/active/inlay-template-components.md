@@ -24,9 +24,9 @@ ecosystem rather than maintaining our own rendering code for each block type.
 
 ## Prerequisite
 
-This spec assumes the rename from "blocks" to "components" has been completed
-(`.specs/active/rename-blocks-to-components.md`). Throughout this spec, the
-term "component" refers to the renamed wizard concept (formerly "block"), and
+The rename from "blocks" to "components" has been completed
+(`.specs/done/rename-blocks-to-components.md`). Throughout this spec, the
+term "component" refers to the wizard concept (formerly "block"), and
 "Inlay component" refers specifically to a community-authored Inlay template
 component fetched from a PDS. Where ambiguity could arise, the distinction is
 made explicit.

@@ -1,7 +1,7 @@
 @layer components {
-  /* ===== BLOCK CARDS GRID ===== */
+  /* ===== COMPONENT CARDS GRID ===== */
 
-  .block-grid {
+  .component-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 0.75rem;
@@ -9,7 +9,7 @@
     margin-bottom: 0.75rem;
   }
 
-  .block-card {
+  .component-card {
     background: var(--bg-surface-2);
     border: 1px solid var(--border-subtle);
     border-radius: 6px;
@@ -19,19 +19,19 @@
       box-shadow 0.15s;
   }
 
-  .block-card:hover {
+  .component-card:hover {
     border-color: var(--border-accent);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   }
 
-  .block-card-header {
+  .component-card-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     margin-bottom: 0.625rem;
   }
 
-  .block-card-name {
+  .component-card-name {
     font-weight: 500;
     font-size: 0.9375rem;
     overflow: hidden;
@@ -42,13 +42,13 @@
     min-width: 0;
   }
 
-  .block-card-actions {
+  .component-card-actions {
     display: flex;
     gap: 0.375rem;
     flex-shrink: 0;
   }
 
-  .block-card-actions button {
+  .component-card-actions button {
     background: none;
     border: none;
     color: var(--text-muted);
@@ -57,13 +57,13 @@
     padding: 0.125rem 0.25rem;
   }
 
-  .block-card-actions button:hover {
+  .component-card-actions button:hover {
     color: var(--accent);
   }
 
-  /* Block card requirements list */
+  /* Component card requirements list */
 
-  .block-card-requirements {
+  .component-card-requirements {
     list-style: none;
     padding: 0;
     margin: 0;
@@ -74,7 +74,7 @@
     overflow: hidden;
   }
 
-  .block-card-req {
+  .component-card-req {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -83,7 +83,7 @@
     padding: 0.25rem 0;
   }
 
-  .block-card-req .req-order {
+  .component-card-req .req-order {
     width: 16px;
     height: 16px;
     border-radius: 50%;
@@ -97,7 +97,7 @@
     font-weight: 600;
   }
 
-  .block-card-req .req-type-badge {
+  .component-card-req .req-type-badge {
     font-size: 0.5625rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -110,7 +110,7 @@
 
   /* Reorder buttons */
 
-  .block-card-req .reorder-btns {
+  .component-card-req .reorder-btns {
     margin-left: auto;
     display: flex;
     gap: 0.125rem;
@@ -118,7 +118,7 @@
     transition: opacity 0.15s;
   }
 
-  .block-card:hover .block-card-req .reorder-btns {
+  .component-card:hover .component-card-req .reorder-btns {
     opacity: 1;
   }
 
@@ -399,9 +399,9 @@
     color: var(--accent);
   }
 
-  /* ===== INLAY PREVIEW (block cards) ===== */
+  /* ===== INLAY PREVIEW (component cards) ===== */
 
-  .block-card-inlay-preview {
+  .component-card-inlay-preview {
     background: #fff;
     border-radius: 4px;
     padding: 0.5rem 0.75rem;
@@ -411,7 +411,7 @@
     position: relative;
   }
 
-  .block-card-inlay-preview::after {
+  .component-card-inlay-preview::after {
     content: '';
     position: absolute;
     bottom: 0;
@@ -424,7 +424,7 @@
 
   /* ===== FULFILLS BADGE ===== */
 
-  .block-card-fulfills {
+  .component-card-fulfills {
     font-size: 0.6875rem;
     color: var(--text-muted);
     padding: 0.375rem 0;
@@ -561,7 +561,7 @@
   /* ===== RESPONSIVE ===== */
 
   @media (max-width: 767px) {
-    .block-grid {
+    .component-grid {
       grid-template-columns: 1fr;
     }
 
@@ -571,7 +571,7 @@
     }
 
     /* Always show reorder buttons on touch viewports */
-    .block-card-req .reorder-btns {
+    .component-card-req .reorder-btns {
       opacity: 1;
     }
   }

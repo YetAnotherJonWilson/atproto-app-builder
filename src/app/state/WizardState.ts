@@ -133,8 +133,8 @@ export function initializeWizardState(): WizardState {
     },
     requirements: [],
     nonDataElements: [],
-    blocks: [],
-    views: [{ id: generateId(), name: 'Home', blockIds: [] }],
+    components: [],
+    views: [{ id: generateId(), name: 'Home', componentIds: [] }],
     hasGenerated: false,
     hasSeenWelcome: false
   };
@@ -153,9 +153,45 @@ export function setWizardState(state: WizardState): void {
   if (!state.nonDataElements) {
     state.nonDataElements = [];
   }
-  // Migrate: ensure blocks array exists for old saved states
-  if (!state.blocks) {
-    state.blocks = [];
+  // Migrate: rename legacy `blocks` field to `components` (and migrate per-
+  // component `blockType` → `componentType`). Applies to both localStorage
+  // and PDS-loaded state. After this block runs, only `components` is used.
+  {
+    const legacy = state as unknown as Record<string, unknown>;
+    if (Array.isArray(legacy.blocks) && !Array.isArray(legacy.components)) {
+      const migrated = (legacy.blocks as Array<Record<string, unknown>>).map(b => {
+        const comp: Record<string, unknown> = { ...b };
+        if ('blockType' in comp) {
+          if (comp.componentType === undefined) {
+            comp.componentType = comp.blockType;
+          }
+          delete comp.blockType;
+        }
+        return comp;
+      });
+      legacy.components = migrated;
+    }
+    // Drop the legacy field in all cases so it doesn't get re-saved.
+    if ('blocks' in legacy) {
+      delete legacy.blocks;
+    }
+    if (!Array.isArray(legacy.components)) {
+      legacy.components = [];
+    }
+  }
+  // Migrate: rename legacy `blockIds` on views to `componentIds`.
+  if (Array.isArray(state.views)) {
+    for (const view of state.views as unknown as Array<Record<string, unknown>>) {
+      if ('blockIds' in view && !('componentIds' in view)) {
+        view.componentIds = view.blockIds;
+      }
+      if ('blockIds' in view) {
+        delete view.blockIds;
+      }
+      if (!Array.isArray(view.componentIds)) {
+        view.componentIds = [];
+      }
+    }
   }
   // Migrate: ensure hasGenerated exists for old saved states
   if (state.hasGenerated === undefined) {
@@ -167,7 +203,7 @@ export function setWizardState(state: WizardState): void {
   }
   // Migrate: ensure views array exists with seeded Home view for old saved states
   if (!state.views || state.views.length === 0) {
-    state.views = [{ id: generateId(), name: 'Home', blockIds: [] }];
+    state.views = [{ id: generateId(), name: 'Home', componentIds: [] }];
   }
   // Migrate: ensure recordTypes have displayName and identity fields for old saved states
   if (state.recordTypes) {
@@ -183,15 +219,15 @@ export function setWizardState(state: WizardState): void {
       }
     }
   }
-  // Migrate: seed contentNodes on text blocks from linked know requirements'
+  // Migrate: seed contentNodes on text components from linked know requirements'
   // legacy fields (textVariant/text/content). Must run BEFORE requirement cleanup.
-  if (state.blocks && state.requirements) {
-    for (const block of state.blocks) {
-      if (block.blockType !== 'text') continue;
-      if (block.contentNodes) continue; // already migrated
+  if (state.components && state.requirements) {
+    for (const component of state.components) {
+      if (component.componentType !== 'text') continue;
+      if (component.contentNodes) continue; // already migrated
 
       const nodes: ContentNode[] = [];
-      for (const rid of block.requirementIds) {
+      for (const rid of component.requirementIds) {
         const req = state.requirements.find(r => r.id === rid);
         if (!req || req.type !== 'know' || !req.text) continue;
 
@@ -219,12 +255,12 @@ export function setWizardState(state: WizardState): void {
             break;
         }
       }
-      block.contentNodes = nodes;
+      component.contentNodes = nodes;
     }
   }
 
   // Migrate: clean up legacy content/textVariant on know requirements
-  // (runs after block seeding so blocks can read legacy fields first)
+  // (runs after component seeding so components can read legacy fields first)
   if (state.requirements) {
     for (const req of state.requirements) {
       if (req.type !== 'know') continue;
