@@ -36,7 +36,13 @@ Pick one item from "Up Next" before starting a coding session.
 ### Post-Migration Features
 
 - [x] PDS state persistence (multi-project save/load) — see `.specs/done/pds-state-persistence.md`
-- [ ] Inlay template components (Option B — render community Inlay components) — see `.specs/active/inlay-template-components.md`
+- [ ] Inlay Option B — do in dependency order:
+  - [ ] `@inlay/render` browser compatibility spike — see `.specs/active/inlay-render-browser-spike.md`
+  - [ ] Inlay component discovery (parallel with primitive expansion) — see `.specs/active/inlay-component-discovery.md`
+  - [ ] Inlay primitive expansion (parallel with discovery) — see `.specs/active/inlay-primitive-expansion.md`
+  - [ ] Inlay template components — integration (depends on above three) — see `.specs/active/inlay-template-components.md`
+- [ ] Wizard-built primitive trees (navigate/non-data requirements) — see `.specs/active/wizard-built-primitive-trees.md`
+- [ ] Menu component primitive-tree migration — see `.specs/active/menu-component-primitive-tree-migration.md`
 - [ ] Wizard walkthrough / guided tour — see `.specs/active/wizard-walkthrough.md`
 - [ ] Wireframe / mockup preview view — see `.specs/active/wireframe-preview-view.md`
 - [ ] Generated code view — see `.specs/active/generated-code-view.md`

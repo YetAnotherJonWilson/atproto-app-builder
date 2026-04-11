@@ -1,361 +1,299 @@
-# Spec: Inlay Template Components (Option B)
+# Spec: Inlay Template Components — Integration
 
 **Status:** ready
-**Date:** 2026-04-09
+**Date:** 2026-04-11
 
 ## What
 
-Enable generated apps to render real Inlay template components from the AT
-Protocol ecosystem. Users browse existing community components (e.g.,
-ProfileHeader, Post), associate them with blocks, and the generator produces
-apps that resolve and render those components with live AT Protocol data.
+Wire community-authored Inlay template components into the wizard's
+generator so that components whose requirement is `do` + dataTypeId
+can be associated with an Inlay template, and the generator produces
+working code that renders that template against live AT Protocol
+data. This is the integration step of the Option B initiative — it
+assumes discovery, primitive support, and the `@inlay/render` browser-
+compatibility question have been handled in their own specs.
 
-This replaces the old block-component-rendering spec (2026-03-23), which
-predated the Inlay integration decision.
+This replaces the earlier block-component-rendering spec (2026-03-23),
+which predated the Inlay integration decision.
 
 ## Why
 
-The generator currently renders non-menu, non-text blocks as placeholder stubs.
-Option A (completed) proved out the Inlay primitive rendering pipeline for static
-text content. Option B extends this to data-bound components: blocks that display
-AT Protocol records using community-authored Inlay templates. This makes
-generated apps functional and connects them to the growing Inlay component
-ecosystem rather than maintaining our own rendering code for each block type.
+Generated apps currently render non-menu, non-text components as
+placeholder stubs. Option A proved out the primitive rendering
+pipeline for static text. This spec is the final step of Option B —
+turning a user's "display posts" or "show profile" intent into working
+rendered output, using community-authored Inlay templates as the
+rendering source for data-bound components.
 
-## Prerequisite
+## Architecture Context
 
-The rename from "blocks" to "components" has been completed
-(`.specs/done/rename-blocks-to-components.md`). Throughout this spec, the
-term "component" refers to the wizard concept (formerly "block"), and
-"Inlay component" refers specifically to a community-authored Inlay template
-component fetched from a PDS. Where ambiguity could arise, the distinction is
-made explicit.
+This spec is one piece of a larger architectural model: **every
+wizard component is rendered as an Inlay primitive tree**, compiled
+to static HTML at generation time with runtime "holes" for dynamic
+data. The tree can be sourced three ways:
+
+1. **Community Inlay template components** — data-bound trees
+   authored by the Inlay community, resolved via `@inlay/render` at
+   generation time. Only meaningful for components whose requirement
+   includes a data type (record collection), because templates
+   declare `view.accepts` against a collection. **This spec wires
+   this source into the generator.**
+2. **Wizard-built primitive trees** — trees we construct directly in
+   wizard code from the requirement's shape. Already used for `know`
+   requirements via `src/inlay/text-variants.ts`. Covers requirements
+   that don't map to a data-bound template. Follow-up spec:
+   `wizard-built-primitive-trees.md`.
+3. **User-authored trees** (future, out of scope).
+
+Both sources (1) and (2) flow through the same compile pipeline
+(`src/generator/inlay/compile.ts`) and the same host runtime
+(`src/inlay/host-runtime.ts`). The only difference is how the tree
+is built.
+
+The current `menu` component is an exception: it uses hand-built
+NavMenu code rather than a primitive tree, predating this model.
+Migration is tracked in
+`menu-component-primitive-tree-migration.md`.
+
+## Prerequisites
+
+- `inlay-render-browser-spike.md` — decision on whether
+  `@inlay/render` runs in the browser, and if not, the fallback
+  mechanism chosen. This spec's resolution module sits on top of the
+  outcome.
+- `inlay-component-discovery.md` — discovery module returning
+  metadata-tagged components from known authors, consumed by the
+  selection UI.
+- `inlay-primitive-expansion.md` — primitives needed by the first
+  target template component (and any others the selection UI will
+  surface) implemented in both runtime and compile pipelines.
+- `.specs/done/rename-blocks-to-components.md` — "blocks" renamed to
+  "components" throughout the wizard.
 
 ## Background
 
-See `docs/inlay-research.md` for full Inlay architecture context. Key points:
+Inlay template components are JSON element trees with data bindings,
+stored as AT Protocol records. A template declares `view.accepts`
+against a record collection; when rendered with a record URI, bindings
+like `{record.displayName}` resolve against the fetched record's
+fields. See `docs/inlay-research.md` for deeper background.
 
-- Template components are JSON element trees with data bindings, stored as AT
-  Protocol records in the `at.inlay.component` collection
-- The `@inlay/render` package handles resolution, template deserialization,
-  binding resolution, and recursive tree expansion
-- The host (our generated app) only needs to implement the "last mile" — mapping
-  primitives (org.atsui.*) to DOM elements
-- Option A already implemented this last mile in `src/inlay/host-runtime.ts`
-- Component discovery uses hardcoded author DIDs + `com.atproto.repo.listRecords`
-
-Known component authors:
-| Handle | DID | Components |
-|--------|-----|------------|
-| danabra.mov | did:plc:fpruhuo22xkm5o7ttr2ktxdo | 16 |
-| dansshadow.bsky.social | did:plc:rm4mmytequowusm6smpw53ez | 4 |
+The strategy is **hybrid compile-time + runtime**: resolution runs at
+generation time (producing a frozen primitive tree for each
+component), and the generated app does only the final data fetch and
+DOM insertion at runtime. The generated app ships no `@inlay/render`
+dependency — it's vanilla JS that knows exactly what DOM to build
+and where to plug in record fields.
 
 ## Acceptance Criteria
 
-- [ ] **Component discovery** — The wizard can fetch and display available Inlay
-  template components from known authors
-  - On opening the component browser, the system fetches `at.inlay.component`
-    records from each known author's PDS
-  - Components are displayed with their NSID, description, and author
-  - Components are filterable/browsable by what record collection they render
-    (via their `view` field)
+- [ ] **Inlay component association on wizard components** — users
+  can attach an Inlay template reference to a component whose
+  requirement is `do` + dataTypeId.
+  - Qualifying components show an "attach Inlay component" control
+    in the Components panel
+  - Clicking opens a minimal picker that lists discovered components
+    compatible with the component's data type (filtered by
+    `view.accepts`)
+  - A "browse all" fallback lists every discovered component
+    regardless of compatibility
+  - Selection stores the AT-URI on the wizard component as
+    `inlayComponentRef`
+  - The component card surfaces the associated template's name
+  - The reference can be changed or cleared
 
-- [ ] **Component creation flow** — Creating a new data-displaying component
-  starts from the data type, not from a category
-  - The user picks a data type (record collection) for the new component
-  - The system shows compatible Inlay components (auto-suggested by matching
-    `view.accepts` against the chosen data type)
-  - The user selects an Inlay component, or opens the browse fallback to
-    explore all components
-  - Special-case component types (menu, static content) remain creatable as
-    distinct, non-data-displaying options
+- [ ] **Association restricted to `do` + dataTypeId components** —
+  other requirement types don't expose the association UI.
 
-- [ ] **Inlay component association** — A component can be associated with an
-  Inlay component reference
-  - When editing a data-displaying component, the user can open the Inlay
-    component browser
-  - Selecting an Inlay component stores a reference (AT-URI) on the wizard
-    component
-  - The component card in the Components panel shows the associated Inlay
-    component name
-  - A component's Inlay component reference can be changed or removed
+- [ ] **Generation-time resolution** — during generate, each component
+  with an `inlayComponentRef` is expanded to a fully-resolved
+  primitive tree via the resolution module, which uses
+  `@inlay/render` or the fallback chosen by the spike. The compile
+  pipeline then produces HTML with binding sites marked.
 
-- [ ] **Generator produces working component code** — Blocks with associated
-  Inlay components generate functional rendering code
-  - The generator resolves the template component's element tree at generation
-    time (using `@inlay/render` or equivalent resolution logic)
-  - The generated code includes the compiled DOM structure from the resolved
-    primitive tree
-  - Data bindings become runtime fetch + insertion points (the hybrid approach)
-  - The generated app fetches AT Protocol records at runtime and fills in bound
-    values
-  - Components render correctly with live data from the user's PDS
+- [ ] **Runtime data binding** — generated code for each resolved
+  template includes JavaScript that reads the bound record from the
+  generated app's Store and writes values into the frozen DOM
+  structure at binding sites. Record fetching goes through the
+  existing generated `Session`/`Api`/`Store` layer; no duplicate
+  fetch code.
 
-- [ ] **Primitives beyond text** — The host runtime and compile pipeline support
-  all primitives needed by discovered template components
-  - Layout primitives: Stack, Row, Fill, Grid, Clip (extend beyond current set)
-  - Media primitives: Avatar, Blob, Cover
-  - Navigation: Link, Timestamp
-  - Framework: Maybe, Fragment, Loading
+- [ ] **Generator wiring** — `src/generator/views/ViewPage.ts` has a
+  new branch: components with an `inlayComponentRef` emit compiled
+  primitive-tree HTML plus binding code, alongside the existing menu
+  and text branches.
 
-- [ ] **Fallback for unassociated blocks** — Blocks without a component
-  association still render (placeholder or default)
+- [ ] **Fallback for unresolvable templates** — if resolution fails
+  at generation time (missing author, malformed record, missing
+  primitive), the generator emits a visible fallback placeholder for
+  that component and logs a warning. Generation does not abort.
+
+- [ ] **Fallback for unassociated components** — components without
+  an `inlayComponentRef` continue to render as the current
+  placeholder stub until another source (wizard-built trees)
+  replaces it.
+
+- [ ] **End-to-end verification** — a wizard project with a real
+  community Inlay template generates and runs correctly against a
+  user's PDS with live data visible.
 
 ## Scope
 
 **In scope:**
-- `@inlay/render` integration for template resolution and binding analysis
-- Component discovery from hardcoded author DIDs
-- UI for browsing and selecting components in the Blocks panel
-- Block type additions to store component AT-URI reference
-- Generator changes to produce hybrid compiled+runtime code
-- Extending host-runtime.ts and compile.ts for additional primitives
-- CSS for additional Inlay primitives in generated apps
+- `src/inlay/resolve.ts` — generation-time template resolution using
+  `@inlay/render` or the chosen fallback
+- `src/generator/inlay/data-binding.ts` — code emission for runtime
+  fetch + insert at binding sites
+- `src/generator/inlay/compile.ts` — extended to emit deterministic
+  markers at binding sites in compiled HTML
+- `src/types/wizard.ts` — `inlayComponentRef?: string` on
+  `Component`; state migration if needed
+- `src/app/views/panels/ComponentsPanel.ts` — minimal selection UI
+- `src/generator/views/ViewPage.ts` — new generator branch
+- `src/generator/index.ts` — orchestration if new files need writing
+- End-to-end verification with a real community template
 
 **Out of scope:**
-- External components (bodyExternal / XRPC endpoints) — template only for now
-- Form blocks / input primitives / actions system
-- Running our own firehose ingester for discovery
-- User-authored custom components
-- Menu blocks (already have their own rendering)
-- Text blocks with contentNodes (already handled by Option A)
+- Component discovery infrastructure — `inlay-component-discovery.md`
+- Primitive expansion — `inlay-primitive-expansion.md`
+- `@inlay/render` browser compatibility decision —
+  `inlay-render-browser-spike.md`
+- External-body components (`bodyExternal`, XRPC endpoints)
+- Polished component browser UX (search, preview, filtering) —
+  deferred to a follow-up
+- Form components / input primitives / actions (blocked on Inlay
+  ecosystem)
+- Menu component migration
+- Wizard-built primitive trees for other requirement types
 
 ## Code Context
 
-### Existing Option A code to extend
+**`src/inlay/resolve.ts`** (new) — takes an Inlay component AT-URI,
+runs the resolution pipeline (via `@inlay/render` or the chosen
+fallback), and returns a fully-resolved primitive tree with binding
+locations identified. Consumed by the generator during component
+compilation.
 
-**`src/inlay/element.ts`** — Defines the `InlayElement` interface
-(`{ type: string; props: Record<string, unknown> }`), the `el()` shorthand
-constructor, and an `NSID` constants object. Currently exports constants for
-Stack, Row, Title, Heading, Text, Caption, Fill. **Extend** the NSID constants
-with the additional primitives this spec needs (Avatar, Blob, Cover, Grid,
-Clip, Link, Timestamp, Maybe, Fragment, Loading).
+**`src/generator/inlay/compile.ts`** — already compiles an
+`InlayElement` tree to HTML. For this spec, it needs to emit
+deterministic markers (attribute or placeholder node) at binding
+sites so runtime insertion code can find them.
 
-**`src/inlay/host-runtime.ts`** — Renders an `InlayElement` tree to live DOM
-elements. Used by the wizard for live previews. Has:
-- `nsidToTag(nsid)` — converts `org.atsui.Stack` → `org-atsui-stack`
-- `ARIA_ROLES` map for accessibility attributes
-- `ATTRIBUTE_PROPS` set listing prop names that become HTML attributes
-- `KNOWN_PRIMITIVES` set listing supported NSIDs (currently just Stack, Row,
-  Title, Heading, Text, Caption, Fill)
-- `renderToDOM(element)` — main entry point; returns an `inlay-error` div for
-  unknown primitives
+**`src/generator/inlay/data-binding.ts`** (new) — given a resolved
+template tree with binding locations, emits JavaScript that:
+1. Reads the bound record from the generated app's Store
+2. Walks the frozen DOM structure to each binding site
+3. Inserts text / attribute values / image sources per the binding's
+   target
 
-**Extend** by adding new primitives to `KNOWN_PRIMITIVES`, ARIA roles where
-appropriate, attribute props for new prop types, and any special-case rendering
-logic (Avatar needs an `<img>` child, Link needs an `<a>` wrapper, etc.).
+**`src/generator/atproto/Session.ts` / `Api.ts` /
+`src/generator/app/Store.ts`** — existing generated session, API,
+and store layers. Data binding reads from the Store, not from
+independent fetches.
 
-**`src/generator/inlay/compile.ts`** — Compile-time analog of host-runtime.ts;
-serializes an `InlayElement` tree to an HTML string for the generator's output.
-**Mirrors** the same maps (ARIA_ROLES, ATTRIBUTE_PROPS) and rendering rules.
-Keep this in sync with host-runtime.ts when adding primitives. Has
-`compileToHtml(element)` as the main entry point.
+**`src/app/views/panels/ComponentsPanel.ts`** — current panel. Adds
+the minimal selector for choosing an Inlay template on qualifying
+components, using results from `src/inlay/discovery.ts` (prereq
+spec).
 
-**`src/inlay/text-variants.ts`** — Maps wizard `ContentNode` and `TextVariant`
-types to `InlayElement` trees. Reference for how to construct trees from
-typed inputs (relevant if we end up generating trees from generator code
-rather than only resolving them from external Inlay components).
-
-### AT Protocol infrastructure to plug into
-
-**`src/generator/atproto/Api.ts`** — Generates CRUD code (create, update,
-delete, get*, list with pagination). The generated app's data fetching for
-Inlay components should use this same pattern — generate per-record-type
-fetcher functions in the same style.
-
-**`src/generator/atproto/Session.ts`** — Generates the session manager that
-restores auth and loads all record types on app init via `loadUserData()`.
-Inlay component data fetches should integrate here so they happen on app
-startup, the same way other record loads do.
-
-**`src/generator/app/Store.ts`** — Generates the global reactive store with
-typed getters/setters per record type. Inlay component renderers should read
-from this store rather than fetching independently.
-
-**Identity resolution flow** (for generation-time component discovery from
-PDSes — not required at runtime in generated apps):
-1. Resolve handle → DID via `com.atproto.identity.resolveHandle` on
-   `public.api.bsky.app`
-2. Look up DID doc at `https://plc.directory/{did}`
-3. Extract PDS URL from `#atproto_pds` service entry
-4. Call `com.atproto.repo.listRecords?repo={did}&collection=at.inlay.component`
-
-The user has a memory note (`feedback_bsky_public_api.md`) preferring
-`public.api.bsky.app` for unauthenticated XRPC calls — apply that here.
-
-### `@inlay/render` package
-
-- npm package name: `@inlay/render`
-- Source: tangled.sh/danabra.mov/inlay (per research doc)
-- API surface: `render()` returns `{ node, props, context, cache }`;
-  `node === null` means "this is a primitive — host renders the resolved
-  props"
-- Behavior: handles template deserialization, binding resolution against scope,
-  external component XRPC calls (not needed for this spec, template-only),
-  import stack resolution, recursive expansion, depth limiting (default 30)
-
-**Browser compatibility unknown** — Must test before relying on it. If it
-fails to bundle/run in the wizard's Vite/browser context, fall back per
-Ambiguity 2 (Cloudflare Worker preferred, custom reimplementation as last
-resort).
+**`src/types/wizard.ts`** — add `inlayComponentRef?: string` to the
+`Component` type. If existing persisted state is affected, add a
+migration in `src/app/state/WizardState.ts`.
 
 ## Files Likely Affected
 
-### Wizard side
-- `package.json` — add `@inlay/render` dependency
-- `src/types/wizard.ts` — Add `inlayComponentRef?: string` field to the
-  `Component` type (renamed from `Block` per prerequisite). Stores the AT-URI
-  of the associated Inlay component.
-- `src/app/views/panels/ComponentsPanel.ts` (renamed from `BlocksPanel.ts` per
-  prerequisite) — Add component browser UI: data type selector → suggested
-  Inlay components → selection. Minimal interface this spec; polished browser
-  in follow-up spec.
-- New: `src/inlay/discovery.ts` — Fetch `at.inlay.component` records from
-  known author PDSes via the resolution flow above. Returns metadata
-  (description, view.accepts collections, body type) for browsing.
-- New: `src/inlay/resolve.ts` — Generation-time template resolution. Wraps
-  `@inlay/render` (or our reimplementation). Inputs an Inlay component AT-URI;
-  outputs a fully-resolved primitive tree with binding locations identified.
-
-### Inlay primitive support (extends Option A)
-- `src/inlay/element.ts` — Extend `NSID` constants for new primitives
-- `src/inlay/host-runtime.ts` — Extend `KNOWN_PRIMITIVES`, `ARIA_ROLES`,
-  `ATTRIBUTE_PROPS`; add special-case rendering for Avatar/Link/Blob/etc.
-- `src/generator/inlay/compile.ts` — Mirror the host-runtime extensions for
-  compile-time rendering
-- New CSS for additional primitives (location TBD; either `styles/` for the
-  wizard or `src/generator/templates/Styles.ts` for generated apps, or both)
-
-### Generator side
-- `src/generator/views/ViewPage.ts` — Add a new branch in the component
-  rendering loop (currently has branches for `menu`, `text`, and placeholder
-  fallback). New branch: components with an `inlayComponentRef` use the
-  hybrid output — emit the compiled DOM structure plus runtime data fetch
-  code that fills bindings with record data.
-- New: `src/generator/inlay/data-binding.ts` — Given a resolved Inlay
-  template tree with bindings, emit the JavaScript code that fetches the
-  bound record from the Store and inserts values at the binding sites in
-  the static DOM structure.
-- `src/generator/index.ts` — Top-level orchestration; ensure the new
-  generator paths are wired in and any new files are written.
+- `src/types/wizard.ts` — `inlayComponentRef` field
+- `src/app/state/WizardState.ts` — migration if needed
+- `src/app/views/panels/ComponentsPanel.ts` — minimal selector UI
+- New: `src/inlay/resolve.ts`
+- New: `src/generator/inlay/data-binding.ts`
+- `src/generator/inlay/compile.ts` — binding site markers
+- `src/generator/views/ViewPage.ts` — new branch for
+  `inlayComponentRef` components
+- `src/generator/index.ts` — orchestration if needed
 
 ## Implementation Approach
 
-Suggested order:
+Suggested order (all prerequisite specs assumed complete):
 
-1. **Browser compatibility test** — Install `@inlay/render`, try importing
-   it in the wizard, run a trivial render call. If it works, use it. If not,
-   resolve Ambiguity 2 (Cloudflare Worker or custom reimplementation).
-2. **Component discovery** — Build `src/inlay/discovery.ts` standalone first;
-   verify it can fetch components from danabra.mov's PDS and parse out the
-   metadata.
-3. **Primitive expansion** — Extend host-runtime and compile.ts with the
-   primitives needed by at least one real community component (e.g.,
-   ProfileHeader from danabra.mov uses Stack, Row, Avatar, Title, Caption,
-   Maybe, Text — implement those first). Add unit tests for each new primitive
-   in both runtime and compile paths.
-4. **Resolution pipeline** — Build `src/inlay/resolve.ts` that takes an Inlay
-   component AT-URI and returns a resolved primitive tree.
-5. **Data binding generator** — Build `src/generator/inlay/data-binding.ts`
-   that emits runtime fetch+insert code from a resolved tree's binding sites.
-6. **Wire into ViewPage.ts** — Add the new branch for components with an
-   `inlayComponentRef`.
-7. **Type and state changes** — Add `inlayComponentRef` to the Component type;
-   update state migration if needed.
-8. **Minimal selection UI** — Add a basic data-type-first selector to
-   ComponentsPanel that lists compatible Inlay components and stores the
-   selection on the component. Polish deferred to follow-up spec.
-9. **End-to-end verification** — Create a wizard project, attach a real
-   community Inlay component to a wizard component, generate, run the output
-   app, verify live data renders.
+1. **Wizard state + type changes** — add `inlayComponentRef` to the
+   `Component` type and state migration. Unit test persistence
+   round-trip.
+2. **Resolution module** — build `src/inlay/resolve.ts` on top of
+   whatever the spike decided. Unit test against a mocked component
+   record.
+3. **Binding-site markers** — extend `compile.ts` to emit
+   deterministic markers at binding sites.
+4. **Data-binding codegen** — build
+   `src/generator/inlay/data-binding.ts` that emits runtime
+   fetch+insert code from a resolved tree. Unit test against a
+   fixture.
+5. **ViewPage integration** — add the new branch in
+   `src/generator/views/ViewPage.ts`. Generator snapshot test for
+   the output shape.
+6. **Minimal selection UI** — add the attach-component control and
+   picker to `ComponentsPanel`.
+7. **End-to-end verification** — wizard project with a real Profile
+   template; generate; run; log in; verify live data renders.
 
 ## Ambiguity Warnings
 
-1. **When does resolution happen?** — RESOLVED
-   Hybrid approach: resolution at generation time, data fetching at runtime.
-   The generator uses `@inlay/render` (or equivalent) to expand the Inlay
-   template to a fully-resolved primitive tree, then compiles that to code with
-   "holes" for data bindings. The generated app has no `@inlay/render`
-   dependency — it ships vanilla JS that creates the DOM structure (frozen at
-   generation time) and fetches AT Protocol records at runtime to fill in bound
-   values. Components are "frozen" at generation time; regenerating the app
-   picks up any updates to the source Inlay component.
+1. **Hybrid approach at generation time** — RESOLVED
+   Resolution at generation time, data fetching at runtime. The
+   generator resolves the template, compiles to HTML with binding
+   markers, and emits runtime fetch+insert code. The generated app
+   ships vanilla JS and has no `@inlay/render` dependency. Templates
+   are frozen at generation time; regenerating picks up template
+   updates.
 
-2. **Does `@inlay/render` work in the browser?** — PARTIALLY RESOLVED
-   Approach: try `@inlay/render` browser-side first (it runs at generation time
-   in the wizard, which is a browser-based Vite app). If browser use is blocked
-   by Node.js dependencies, the preferred fallback is running resolution
-   server-side in our existing Cloudflare Worker infrastructure. Reimplementing
-   the resolution logic ourselves remains a third option but is not preferred.
-   Final decision deferred until we test browser compatibility during
-   implementation.
+2. **Component browser UX** — PARTIALLY RESOLVED
+   This spec ships a **minimal selector** (compatible list + browse
+   all). A polished browser (search, filtering, preview) is deferred
+   to a follow-up so this spec can focus on the machinery.
 
-3. **Component browser UX** — RESOLVED (partially)
-   Approach: auto-suggest compatible Inlay components based on the component's
-   data type, with a browse fallback for exploration. Designed assuming the
-   Inlay component ecosystem will grow large (thousands of components), so the
-   architecture supports both selection paths.
+3. **Association scope** — RESOLVED
+   Inlay template association is only available on components whose
+   requirement is `do` + dataTypeId (see Architecture Context).
 
-   This spec includes only a **minimal selection interface** sufficient to
-   verify the pipeline works. The polished component browser (search,
-   filtering, preview, mockups) is deferred to a follow-up spec so this spec
-   can focus on the underlying machinery.
-
-4. **What about blocks without `do` requirements?**
-   Card and detail blocks for displaying data need a `do` requirement with a
-   `dataTypeId` to know which record collection to fetch. If a block has no `do`
-   requirement, should the component browser still be available? What data would
-   the component bind to?
-   - _Likely assumption:_ Component association only available on blocks that
-     have a `do` requirement with a `dataTypeId`, since data bindings require
-     knowing the record collection.
-   - _Please confirm or clarify._
-
-5. **Block type vs. component type** — RESOLVED
-   `blockType`/`componentType` becomes obsolete for data-displaying components.
-   What matters is the data type (record collection) the component can display,
-   declared via the Inlay component's `view.accepts` field. Special-case
-   non-data components (menu for navigation, static content for text, future
-   form components for input) remain as distinct component types. After the
-   rename prerequisite, the model is: most components reference an Inlay
-   component and a data type; a few components are special-case types.
-
-6. **Handling components that use unimplemented primitives** — RESOLVED
-   When the generator (or generated app) encounters an Inlay primitive that our
-   host runtime doesn't implement yet, render a visible fallback — a styled
-   warning element showing the unsupported primitive's NSID. Primitive support
-   expands iteratively: when a user picks a community component that needs
-   Cluster, the first generation shows fallbacks where Cluster would be, then
-   we add Cluster support and regenerate. We do not block component selection
-   based on primitive support, and we do not try to implement all 19 primitives
-   upfront.
+4. **Handling unimplemented primitives** — RESOLVED
+   Fallback to a visible warning element showing the primitive's
+   NSID. Primitive support expands iteratively; component selection
+   is not blocked on full primitive coverage. Standardization of
+   this fallback lives in `inlay-primitive-expansion.md`.
 
 ## Integration Boundaries
 
-### AT Protocol PDS (Component Discovery)
-- **Data flowing in:** `at.inlay.component` records from known author PDSes
-- **Expected contract:** `com.atproto.repo.listRecords` with
-  `collection=at.inlay.component`; each record has `view`, `body`, `imports`,
-  `description` fields per Inlay lexicon
-- **Unavailability:** Show "unable to load components" message; blocks can still
-  function without component association (placeholder fallback)
+### Template resolution backend (@inlay/render or fallback)
+- **Data flowing in:** component record (`body`, `view`, `imports`)
+  plus any data needed for binding locations
+- **Data flowing out:** resolved primitive tree with binding
+  locations identified
+- **Expected contract:** `render()`-style API returning resolved
+  tree / primitive nodes, regardless of whether the spike selected
+  `@inlay/render` directly or a fallback
+- **Unavailability:** generation-time only; failure falls back to a
+  placeholder for the affected component without aborting
 
-### @inlay/render (Template Resolution)
-- **Data flowing in:** Component record (body, view, imports)
-- **Data flowing out:** Resolved primitive tree with binding locations identified
-- **Expected contract:** `render()` function returns
-  `{ node, props, context, cache }`; `node === null` means primitive
-- **Unavailability:** Generation-time only; if resolution fails, fall back to
-  placeholder rendering for that block
+### Generated app's Store / Api layer
+- **Data flowing in (at generated-app runtime):** AT Protocol records
+  bound to template components
+- **Expected contract:** the existing typed getters the generator
+  already produces for each record type
+- **Unavailability:** record-fetch failures render a loading/empty
+  state at the binding site (existing Store behavior)
 
 ## How to Verify
 
-1. Open the wizard, create a block with a `do` requirement targeting a record type
-2. Open the component browser, see available Inlay components
-3. Filter to components that render the matching record collection
-4. Select a component (e.g., a Post or ProfileHeader template)
+1. Create a wizard project; add a data type matching a real Inlay
+   template's `view.accepts` (e.g., `app.bsky.actor.profile`)
+2. Add a component with a `do` requirement targeting that data type
+3. Open the component, attach an Inlay template from the selector
+4. Confirm the component card shows the template's name
 5. Generate the app
-6. Run the generated app — verify the block renders live AT Protocol data using
-   the selected component's layout/structure
-7. Verify blocks without component associations still render (placeholder)
-8. Verify changing a block's component regenerates correctly
+6. Run the generated app, log in with the PDS user
+7. Verify the component renders live data using the template's
+   layout
+8. Change the template to a different one; regenerate; verify update
+9. Remove the association; regenerate; verify placeholder fallback
+10. Attach a template that uses a not-yet-implemented primitive;
+    verify visible warning element
