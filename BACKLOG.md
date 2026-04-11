@@ -18,8 +18,7 @@ Pick one item from "Up Next" before starting a coding session.
 - [x] Phase 5: Views Panel — see `.specs/done/views-panel.md`
 - [x] Phase 6: Generate Flow — see `.specs/done/generate-panel.md`
 - [x] Phase 7: Navigation and History Rework — see `.specs/done/phase-7-navigation-history.md`
-- [ ] Phase 8: Cleanup (delete deprecated files, remove old CSS)
-      Full spec: `.specs/active/layout-migration-sidebar-workspace.md`
+- [x] Phase 8: Cleanup — see `.specs/done/phase-8-cleanup.md`
 
 ## Up Next
 
@@ -27,8 +26,6 @@ Pick one item from "Up Next" before starting a coding session.
 
 ### Independent (no blockers)
 
-- [ ] Remove no-views dead code from navigate forms — see `.specs/active/remove-no-views-dead-code.md`
-- [ ] Clean up unused assets (fonts, SVG filters) — see `.specs/active/cleanup-unused-assets.md`
 - [ ] Add Vitest unit tests for generator output — see `.specs/active/001-example-add-tests-for-generators.md`
 - [ ] Add Vitest unit tests for utility functions (text, id, html, nsid)
 
@@ -44,7 +41,6 @@ Pick one item from "Up Next" before starting a coding session.
 - [ ] Wireframe / mockup preview view — see `.specs/active/wireframe-preview-view.md`
 - [ ] Generated code view — see `.specs/active/generated-code-view.md`
 - [ ] AI implementation specs output — see `.specs/active/ai-implementation-specs-output.md`
-- [ ] Add Playwright e2e test for basic wizard flow
 
 ### UX Improvements
 
@@ -59,6 +55,11 @@ Pick one item from "Up Next" before starting a coding session.
 
 <!-- Move completed items here with date -->
 
+- [x] Layout migration — sidebar + workspace (Phases 0–8) — see `.specs/done/layout-migration-sidebar-workspace.md` and `.specs/done/phase-8-cleanup.md` 4/10/26
+- [x] Remove no-views dead code from navigate forms — see `.specs/done/remove-no-views-dead-code.md` 4/10/26
+- [x] Clean up unused assets (fonts, SVG filters) — see `.specs/done/cleanup-unused-assets.md` 4/10/26
+- [x] Add Playwright e2e test for basic wizard flow — `e2e/smoke.spec.ts` 4/10/26
+- [x] Sidebar sections stale on reload — see `.specs/done/sidebar-stale-on-reload.md` 4/10/26
 - [x] Rename blocks to components (prerequisite refactor) — see `.specs/done/rename-blocks-to-components.md` 4/9/26
 - [x] Inlay text blocks (static primitives) — see `.specs/done/inlay-text-blocks.md` 4/7/26
 - [x] Simplify know requirements — see `.specs/done/simplify-know-requirements.md` 4/7/26

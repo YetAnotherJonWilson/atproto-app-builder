@@ -286,43 +286,21 @@ function renderNavSubtypeFields(
   existing?: Requirement,
 ): string {
   const { views } = getWizardState();
-  const hasViews = views.length > 0;
 
   if (navType === 'direct') {
-    return renderDirectLinkFields(views, hasViews, existing);
+    return renderDirectLinkFields(views, existing);
   }
   if (navType === 'menu') {
-    return renderMenuFields(views, hasViews, existing);
+    return renderMenuFields(views, existing);
   }
   // forward-back
-  return renderForwardBackFields(views, hasViews, existing);
+  return renderForwardBackFields(views, existing);
 }
 
 function renderDirectLinkFields(
   views: View[],
-  hasViews: boolean,
   existing?: Requirement,
 ): string {
-  if (!hasViews) {
-    return `
-      <div class="form-hint nav-no-views-hint">Create some views first to set up direct links.</div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>From View</label>
-          <select id="req-nav-from" disabled>
-            <option disabled selected>No views yet</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>To View</label>
-          <select id="req-nav-to" disabled>
-            <option disabled selected>No views yet</option>
-          </select>
-        </div>
-      </div>
-    `;
-  }
-
   const fromView = existing?.fromView ?? '';
   const toView = existing?.toView ?? '';
   const viewOptions = (selected: string) =>
@@ -355,19 +333,8 @@ function renderDirectLinkFields(
 
 function renderMenuFields(
   views: View[],
-  hasViews: boolean,
   existing?: Requirement,
 ): string {
-  if (!hasViews) {
-    return `
-      <div class="form-hint nav-no-views-hint">Create some views first to set up a navigation menu.</div>
-      <div class="form-group">
-        <label>Menu Items</label>
-        <div class="checkbox-list-placeholder">No views yet</div>
-      </div>
-    `;
-  }
-
   const label = existing?.menuLabel ?? '';
   const includeAll = existing?.menuIncludeAllViews !== false; // default true
   const checkedAttr = includeAll ? ' checked' : '';
@@ -417,31 +384,11 @@ function renderMenuFields(
 
 function renderForwardBackFields(
   views: View[],
-  hasViews: boolean,
   existing?: Requirement,
 ): string {
   const controlType = existing?.navControlType ?? 'arrows';
   const fwdText = existing?.buttonForwardText ?? '';
   const backText = existing?.buttonBackText ?? '';
-
-  if (!hasViews) {
-    return `
-      <div class="form-hint nav-no-views-hint">Create some views first to set up forward/back navigation.</div>
-      <div class="form-group">
-        <label>Page Order</label>
-        <div class="checkbox-list-placeholder">No views yet</div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Control Type</label>
-          <select id="req-nav-control-type" disabled>
-            <option value="arrows">Arrows</option>
-            <option value="buttons">Buttons</option>
-          </select>
-        </div>
-      </div>
-    `;
-  }
 
   // Build ordered view list: preserve existing order, filter deleted, append new
   const orderedViews = buildPageOrder(views, existing?.pageOrder);

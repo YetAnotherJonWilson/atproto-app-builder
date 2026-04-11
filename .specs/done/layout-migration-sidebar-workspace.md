@@ -1,7 +1,7 @@
 # Spec: Layout Migration — Sidebar + Workspace (Mockup 3b)
 
-**Status:** draft
-**Date:** 2026-03-14
+**Status:** done
+**Date:** 2026-03-14 (completed 2026-04-10)
 
 ## What
 
@@ -152,15 +152,15 @@ See `requirements-panel.md` for full behavioral spec, including empty-state intr
 - [ ] Handle browser back/forward between sections
 - [ ] Verify: URL reflects current section, browser nav works
 
-### Phase 8: Cleanup
+### Phase 8: Cleanup — see `.specs/done/phase-8-cleanup.md`
 
-- [ ] Delete all deprecated step files
-- [ ] Delete orphaned `DataCollector.ts` if no longer used
-- [ ] Remove step-specific CSS (`.wizard-columns`, `.wizard-column-*`, `.wizard-progress-*`, `.wizard-nav` if replaced)
-- [ ] Remove unused `STEP_NAMES` and progress bar logic from `StepNavigation.ts`
-- [ ] Remove `window.wizardOps` if replaced by event delegation (optional)
-- [ ] Update `index.html` to remove commented-out progress bar HTML
-- [ ] Final build + test pass
+- [x] Delete all deprecated step files
+- [x] Delete orphaned `DataCollector.ts` if no longer used (done in Phase 7)
+- [x] Remove step-specific CSS (`.wizard-columns`, `.wizard-column-*`, `.wizard-progress-*`) — already gone
+- [x] Remove unused `STEP_NAMES` and progress bar logic from `StepNavigation.ts` (done in Phase 7)
+- [ ] Remove `window.wizardOps` if replaced by event delegation (intentionally deferred — optional)
+- [x] Update `index.html` to remove commented-out progress bar HTML
+- [x] Final build + test pass
 
 ---
 

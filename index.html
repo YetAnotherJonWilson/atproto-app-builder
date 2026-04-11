@@ -51,37 +51,12 @@
     </header>
     <main>
       <div id="wizard-container">
-        <!-- Progress Indicator -->
-        <!-- <div class="wizard-progress">
-          <div class="wizard-progress-bar">
-            <div
-              class="wizard-progress-fill"
-              id="wizard-progress-fill"
-              style="width: 0%"
-            ></div>
-          </div>
-          <p class="wizard-progress-text" id="wizard-progress-text">
-            Step 1 of 6: App Information
-          </p>
-        </div> -->
-
-        <!-- Step Container (content changes based on current step) -->
         <div id="wizard-step-content">
           <!-- Dynamic step content inserted here by JavaScript -->
         </div>
 
-        <!-- Navigation Buttons -->
         <div class="wizard-nav">
           <div class="wizard-nav-main">
-            <button
-              type="button"
-              id="wizard-back"
-              class="wizard-button wizard-button-secondary"
-              style="display: none"
-              disabled
-            >
-              Back
-            </button>
             <button
               type="button"
               id="wizard-next"
@@ -416,52 +391,5 @@
 
 
     <div id="tooltip" class="tooltip"></div>
-
-    <!-- SVG filter for rough torn-paper edges.
-         feTurbulence generates fractal noise; feDisplacementMap
-         uses it to distort the edges of any element that references
-         this filter via CSS filter: url(#paint-roughen). -->
-    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
-      <defs>
-        <filter id="paint-roughen">
-          <!-- Fractal noise — type="turbulence" gives a more chaotic,
-               torn look than "fractalNoise". numOctaves controls detail
-               level; baseFrequency controls the scale of the distortion. -->
-          <feTurbulence
-            type="turbulence"
-            baseFrequency="0.04"
-            numOctaves="4"
-            seed="2"
-            result="noise"
-          />
-          <!-- Displace the source graphic's pixels using the noise.
-               scale = how far pixels get pushed = how jagged the edges are. -->
-          <feDisplacementMap
-            in="SourceGraphic"
-            in2="noise"
-            scale="22"
-            xChannelSelector="R"
-            yChannelSelector="G"
-          />
-        </filter>
-        <!-- A second, more aggressive filter for the smaller splatter bits -->
-        <filter id="paint-roughen-heavy">
-          <feTurbulence
-            type="turbulence"
-            baseFrequency="0.05"
-            numOctaves="4"
-            seed="7"
-            result="noise"
-          />
-          <feDisplacementMap
-            in="SourceGraphic"
-            in2="noise"
-            scale="9"
-            xChannelSelector="R"
-            yChannelSelector="G"
-          />
-        </filter>
-      </defs>
-    </svg>
   </body>
 </html>

@@ -14,7 +14,6 @@ import {
   setWizardState,
   initializeWizardState,
   getWizardState,
-  saveWizardState,
 } from '../../src/app/state/WizardState';
 
 describe('WizardState PDS tracking', () => {
@@ -128,21 +127,4 @@ describe('WizardState PDS tracking', () => {
     });
   });
 
-  describe('saveWizardState save feedback', () => {
-    it('shows "Progress saved!" when logged out', () => {
-      document.body.innerHTML = '<p id="wizard-progress-text">Step 1</p>';
-      setLoggedIn(false);
-      const state = getWizardState();
-      saveWizardState(state);
-      expect(document.getElementById('wizard-progress-text')!.textContent).toBe('Progress saved!');
-    });
-
-    it('does NOT show "Progress saved!" when logged in', () => {
-      document.body.innerHTML = '<p id="wizard-progress-text">Step 1</p>';
-      setLoggedIn(true);
-      const state = getWizardState();
-      saveWizardState(state);
-      expect(document.getElementById('wizard-progress-text')!.textContent).toBe('Step 1');
-    });
-  });
 });

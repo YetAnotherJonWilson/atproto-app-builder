@@ -338,12 +338,6 @@ export function getWizardState(): WizardState {
 export function saveWizardState(state: WizardState): void {
   state.lastSaved = new Date().toISOString();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  // Only show "Progress saved!" when logged out — when logged in, the
-  // sidebar save button handles PDS save feedback instead.
-  if (!_isLoggedIn) {
-    showSaveConfirmation();
-  }
-  // Trigger debounced PDS auto-save if registered
   _onSaveCallback?.();
 }
 
@@ -396,13 +390,3 @@ export function hasMeaningfulState(state: WizardState): boolean {
   return hasAppInfo || hasRecordTypes || hasQueryMethods || hasProcedureMethods || hasRequirements;
 }
 
-export function showSaveConfirmation(): void {
-  const progressText = document.getElementById('wizard-progress-text');
-  if (!progressText) return;
-
-  const originalText = progressText.textContent;
-  progressText.textContent = 'Progress saved!';
-  setTimeout(() => {
-    progressText.textContent = originalText;
-  }, 2000);
-}

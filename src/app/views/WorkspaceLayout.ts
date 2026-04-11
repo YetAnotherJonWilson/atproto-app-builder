@@ -205,25 +205,27 @@ export function switchSection(
     if (bodyEl) bodyEl.innerHTML = config.render();
   }
 
-  // Wire panel-specific event handlers
+  // Wire panel-specific event handlers for the active section only —
+  // these bind listeners to freshly-rendered DOM.
   if (section === 'requirements') {
     wireRequirementsPanel();
-    updateRequirementsSidebar();
   } else if (section === 'data') {
     wireDataPanel();
   } else if (section === 'components') {
     wireComponentsPanel();
-    updateComponentsSidebar();
   } else if (section === 'views') {
     wireViewsPanel();
-    updateViewsSidebar();
   } else if (section === 'generate') {
     wireGeneratePanel();
-    updateGenerateSidebar();
   }
 
-  // Always keep data sidebar in sync (RecordTypes may be seeded from requirements)
+  // Keep every sidebar section in sync with state on every switch, so a
+  // reload or cross-section navigation always reflects saved state.
+  updateRequirementsSidebar();
   updateDataSidebar();
+  updateComponentsSidebar();
+  updateViewsSidebar();
+  updateGenerateSidebar();
 
   // Scroll accordion section into view on narrow viewports
   if (narrow && accordionSection?.scrollIntoView) {

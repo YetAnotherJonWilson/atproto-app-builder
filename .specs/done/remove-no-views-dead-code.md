@@ -1,7 +1,7 @@
 # Spec: Remove No-Views Dead Code from Navigate Forms
 
-**Status:** draft
-**Date:** 2026-03-23
+**Status:** done
+**Date:** 2026-03-23 (completed 2026-04-10)
 
 ## What
 

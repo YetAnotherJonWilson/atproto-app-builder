@@ -70,9 +70,7 @@ export function initializeApp(): void {
   // Initialize browser history management for step navigation
   initializeHistoryManager();
 
-  // Wire up the landing-page "Start Building" button. The back button
-  // (#wizard-back) is hidden in HTML and unused in the sidebar layout;
-  // it will be removed in Phase 8.
+  // Wire up the landing-page "Start Building" button.
   const nextBtn = document.getElementById('wizard-next');
   if (nextBtn) {
     nextBtn.addEventListener('click', () => {
