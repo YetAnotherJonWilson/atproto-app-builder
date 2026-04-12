@@ -15,6 +15,7 @@
   "dependencies": {
     "@atproto/api": "^0.19.3",
     "@atproto/oauth-client-browser": "^0.3.41",
+    "@inlay/render": "^0.3.1",
     "jszip": "^3.10.1"
   },
   "devDependencies": {

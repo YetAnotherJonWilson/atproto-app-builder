@@ -145,7 +145,7 @@ export async function saveProject(
         rkey,
       });
       const existingVal = existing.data.value as Record<string, unknown>;
-      record.createdAt = (existingVal.createdAt as string) || now;
+      record.createdAt = (existingVal.createdAt as typeof now) || now;
     } catch {
       // If we can't read the existing record, just use now for createdAt
     }

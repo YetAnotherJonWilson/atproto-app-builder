@@ -57,10 +57,13 @@ Migration is tracked in
 
 ## Prerequisites
 
-- `inlay-render-browser-spike.md` — decision on whether
-  `@inlay/render` runs in the browser, and if not, the fallback
-  mechanism chosen. This spec's resolution module sits on top of the
-  outcome.
+- `inlay-render-browser-spike.md` — **complete (2026-04-11).** Outcome:
+  `@inlay/render` works in the browser on the primitive-type path;
+  `@inlay/render ^0.3.1` is retained as a wizard dependency. This spec's
+  resolution module proceeds with browser-side resolution as the default.
+  See `.specs/done/inlay-render-browser-spike.md` for caveats (bundle
+  impact, `@atproto/common-web` bump, and the open question of whether
+  `Resolver` I/O works from the browser).
 - `inlay-component-discovery.md` — discovery module returning
   metadata-tagged components from known authors, consumed by the
   selection UI.
