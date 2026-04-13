@@ -40,7 +40,6 @@ Pick one item from "Up Next" before starting a coding session.
   - [x] `@inlay/render` browser compatibility spike — see `.specs/done/inlay-render-browser-spike.md` 4/11/26
   - [x] Inlay component discovery (parallel with primitive expansion) — see `.specs/done/inlay-component-discovery.md` 4/11/26
   - [ ] Inlay primitive expansion (parallel with discovery) — see `.specs/active/inlay-primitive-expansion.md`
-    - **Next session: refine spec first** — lock the target component cluster before coding. Discovery confirmed ProfileHeader + AviHandle (and Profile, Post, Repost, NowPlaying, Connection, ProfileReplies/Posts/Media/Plays) from danabra.mov; dansshadow re-exports a subset. Pick a small starting cluster that shares primitives.
   - [ ] Inlay template components — integration (depends on above three) — see `.specs/active/inlay-template-components.md`
 - [ ] Wizard-built primitive trees (navigate/non-data requirements) — see `.specs/active/wizard-built-primitive-trees.md`
 - [ ] Menu component primitive-tree migration — see `.specs/active/menu-component-primitive-tree-migration.md`

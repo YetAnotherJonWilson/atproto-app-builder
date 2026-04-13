@@ -1,7 +1,7 @@
 # Spec: Inlay Primitive Expansion
 
 **Status:** ready
-**Date:** 2026-04-11
+**Date:** 2026-04-12 (target set locked)
 
 ## What
 
@@ -37,39 +37,73 @@ the browser spike.
 
 ## Target Set
 
-Driven by what real community components need. ProfileHeader
-(danabra.mov) is the first target and exercises: Stack, Row, Avatar,
-Title, Caption, Maybe, Text. Stack, Title, Caption, and Text already
-exist from Option A, leaving: **Avatar, Row, Maybe** as the minimum
-new primitives.
+Locked by surveying danabra.mov's 10 template components (the
+discovery spec's first author). Already supported from Option A:
+Stack, Row, Title, Heading, Text, Caption, Fill.
 
-Expand from there to cover additional target components as they're
-selected: Blob, Cover, Grid, Clip, Link, Timestamp, Loading,
-Fragment. The full set is not required upfront — unimplemented
-primitives render a visible fallback, and support grows
-iteratively.
+**Starting cluster (this spec):** NowPlaying, Post, AviHandle,
+ProfileHeader. These four share primitives heavily and together
+require exactly four new primitives:
+
+- **Avatar** — used by AviHandle, ProfileHeader
+- **Cover** — used by ProfileHeader
+- **Link** — used by Post, AviHandle
+- **Maybe** — used by Post, AviHandle, ProfileHeader
+
+NowPlaying needs zero new primitives (Caption only) and acts as a
+smoke test that lets the integration spec land before any primitive
+work ships. The cluster deliberately avoids interactive/complex
+primitives so the pipeline can be proven before scope grows.
+
+**Deferred (next primitive batch, tracked under this spec's
+follow-ups):** Timestamp (Repost, Connection); List, Grid, Tabs,
+Loading (Profile, ProfilePosts/Replies/Plays/Media). Tabs and List
+pull in real client-side behavior that is explicitly out of scope
+below, so that cluster waits until we're ready to tackle
+interactivity.
+
+Unimplemented primitives render a visible fallback, so additional
+components can be attached iteratively without blocking on full
+primitive coverage.
 
 ## Acceptance Criteria
 
 - [ ] **`src/inlay/element.ts` NSID constants** — extended to include
-  each primitive implemented in this spec.
+  each primitive implemented in this spec. `KNOWN_PRIMITIVES` in
+  `host-runtime.ts` is derived from `NSID` via `Object.values`, so
+  adding an entry here automatically registers the primitive with the
+  runtime — no separate update needed.
 
 - [ ] **`src/inlay/host-runtime.ts`** — extended:
-  - `KNOWN_PRIMITIVES` updated
   - `ARIA_ROLES` updated where relevant
   - `ATTRIBUTE_PROPS` updated for any new prop shapes
-  - Special-case rendering implemented where the primitive needs
-    more than a generic tag + children (Avatar needs `<img>`; Link
-    needs `<a>` wrapper; Maybe's fallback logic; Fragment's no-
-    wrapper behavior)
+  - Special-case rendering implemented for each primitive that
+    needs more than a generic tag + children:
+    - **Avatar** — renders an `<img>` inside the custom element;
+      accepts a `src` prop (static URL in tests; the integration
+      spec owns blob-ref → URL translation). `alt` is a
+      pass-through prop.
+    - **Cover** — same shape as Avatar (banner-sized image);
+      separate primitive because styling and aspect ratio differ.
+    - **Link** — wraps children in an `<a href>`. External links
+      (absolute URLs) get `target="_blank" rel="noopener
+      noreferrer"`; non-absolute hrefs are passed through as-is
+      (the integration spec decides routing conventions).
+    - **Maybe** — conditional wrapper. Renders its `then` child if
+      the `when` prop is truthy, otherwise renders the `else`
+      child (or nothing if absent). Tests must cover both branches
+      and the missing-`else` case. Takes no ARIA role; it
+      contributes no element of its own when its branch is empty.
 
 - [ ] **`src/generator/inlay/compile.ts`** — mirrors all host-runtime
   extensions so compile-time output matches runtime DOM. Any
   divergence is either intentional (and documented) or a bug.
 
-- [ ] **CSS for new primitives** — styles added to whichever
-  stylesheet hosts current Inlay primitive CSS (wizard and/or
-  generated-app), using existing conventions.
+- [ ] **CSS for new primitives** — rules added to
+  `styles/inlay-primitives.css` (the single source of truth;
+  `src/generator/templates/Styles.ts` inlines this file at build
+  time via Vite `?raw` import, so no generator-side CSS edits are
+  needed).
 
 - [ ] **Fallback for unimplemented primitives** — when either
   runtime or compile encounters a primitive NSID not in
@@ -103,22 +137,17 @@ iteratively.
 - `src/inlay/element.ts` — NSID constants
 - `src/inlay/host-runtime.ts` — runtime rendering
 - `src/generator/inlay/compile.ts` — compile-time rendering
-- `styles/…` or `src/generator/templates/Styles.ts` — CSS (location
-  follows existing patterns)
+- `styles/inlay-primitives.css` — CSS for new primitives (single
+  source, consumed by both wizard and generator)
 - `tests/inlay/…` — unit tests per primitive
 
 ## Ambiguity Warnings
 
-1. **CSS location** — wizard-side styles live in `styles/`, generated-
-   app styles are emitted by `src/generator/templates/Styles.ts`.
-   Should new primitive CSS be duplicated in both or extracted?
-   Default: follow the convention already used by current Inlay
-   primitive CSS.
-
-2. **Target set beyond ProfileHeader** — this spec anchors on
-   ProfileHeader as the first concrete target, but the integration
-   spec may pick a different first component. Confirm the full
-   target set when the integration spec begins and batch additions.
+None. Primitive CSS has a single source of truth at
+`styles/inlay-primitives.css`; `src/generator/templates/Styles.ts`
+inlines it via Vite `?raw` import. New primitive CSS is added to that
+one file and automatically flows to both wizard and generated-app
+output.
 
 ## How to Verify
 
