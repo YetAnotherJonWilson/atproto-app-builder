@@ -32,8 +32,21 @@ const ATTRIBUTE_PROPS = new Set([
   'variant',
 ]);
 
-/** Known primitive NSIDs — anything outside this set is an error. */
+/** Known primitive NSIDs — anything outside this set falls back to an unknown-primitive warning. */
 const KNOWN_PRIMITIVES = new Set<string>(Object.values(NSID));
+
+/** Absolute URL = treated as external (gets target=_blank). */
+function isAbsoluteUrl(href: string): boolean {
+  return /^https?:\/\//i.test(href);
+}
+
+/** Standardized warning element for primitives outside KNOWN_PRIMITIVES. */
+function renderUnknownPrimitive(nsid: string): HTMLElement {
+  const errEl = document.createElement('div');
+  errEl.className = 'inlay-unknown-primitive';
+  errEl.textContent = `Unknown Inlay primitive: ${nsid}`;
+  return errEl;
+}
 
 /**
  * Render an InlayElement tree to a DOM element.
@@ -41,10 +54,11 @@ const KNOWN_PRIMITIVES = new Set<string>(Object.values(NSID));
  */
 export function renderToDOM(element: InlayElement): HTMLElement {
   if (!KNOWN_PRIMITIVES.has(element.type)) {
-    const errEl = document.createElement('div');
-    errEl.className = 'inlay-error';
-    errEl.textContent = `Unknown Inlay primitive: ${element.type}`;
-    return errEl;
+    return renderUnknownPrimitive(element.type);
+  }
+
+  if (element.type === NSID.Maybe) {
+    return renderMaybe(element);
   }
 
   const tag = nsidToTag(element.type);
@@ -66,6 +80,16 @@ export function renderToDOM(element: InlayElement): HTMLElement {
     }
   }
 
+  if (element.type === NSID.Avatar || element.type === NSID.Cover) {
+    renderImageInto(el, element);
+    return el;
+  }
+
+  if (element.type === NSID.Link) {
+    renderLinkInto(el, element);
+    return el;
+  }
+
   // Render children
   const children = element.props.children;
   if (children != null) {
@@ -73,6 +97,43 @@ export function renderToDOM(element: InlayElement): HTMLElement {
   }
 
   return el;
+}
+
+function renderImageInto(parent: HTMLElement, element: InlayElement): void {
+  const src = element.props.src;
+  const alt = element.props.alt;
+  const img = document.createElement('img');
+  if (typeof src === 'string') img.setAttribute('src', src);
+  img.setAttribute('alt', typeof alt === 'string' ? alt : '');
+  parent.appendChild(img);
+}
+
+function renderLinkInto(parent: HTMLElement, element: InlayElement): void {
+  const href = element.props.href;
+  const a = document.createElement('a');
+  if (typeof href === 'string') {
+    a.setAttribute('href', href);
+    if (isAbsoluteUrl(href)) {
+      a.setAttribute('target', '_blank');
+      a.setAttribute('rel', 'noopener noreferrer');
+    }
+  }
+  const children = element.props.children;
+  if (children != null) {
+    renderChildren(a, children);
+  }
+  parent.appendChild(a);
+}
+
+function renderMaybe(element: InlayElement): HTMLElement {
+  const wrapper = document.createElement(nsidToTag(NSID.Maybe));
+  const branch = element.props.when ? element.props.then : element.props.else;
+  if (isInlayElement(branch)) {
+    wrapper.appendChild(renderToDOM(branch));
+  } else if (typeof branch === 'string') {
+    wrapper.appendChild(document.createTextNode(branch));
+  }
+  return wrapper;
 }
 
 function renderChildren(parent: HTMLElement, children: unknown): void {

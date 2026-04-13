@@ -139,13 +139,71 @@ org-atsui-stack[variant="banner"] org-atsui-caption {
   color: #cbd5e1;
 }
 
-/* ── Error element ─────────────────────────────────────────────────── */
+/* ── Avatar ────────────────────────────────────────────────────────── */
 
-.inlay-error {
-  color: #dc2626;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+org-atsui-avatar {
+  display: inline-flex;
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #e5e7eb;
+}
+
+org-atsui-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ── Cover ─────────────────────────────────────────────────────────── */
+
+org-atsui-cover {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 1;
+  overflow: hidden;
+  background: #e5e7eb;
+}
+
+org-atsui-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ── Link ──────────────────────────────────────────────────────────── */
+
+org-atsui-link {
+  display: inline;
+}
+
+org-atsui-link a {
+  color: inherit;
+  text-decoration: none;
+}
+
+org-atsui-link a:hover {
+  text-decoration: underline;
+}
+
+/* ── Maybe ─────────────────────────────────────────────────────────── */
+
+org-atsui-maybe {
+  display: contents;
+}
+
+/* ── Unknown primitive (fallback warning) ──────────────────────────── */
+
+.inlay-unknown-primitive {
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
   border-radius: 4px;
   padding: 8px 12px;
   font-size: 0.875rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }

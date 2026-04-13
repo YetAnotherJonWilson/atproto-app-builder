@@ -67,4 +67,98 @@ describe('compileToHtml()', () => {
     const html = compileToHtml(el(NSID.Fill, {}));
     expect(html).toBe('<org-atsui-fill></org-atsui-fill>');
   });
+
+  describe('Avatar', () => {
+    it('compiles with <img> child carrying src + alt', () => {
+      const html = compileToHtml(el(NSID.Avatar, { src: 'https://example.com/a.png', alt: 'Alice' }));
+      expect(html).toBe('<org-atsui-avatar><img src="https://example.com/a.png" alt="Alice"></org-atsui-avatar>');
+    });
+
+    it('defaults alt to empty string when omitted', () => {
+      const html = compileToHtml(el(NSID.Avatar, { src: 'https://example.com/a.png' }));
+      expect(html).toBe('<org-atsui-avatar><img src="https://example.com/a.png" alt=""></org-atsui-avatar>');
+    });
+
+    it('escapes src and alt to prevent attribute injection', () => {
+      const html = compileToHtml(
+        el(NSID.Avatar, { src: 'https://x.com/"><script>', alt: '"<>&' }),
+      );
+      expect(html).not.toContain('<script>');
+      expect(html).toContain('&quot;');
+      expect(html).toContain('&amp;');
+    });
+  });
+
+  describe('Cover', () => {
+    it('compiles with <img> child', () => {
+      const html = compileToHtml(el(NSID.Cover, { src: 'https://example.com/b.jpg', alt: 'banner' }));
+      expect(html).toBe('<org-atsui-cover><img src="https://example.com/b.jpg" alt="banner"></org-atsui-cover>');
+    });
+  });
+
+  describe('Link', () => {
+    it('absolute URLs get target="_blank" rel="noopener noreferrer"', () => {
+      const html = compileToHtml(
+        el(NSID.Link, { href: 'https://example.com' }, el(NSID.Text, {}, 'Open')),
+      );
+      expect(html).toBe(
+        '<org-atsui-link><a href="https://example.com" target="_blank" rel="noopener noreferrer"><org-atsui-text role="paragraph">Open</org-atsui-text></a></org-atsui-link>',
+      );
+    });
+
+    it('non-absolute hrefs are passed through without target/rel', () => {
+      const html = compileToHtml(el(NSID.Link, { href: '/profile/alice' }, 'Profile'));
+      expect(html).toBe('<org-atsui-link><a href="/profile/alice">Profile</a></org-atsui-link>');
+    });
+
+    it('escapes href to prevent attribute injection', () => {
+      const html = compileToHtml(el(NSID.Link, { href: '"><script>alert(1)</script>' }, 'x'));
+      expect(html).not.toContain('<script>');
+      expect(html).toContain('&quot;');
+    });
+  });
+
+  describe('Maybe', () => {
+    it('renders the then branch when when is truthy', () => {
+      const html = compileToHtml(
+        el(NSID.Maybe, {
+          when: true,
+          then: el(NSID.Text, {}, 'shown'),
+          else: el(NSID.Text, {}, 'hidden'),
+        }),
+      );
+      expect(html).toBe('<org-atsui-maybe><org-atsui-text role="paragraph">shown</org-atsui-text></org-atsui-maybe>');
+    });
+
+    it('renders the else branch when when is falsy', () => {
+      const html = compileToHtml(
+        el(NSID.Maybe, {
+          when: false,
+          then: el(NSID.Text, {}, 'shown'),
+          else: el(NSID.Text, {}, 'fallback'),
+        }),
+      );
+      expect(html).toBe('<org-atsui-maybe><org-atsui-text role="paragraph">fallback</org-atsui-text></org-atsui-maybe>');
+    });
+
+    it('renders empty when when is falsy and else is missing', () => {
+      const html = compileToHtml(
+        el(NSID.Maybe, { when: false, then: el(NSID.Text, {}, 'shown') }),
+      );
+      expect(html).toBe('<org-atsui-maybe></org-atsui-maybe>');
+    });
+  });
+
+  describe('unknown primitive fallback', () => {
+    it('emits a visible warning element with the NSID', () => {
+      const html = compileToHtml({ type: 'org.atsui.NotReal', props: {} });
+      expect(html).toBe('<div class="inlay-unknown-primitive">Unknown Inlay primitive: org.atsui.NotReal</div>');
+    });
+
+    it('escapes the NSID in the fallback warning', () => {
+      const html = compileToHtml({ type: '<script>', props: {} });
+      expect(html).not.toContain('<script>');
+      expect(html).toContain('&lt;script&gt;');
+    });
+  });
 });

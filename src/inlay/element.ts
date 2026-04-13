@@ -42,4 +42,8 @@ export const NSID = {
   Text: 'org.atsui.Text',
   Caption: 'org.atsui.Caption',
   Fill: 'org.atsui.Fill',
+  Avatar: 'org.atsui.Avatar',
+  Cover: 'org.atsui.Cover',
+  Link: 'org.atsui.Link',
+  Maybe: 'org.atsui.Maybe',
 } as const;

@@ -39,7 +39,7 @@ Pick one item from "Up Next" before starting a coding session.
 - [ ] Inlay Option B — do in dependency order:
   - [x] `@inlay/render` browser compatibility spike — see `.specs/done/inlay-render-browser-spike.md` 4/11/26
   - [x] Inlay component discovery (parallel with primitive expansion) — see `.specs/done/inlay-component-discovery.md` 4/11/26
-  - [ ] Inlay primitive expansion (parallel with discovery) — see `.specs/active/inlay-primitive-expansion.md`
+  - [x] Inlay primitive expansion (parallel with discovery) — see `.specs/done/inlay-primitive-expansion.md` 4/13/26
   - [ ] Inlay template components — integration (depends on above three) — see `.specs/active/inlay-template-components.md`
 - [ ] Wizard-built primitive trees (navigate/non-data requirements) — see `.specs/active/wizard-built-primitive-trees.md`
 - [ ] Menu component primitive-tree migration — see `.specs/active/menu-component-primitive-tree-migration.md`
@@ -61,6 +61,7 @@ Pick one item from "Up Next" before starting a coding session.
 
 <!-- Move completed items here with date -->
 
+- [x] Inlay primitive expansion — see `.specs/done/inlay-primitive-expansion.md` 4/13/26
 - [x] Inlay component discovery — see `.specs/done/inlay-component-discovery.md` 4/11/26
 - [x] `@inlay/render` browser compatibility spike — see `.specs/done/inlay-render-browser-spike.md` 4/11/26
 - [x] Layout migration — sidebar + workspace (Phases 0–8) — see `.specs/done/layout-migration-sidebar-workspace.md` and `.specs/done/phase-8-cleanup.md` 4/10/26
