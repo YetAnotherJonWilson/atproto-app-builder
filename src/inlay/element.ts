@@ -17,10 +17,18 @@ export function el(
   props?: Record<string, unknown>,
   ...children: (InlayElement | string)[]
 ): InlayElement {
-  const resolvedChildren = children.length === 1 ? children[0] : children.length > 0 ? children : undefined;
+  const resolvedChildren =
+    children.length === 1
+      ? children[0]
+      : children.length > 0
+        ? children
+        : undefined;
   return {
     type,
-    props: { ...props, ...(resolvedChildren !== undefined ? { children: resolvedChildren } : {}) },
+    props: {
+      ...props,
+      ...(resolvedChildren !== undefined ? { children: resolvedChildren } : {}),
+    },
   };
 }
 

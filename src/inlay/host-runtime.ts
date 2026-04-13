@@ -6,7 +6,7 @@
  * in the app builder (live preview) and by the generator (compile-time).
  */
 
-import type { InlayElement } from './element';
+import { NSID, type InlayElement } from './element';
 
 /** Convert NSID to custom element tag name: "org.atsui.Stack" → "org-atsui-stack" */
 export function nsidToTag(nsid: string): string {
@@ -22,18 +22,18 @@ const ARIA_ROLES: Record<string, Record<string, string>> = {
 };
 
 /** Props that map to HTML attributes on the custom element. */
-const ATTRIBUTE_PROPS = new Set(['gap', 'align', 'justify', 'inset', 'sticky', 'separator', 'variant']);
+const ATTRIBUTE_PROPS = new Set([
+  'gap',
+  'align',
+  'justify',
+  'inset',
+  'sticky',
+  'separator',
+  'variant',
+]);
 
 /** Known primitive NSIDs — anything outside this set is an error. */
-const KNOWN_PRIMITIVES = new Set([
-  'org.atsui.Stack',
-  'org.atsui.Row',
-  'org.atsui.Title',
-  'org.atsui.Heading',
-  'org.atsui.Text',
-  'org.atsui.Caption',
-  'org.atsui.Fill',
-]);
+const KNOWN_PRIMITIVES = new Set<string>(Object.values(NSID));
 
 /**
  * Render an InlayElement tree to a DOM element.
