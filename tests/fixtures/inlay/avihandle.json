@@ -1,0 +1,116 @@
+{
+  "uri": "at://did:plc:rm4mmytequowusm6smpw53ez/at.inlay.component/mov.danabra.AviHandle",
+  "cid": "bafyreig76iu56cpgioqj4vplmr4m75uwsapvksojbacxzgyqccsnwhjbui",
+  "value": {
+    "body": {
+      "node": {
+        "$": "$",
+        "type": "org.atsui.Link",
+        "props": {
+          "uri": {
+            "$": "$",
+            "type": "at.inlay.Binding",
+            "props": {
+              "path": ["props", "uri"]
+            }
+          },
+          "children": [
+            {
+              "$": "$",
+              "key": "0",
+              "type": "org.atsui.Row",
+              "props": {
+                "children": [
+                  {
+                    "$": "$",
+                    "key": "0",
+                    "type": "org.atsui.Avatar",
+                    "props": {
+                      "did": {
+                        "$": "$",
+                        "type": "at.inlay.Binding",
+                        "props": {
+                          "path": ["props", "uri", "$did"]
+                        }
+                      },
+                      "src": {
+                        "$": "$",
+                        "type": "at.inlay.Binding",
+                        "props": {
+                          "path": ["record", "avatar"]
+                        }
+                      },
+                      "size": "small"
+                    }
+                  },
+                  {
+                    "$": "$",
+                    "key": "1",
+                    "type": "at.inlay.Maybe",
+                    "props": {
+                      "children": [
+                        {
+                          "$": "$",
+                          "key": "0",
+                          "type": "org.atsui.Heading",
+                          "props": {
+                            "children": [
+                              {
+                                "$": "$",
+                                "key": "0",
+                                "type": "at.inlay.Binding",
+                                "props": {
+                                  "path": ["record", "displayName"]
+                                }
+                              },
+                              " PhD"
+                            ]
+                          }
+                        }
+                      ],
+                      "fallback": {
+                        "$": "$",
+                        "type": "org.atsui.Heading",
+                        "props": {
+                          "children": [
+                            {
+                              "$": "$",
+                              "key": "0",
+                              "type": "at.inlay.Binding",
+                              "props": {
+                                "path": ["props", "uri", "$did"]
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "$type": "at.inlay.component#bodyTemplate"
+    },
+    "view": {
+      "prop": "uri",
+      "$type": "at.inlay.component#view",
+      "accepts": [
+        {
+          "rkey": "self",
+          "$type": "at.inlay.component#viewRecord",
+          "collection": "app.bsky.actor.profile"
+        }
+      ]
+    },
+    "$type": "at.inlay.component",
+    "imports": [
+      "did:plc:mdg3w2kpadcyxy33pizokzf3",
+      "did:plc:e4fjueijznwqm2yxvt7q4mba",
+      "did:plc:fpruhuo22xkm5o7ttr2ktxdo"
+    ],
+    "createdAt": "2026-03-29T20:46:16.353Z"
+  }
+}

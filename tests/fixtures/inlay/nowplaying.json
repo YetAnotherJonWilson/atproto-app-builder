@@ -1,0 +1,52 @@
+{
+  "uri": "at://did:plc:fpruhuo22xkm5o7ttr2ktxdo/at.inlay.component/mov.danabra.NowPlaying",
+  "cid": "bafyreicx4yqtqljbb2ls2a4at274sz53arxmjdx6trim4kmuezn2ithwke",
+  "value": {
+    "body": {
+      "node": {
+        "$": "$",
+        "type": "org.atsui.Caption",
+        "props": {
+          "children": [
+            {
+              "$": "$",
+              "key": "0",
+              "type": "at.inlay.Binding",
+              "props": {
+                "path": ["record", "item", "artists", "0", "artistName"]
+              }
+            },
+            " – ",
+            {
+              "$": "$",
+              "key": "2",
+              "type": "at.inlay.Binding",
+              "props": {
+                "path": ["record", "item", "trackName"]
+              }
+            }
+          ]
+        }
+      },
+      "$type": "at.inlay.component#bodyTemplate"
+    },
+    "view": {
+      "prop": "uri",
+      "$type": "at.inlay.component#view",
+      "accepts": [
+        {
+          "rkey": "self",
+          "$type": "at.inlay.component#viewRecord",
+          "collection": "fm.teal.alpha.actor.status"
+        }
+      ]
+    },
+    "$type": "at.inlay.component",
+    "imports": [
+      "did:plc:mdg3w2kpadcyxy33pizokzf3",
+      "did:plc:e4fjueijznwqm2yxvt7q4mba",
+      "did:plc:fpruhuo22xkm5o7ttr2ktxdo"
+    ],
+    "createdAt": "2026-03-24T01:29:08.511Z"
+  }
+}
