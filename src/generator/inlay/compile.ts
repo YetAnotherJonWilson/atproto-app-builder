@@ -16,7 +16,7 @@ const ARIA_ROLES: Record<string, Record<string, string>> = {
   'org.atsui.Caption': { role: 'note' },
 };
 
-const ATTRIBUTE_PROPS = new Set(['gap', 'align', 'justify', 'inset', 'sticky', 'separator', 'variant']);
+const ATTRIBUTE_PROPS = new Set(['gap', 'align', 'justify', 'inset', 'sticky', 'separator', 'variant', 'size']);
 
 /** Known primitive NSIDs — must match host-runtime.ts. */
 const KNOWN_PRIMITIVES = new Set<string>(Object.values(NSID));
@@ -29,8 +29,8 @@ function escapeHtml(str: string): string {
     .replace(/"/g, '&quot;');
 }
 
-function isAbsoluteUrl(href: string): boolean {
-  return /^https?:\/\//i.test(href);
+function isAbsoluteUrl(uri: string): boolean {
+  return /^https?:\/\//i.test(uri);
 }
 
 function compileUnknownPrimitive(nsid: string): string {
@@ -95,11 +95,11 @@ function compileImg(element: InlayElement): string {
 }
 
 function compileLink(element: InlayElement): string {
-  const href = element.props.href;
+  const uri = element.props.uri;
   const attrs: string[] = [];
-  if (typeof href === 'string') {
-    attrs.push(`href="${escapeHtml(href)}"`);
-    if (isAbsoluteUrl(href)) {
+  if (typeof uri === 'string') {
+    attrs.push(`href="${escapeHtml(uri)}"`);
+    if (isAbsoluteUrl(uri)) {
       attrs.push('target="_blank"');
       attrs.push('rel="noopener noreferrer"');
     }

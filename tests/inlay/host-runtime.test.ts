@@ -36,9 +36,9 @@ describe('renderToDOM() — Cover', () => {
 });
 
 describe('renderToDOM() — Link', () => {
-  it('wraps children in an <a href> with absolute URL → external link attrs', () => {
+  it('wraps children in an <a> with absolute URL → external link attrs', () => {
     const dom = renderToDOM(
-      el(NSID.Link, { href: 'https://example.com' }, el(NSID.Text, {}, 'Open')),
+      el(NSID.Link, { uri: 'https://example.com' }, el(NSID.Text, {}, 'Open')),
     );
     expect(dom.tagName.toLowerCase()).toBe('org-atsui-link');
     const a = dom.querySelector('a')!;
@@ -48,8 +48,8 @@ describe('renderToDOM() — Link', () => {
     expect(a.querySelector('org-atsui-text')!.textContent).toBe('Open');
   });
 
-  it('passes non-absolute href through without target/rel', () => {
-    const dom = renderToDOM(el(NSID.Link, { href: '/profile/alice' }, 'Profile'));
+  it('passes non-absolute uri through without target/rel', () => {
+    const dom = renderToDOM(el(NSID.Link, { uri: '/profile/alice' }, 'Profile'));
     const a = dom.querySelector('a')!;
     expect(a.getAttribute('href')).toBe('/profile/alice');
     expect(a.hasAttribute('target')).toBe(false);
@@ -132,11 +132,11 @@ describe('runtime ↔ compile parity', () => {
     },
     {
       name: 'Link external',
-      input: el(NSID.Link, { href: 'https://example.com' }, el(NSID.Text, {}, 'Open')),
+      input: el(NSID.Link, { uri: 'https://example.com' }, el(NSID.Text, {}, 'Open')),
     },
     {
       name: 'Link internal',
-      input: el(NSID.Link, { href: '/profile/alice' }, 'Profile'),
+      input: el(NSID.Link, { uri: '/profile/alice' }, 'Profile'),
     },
     {
       name: 'Maybe truthy then',

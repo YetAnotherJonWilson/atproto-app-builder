@@ -30,14 +30,15 @@ const ATTRIBUTE_PROPS = new Set([
   'sticky',
   'separator',
   'variant',
+  'size',
 ]);
 
 /** Known primitive NSIDs — anything outside this set falls back to an unknown-primitive warning. */
 const KNOWN_PRIMITIVES = new Set<string>(Object.values(NSID));
 
 /** Absolute URL = treated as external (gets target=_blank). */
-function isAbsoluteUrl(href: string): boolean {
-  return /^https?:\/\//i.test(href);
+function isAbsoluteUrl(uri: string): boolean {
+  return /^https?:\/\//i.test(uri);
 }
 
 /** Standardized warning element for primitives outside KNOWN_PRIMITIVES. */
@@ -109,11 +110,11 @@ function renderImageInto(parent: HTMLElement, element: InlayElement): void {
 }
 
 function renderLinkInto(parent: HTMLElement, element: InlayElement): void {
-  const href = element.props.href;
+  const uri = element.props.uri;
   const a = document.createElement('a');
-  if (typeof href === 'string') {
-    a.setAttribute('href', href);
-    if (isAbsoluteUrl(href)) {
+  if (typeof uri === 'string') {
+    a.setAttribute('href', uri);
+    if (isAbsoluteUrl(uri)) {
       a.setAttribute('target', '_blank');
       a.setAttribute('rel', 'noopener noreferrer');
     }

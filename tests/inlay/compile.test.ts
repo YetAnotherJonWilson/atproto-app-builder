@@ -99,20 +99,20 @@ describe('compileToHtml()', () => {
   describe('Link', () => {
     it('absolute URLs get target="_blank" rel="noopener noreferrer"', () => {
       const html = compileToHtml(
-        el(NSID.Link, { href: 'https://example.com' }, el(NSID.Text, {}, 'Open')),
+        el(NSID.Link, { uri: 'https://example.com' }, el(NSID.Text, {}, 'Open')),
       );
       expect(html).toBe(
         '<org-atsui-link><a href="https://example.com" target="_blank" rel="noopener noreferrer"><org-atsui-text role="paragraph">Open</org-atsui-text></a></org-atsui-link>',
       );
     });
 
-    it('non-absolute hrefs are passed through without target/rel', () => {
-      const html = compileToHtml(el(NSID.Link, { href: '/profile/alice' }, 'Profile'));
+    it('non-absolute URIs are passed through without target/rel', () => {
+      const html = compileToHtml(el(NSID.Link, { uri: '/profile/alice' }, 'Profile'));
       expect(html).toBe('<org-atsui-link><a href="/profile/alice">Profile</a></org-atsui-link>');
     });
 
-    it('escapes href to prevent attribute injection', () => {
-      const html = compileToHtml(el(NSID.Link, { href: '"><script>alert(1)</script>' }, 'x'));
+    it('escapes uri to prevent attribute injection', () => {
+      const html = compileToHtml(el(NSID.Link, { uri: '"><script>alert(1)</script>' }, 'x'));
       expect(html).not.toContain('<script>');
       expect(html).toContain('&quot;');
     });
