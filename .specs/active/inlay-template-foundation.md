@@ -1,7 +1,7 @@
 # Spec: Inlay Template Foundation — Primitive Reconciliation + Resolution
 
-**Status:** draft
-**Date:** 2026-04-13
+**Status:** ready
+**Date:** 2026-04-13 (ambiguities resolved 2026-04-16)
 
 ## What
 
@@ -90,13 +90,11 @@ observations:
 
 ## Acceptance Criteria
 
-- [ ] **Primitive reconciliation — Link** — `org.atsui.Link` prop
+- [x] **Primitive reconciliation — Link** — `org.atsui.Link` prop
   renamed from `href` to `uri` in both `host-runtime.ts` and
   `compile.ts`. URL-ish detection, `target="_blank"`, and
   `rel="noopener noreferrer"` behavior unchanged. Unit tests updated
-  to match. CSS unchanged.
-  - This is a breaking change to the wizard's own tree builders if
-    any emit `href`. Grep-and-fix any usage.
+  to match. CSS unchanged. *(Done — no wizard tree builders emit Link.)*
 
 - [ ] **Primitive reconciliation — Avatar / Cover** — both primitives
   accept an optional `did` prop in addition to `src`. Rendering
@@ -108,6 +106,7 @@ observations:
   spec wires the real resolution. This keeps the compile path
   deterministic while the binding layer evolves.
   - `size` prop (e.g., `"small"`) added to `ATTRIBUTE_PROPS`.
+    *(Done — `size` added to both host-runtime.ts and compile.ts.)*
 
 - [ ] **Primitive reconciliation — Maybe** — `at.inlay.Maybe` added as
   a supported NSID in `host-runtime.ts` and `compile.ts`. Shape:
@@ -115,36 +114,35 @@ observations:
   - Runtime: if the `children` branch renders without any
     `at.inlay.Missing` descendants, render children; otherwise
     render `fallback` (or nothing if absent).
-  - Compile: both branches are emitted into the HTML wrapped in a
-    marker element (e.g., `<at-inlay-maybe data-branch="then|fallback">`)
-    that runtime code can toggle based on binding-resolution outcome.
-    Initial implementation can emit both branches and let the
-    data-binding layer (next spec) decide which to show; this spec
-    only needs the marker structure in place.
+  - Compile: emit both branches inside the `<at-inlay-maybe>` wrapper.
+    The `children` branch is wrapped in
+    `<div data-inlay-branch="children">` (visible by default).
+    The `fallback` branch is wrapped in
+    `<div data-inlay-branch="fallback" style="display:none">`.
+    At runtime, the data-binding layer resolves bindings in the
+    `children` branch first; if any resolve to missing, it swaps
+    visibility (`display:none` on children, remove it on fallback).
+    No DOM removal, no custom elements — just a style toggle.
   - The earlier `org.atsui.Maybe` primitive added by
     `inlay-primitive-expansion.md` is **removed**. No community
     template uses it, and keeping two Maybe primitives would confuse
     the compile path. If any wizard code emits `org.atsui.Maybe`,
-    migrate it to `at.inlay.Maybe`. (Grep suggests none does yet.)
+    migrate it to `at.inlay.Maybe`. (Grep confirms none does.)
 
 - [ ] **Walker handles props, not just children** — both `compile.ts`
-  and `host-runtime.ts` treat every prop value as potentially
-  containing elements. The walker recurses into prop values and
-  renders embedded elements (most importantly `at.inlay.Binding`
-  and nested primitives) wherever they appear — not only under
-  `props.children`. Behavior for string/number/boolean props is
-  unchanged.
+  and `host-runtime.ts` check each prop value: if it is an
+  InlayElement (has `type` and `props`), recurse into it. This
+  covers bindings and primitives appearing as direct prop values
+  (e.g., `{ src: Binding(...) }`, `{ uri: Binding(...) }`).
+  The walker does **not** recurse into arrays or nested objects
+  in non-`children` props — only direct element-typed values.
+  Behavior for string/number/boolean props is unchanged.
 
-- [ ] **Binding path utilities** — a small shared module
-  (`src/inlay/binding-path.ts`) exports helpers for:
-  - Serializing a path array to a marker string (`"record.avatar"`,
-    `"props.uri.$did"`)
-  - Parsing a marker string back to a path array
-  - Identifying which scope a path belongs to (`record` vs `props`)
-  - Splitting on special segments (`$did`, `$collection`, `$rkey`)
-    for downstream runtime code
-  Used by compile.ts and the next spec's data-binding.ts. Unit tests
-  cover round-trip and special segments.
+- [x] **Binding path utilities** — `src/inlay/binding-path.ts` with
+  helpers for serializing/parsing path arrays, scope identification,
+  and special segment splitting. 22 unit tests.
+  *(Done — `serializePath`, `parsePath`, `pathScope`,
+  `isSpecialSegment`, `parseBindingPath` all implemented and tested.)*
 
 - [ ] **`src/inlay/resolve.ts` — minimal resolution module** — a new
   module that takes an Inlay component AT-URI and returns a resolved
@@ -152,7 +150,12 @@ observations:
   `@inlay/render` call, no lexicon resolver, no recursive nested-
   component expansion.
   - Input: AT-URI string.
-  - Output: `{ templateTree, view, imports, uri } | { error }` where
+  - Output: `{ templateTree, view, imports, uri }` on success, or
+    `{ error: string, code: string }` on failure. `code` is a
+    machine-readable key: `'network'` (fetch failed),
+    `'not-template'` (record exists but body is not bodyTemplate),
+    `'external-body'` (bodyExternal filtered out). Additional codes
+    may be added as cases arise.
     `templateTree` is the deserialized `body.node`.
   - Fetches the component record via the same PDS lookup path that
     `src/inlay/discovery.ts` uses. Reuses
@@ -161,7 +164,8 @@ observations:
     `at.inlay.component#bodyTemplate`. External-body components are
     already filtered out by discovery; resolve.ts double-checks and
     returns a structured error if asked to resolve one.
-  - Calls `deserializeTree` on `body.node`.
+  - Calls `deserializeTree` from `@inlay/core` (named export,
+    confirmed available) on `body.node`.
   - Nested component references (non-primitive NSIDs inside the
     tree) are **not** resolved in this spec. If the walker encounters
     one, compile.ts emits a "nested component unsupported" fallback
@@ -184,9 +188,8 @@ observations:
     documented at the top of compile.ts.
 
 - [ ] **Unit tests against real community fixtures** — two JSON fixture
-  files checked into `tests/fixtures/inlay/` containing the full
-  `at.inlay.component` records for `NowPlaying` and `AviHandle`
-  (captured verbatim from each author's PDS). Tests:
+  files checked into `tests/fixtures/inlay/` *(Done — `nowplaying.json`
+  and `avihandle.json` captured from live PDS 2026-04-16.)*. Tests:
   - `resolve.ts` given each fixture URI (mocked fetch) returns a
     deserialized tree with bindings preserved.
   - `compile.ts` given each resolved tree produces HTML with the
@@ -251,55 +254,51 @@ observations:
 - Updated: `.specs/active/inlay-template-components.md` to reference
   this spec as a prerequisite (or be superseded — see below)
 
-## Ambiguity Warnings
+## Resolved Ambiguities
 
-1. **Removing `org.atsui.Maybe`**
-   The earlier primitive-expansion spec added `org.atsui.Maybe` with a
-   `{when, then, else}` shape. No community template uses it, and no
-   wizard code appears to emit it yet, so removal should be
-   clean. If grep uncovers usage, migrate those call sites to
-   `at.inlay.Maybe` as part of this spec.
-   - _Likely assumption:_ no live usage; removal is safe.
-   - _Please confirm or clarify:_ any known wizard-built trees that
-     use the old shape?
+1. **Removing `org.atsui.Maybe`** — Confirmed safe. Grep shows usage
+   only in host-runtime.ts, compile.ts, and their tests — no wizard
+   tree builders emit it. Remove and migrate tests to `at.inlay.Maybe`.
 
-2. **Avatar `did`-only rendering**
-   When a community template sets `did` on an Avatar without a
-   resolvable `src`, the primitive is supposed to fetch the avatar
-   blob based on the identity. Full resolution is a downstream
-   concern. This spec emits an empty `<img>` with a
-   `data-inlay-did="<serialized path>"` attribute and lets the
-   follow-up data-binding layer fill it in.
-   - _Likely assumption:_ acceptable placeholder behavior for a
-     foundation spec. Visible but unstyled.
-   - _Please confirm or clarify:_ OK to ship with empty-avatar
-     rendering until the binding layer catches up?
+2. **Avatar `did`-only rendering** — Confirmed: empty `<img>` with
+   `data-inlay-did` attribute is acceptable as a placeholder until the
+   binding layer lands.
 
-3. **Binding marker shape**
-   Two competing conventions:
-   - `data-inlay-bind="<path>"` on a wrapper `<span>` for children;
-     `data-inlay-bind-<attr>` on the host element for attributes.
-   - A single convention using wrapper nodes everywhere, with
-     attribute bindings also wrapped.
-   The first is lighter-weight and closer to the DOM semantics
-   runtime code will want. The second is more uniform.
-   - _Likely assumption:_ go with the first (per-attribute
-     attributes) — it's simpler to emit and parse.
-   - _Please confirm or clarify:_ OK, or prefer the uniform
-     wrapper-everywhere version?
+3. **Binding marker shape** — Decision: split approach. Child bindings
+   use `<span data-inlay-bind="<path>">` wrappers. Attribute bindings
+   use `data-inlay-bind-<attr>="<path>"` directly on the host element.
+   Rationale: maps to how the DOM works (text in containers, attributes
+   on elements), avoids unnecessary wrapper nodes, and the runtime
+   query pattern is straightforward for both cases.
 
-4. **Nested component encounter handling**
-   When the walker hits an NSID that is neither a known primitive nor
-   `at.inlay.Binding` / `at.inlay.Maybe`, it's presumably a reference
-   to another Inlay component (not yet supported). This spec emits a
-   visible `<div class="inlay-unresolved-component">` fallback and
-   records the NSID in the resolve result so downstream code can
-   decide whether to block the user from attaching a template that
-   uses it.
-   - _Likely assumption:_ visible fallback + structured warning is
-     sufficient for the foundation; the integration spec decides
-     whether to grey out incompatible templates in the selector.
-   - _Please confirm or clarify:_ OK?
+4. **Nested component encounter handling** — Confirmed: visible
+   `<div class="inlay-unresolved-component">` fallback + NSID logged
+   in resolve result. Integration spec decides UI treatment.
+
+5. **`at.inlay.Maybe` compile-time branch toggling** — Decision: emit
+   both branches, fallback hidden by default via `display:none`. The
+   runtime data-binding layer swaps visibility after resolving bindings
+   — it knows at resolution time whether a value is missing, so no DOM
+   inspection is needed. No custom elements, no DOM removal — just a
+   style toggle. This is sound because generated apps fetch data once
+   on page load (no reactivity). See Maybe acceptance criterion above
+   for marker structure.
+
+6. **Prop-value recursion scope** — Decision: direct element-typed
+   values only. If a non-`children` prop value has `type` and `props`
+   (i.e., is an InlayElement), recurse into it. Do not recurse into
+   arrays or nested objects in non-`children` props. This matches
+   every real community template observed (AviHandle's
+   `src: Binding(...)`, `did: Binding(...)`, `uri: Binding(...)`).
+   Easy to extend later if deeper nesting surfaces.
+
+7. **`deserializeTree` import path** — Confirmed: named export from
+   `@inlay/core`. Import: `import { deserializeTree } from '@inlay/core'`.
+
+8. **resolve.ts error shape** — Decision: `{ error: string, code: string }`
+   where `code` is a machine-readable key (`'network'`,
+   `'not-template'`, `'external-body'`). Additional codes added as
+   cases arise.
 
 ## How to Verify
 
