@@ -96,7 +96,7 @@ observations:
   `rel="noopener noreferrer"` behavior unchanged. Unit tests updated
   to match. CSS unchanged. *(Done — no wizard tree builders emit Link.)*
 
-- [ ] **Primitive reconciliation — Avatar / Cover** — both primitives
+- [x] **Primitive reconciliation — Avatar / Cover** — both primitives
   accept an optional `did` prop in addition to `src`. Rendering
   behavior for `did`-only at runtime is out of scope (that requires
   identity-to-avatar resolution, which happens in the follow-up spec).
@@ -108,7 +108,7 @@ observations:
   - `size` prop (e.g., `"small"`) added to `ATTRIBUTE_PROPS`.
     *(Done — `size` added to both host-runtime.ts and compile.ts.)*
 
-- [ ] **Primitive reconciliation — Maybe** — `at.inlay.Maybe` added as
+- [x] **Primitive reconciliation — Maybe** — `at.inlay.Maybe` added as
   a supported NSID in `host-runtime.ts` and `compile.ts`. Shape:
   `{ children: <then-tree>, fallback: <else-tree> }`. Rendering:
   - Runtime: if the `children` branch renders without any
@@ -129,7 +129,7 @@ observations:
     the compile path. If any wizard code emits `org.atsui.Maybe`,
     migrate it to `at.inlay.Maybe`. (Grep confirms none does.)
 
-- [ ] **Walker handles props, not just children** — both `compile.ts`
+- [x] **Walker handles props, not just children** — both `compile.ts`
   and `host-runtime.ts` check each prop value: if it is an
   InlayElement (has `type` and `props`), recurse into it. This
   covers bindings and primitives appearing as direct prop values
@@ -144,7 +144,7 @@ observations:
   *(Done — `serializePath`, `parsePath`, `pathScope`,
   `isSpecialSegment`, `parseBindingPath` all implemented and tested.)*
 
-- [ ] **`src/inlay/resolve.ts` — minimal resolution module** — a new
+- [x] **`src/inlay/resolve.ts` — minimal resolution module** — a new
   module that takes an Inlay component AT-URI and returns a resolved
   template record in a deserialized form ready for compile.ts. No
   `@inlay/render` call, no lexicon resolver, no recursive nested-
@@ -173,7 +173,7 @@ observations:
     (so downstream specs can gate which templates qualify). NowPlaying
     and AviHandle contain zero nested components and will fully resolve.
 
-- [ ] **`compile.ts` emits binding markers** — when the walker hits an
+- [x] **`compile.ts` emits binding markers** — when the walker hits an
   `at.inlay.Binding` element, it emits a marker DOM node (not a
   replacement value). Initial shape:
   - **Child binding** (binding is a child of a host element like
@@ -187,7 +187,7 @@ observations:
   - Exact marker naming is an implementation detail; keep it
     documented at the top of compile.ts.
 
-- [ ] **Unit tests against real community fixtures** — two JSON fixture
+- [x] **Unit tests against real community fixtures** — two JSON fixture
   files checked into `tests/fixtures/inlay/` *(Done — `nowplaying.json`
   and `avihandle.json` captured from live PDS 2026-04-16.)*. Tests:
   - `resolve.ts` given each fixture URI (mocked fetch) returns a
@@ -201,12 +201,12 @@ observations:
     `children` and a static `fallback` produces both branches
     wrapped in the maybe marker.
 
-- [ ] **Cross-pipeline parity** — given the same input element tree,
+- [x] **Cross-pipeline parity** — given the same input element tree,
   `host-runtime.ts` output (rendered DOM) and `compile.ts` output
   (HTML string) agree on structure. Tests cover at least Stack,
   Link, Avatar, at.inlay.Maybe, and a Binding.
 
-- [ ] **No regressions on existing pipeline** — all text-variant tree
+- [x] **No regressions on existing pipeline** — all text-variant tree
   tests still pass (`tests/inlay/text-variants.test.ts` or
   equivalent). `npm run verify` is green.
 

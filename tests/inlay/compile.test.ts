@@ -118,41 +118,85 @@ describe('compileToHtml()', () => {
     });
   });
 
-  describe('Maybe', () => {
-    it('renders the then branch when when is truthy', () => {
-      const html = compileToHtml(
-        el(NSID.Maybe, {
-          when: true,
-          then: el(NSID.Text, {}, 'shown'),
-          else: el(NSID.Text, {}, 'hidden'),
-        }),
+  describe('Maybe (at.inlay.Maybe)', () => {
+    it('emits both branches with data-inlay-branch wrappers', () => {
+      const html = compileToHtml({
+        type: NSID.Maybe,
+        props: {
+          children: [el(NSID.Text, {}, 'shown')],
+          fallback: el(NSID.Text, {}, 'hidden'),
+        },
+      });
+      expect(html).toBe(
+        '<at-inlay-maybe>' +
+        '<div data-inlay-branch="children"><org-atsui-text role="paragraph">shown</org-atsui-text></div>' +
+        '<div data-inlay-branch="fallback" style="display:none"><org-atsui-text role="paragraph">hidden</org-atsui-text></div>' +
+        '</at-inlay-maybe>',
       );
-      expect(html).toBe('<org-atsui-maybe><org-atsui-text role="paragraph">shown</org-atsui-text></org-atsui-maybe>');
     });
 
-    it('renders the else branch when when is falsy', () => {
-      const html = compileToHtml(
-        el(NSID.Maybe, {
-          when: false,
-          then: el(NSID.Text, {}, 'shown'),
-          else: el(NSID.Text, {}, 'fallback'),
-        }),
+    it('renders empty branches when absent', () => {
+      const html = compileToHtml({ type: NSID.Maybe, props: {} });
+      expect(html).toBe(
+        '<at-inlay-maybe>' +
+        '<div data-inlay-branch="children"></div>' +
+        '<div data-inlay-branch="fallback" style="display:none"></div>' +
+        '</at-inlay-maybe>',
       );
-      expect(html).toBe('<org-atsui-maybe><org-atsui-text role="paragraph">fallback</org-atsui-text></org-atsui-maybe>');
     });
 
-    it('renders empty when when is falsy and else is missing', () => {
-      const html = compileToHtml(
-        el(NSID.Maybe, { when: false, then: el(NSID.Text, {}, 'shown') }),
-      );
-      expect(html).toBe('<org-atsui-maybe></org-atsui-maybe>');
+    it('handles string fallback', () => {
+      const html = compileToHtml({
+        type: NSID.Maybe,
+        props: {
+          children: [el(NSID.Text, {}, 'main')],
+          fallback: 'simple fallback',
+        },
+      });
+      expect(html).toContain('data-inlay-branch="fallback" style="display:none">simple fallback</div>');
     });
   });
 
-  describe('unknown primitive fallback', () => {
+  describe('Binding markers', () => {
+    it('child binding emits span with data-inlay-bind', () => {
+      const html = compileToHtml({
+        type: NSID.Binding,
+        props: { path: ['record', 'item', 'trackName'] },
+      });
+      expect(html).toBe('<span data-inlay-bind="record.item.trackName"></span>');
+    });
+
+    it('attribute binding on Avatar produces data-inlay-bind-src', () => {
+      const html = compileToHtml({
+        type: NSID.Avatar,
+        props: {
+          src: { type: NSID.Binding, props: { path: ['record', 'avatar'] } },
+          size: 'small',
+        },
+      });
+      expect(html).toContain('data-inlay-bind-src="record.avatar"');
+      expect(html).toContain('size="small"');
+    });
+
+    it('attribute binding on Link uri produces data-inlay-bind-href on anchor', () => {
+      const html = compileToHtml({
+        type: NSID.Link,
+        props: {
+          uri: { type: NSID.Binding, props: { path: ['props', 'uri'] } },
+          children: 'click',
+        },
+      });
+      expect(html).toContain('data-inlay-bind-href="props.uri"');
+      // Should not have a regular href= (only data-inlay-bind-href)
+      expect(html).not.toMatch(/\shref="/);
+      expect(html).toContain('>click</a>');
+    });
+  });
+
+  describe('unresolved component fallback', () => {
     it('emits a visible warning element with the NSID', () => {
-      const html = compileToHtml({ type: 'org.atsui.NotReal', props: {} });
-      expect(html).toBe('<div class="inlay-unknown-primitive">Unknown Inlay primitive: org.atsui.NotReal</div>');
+      const html = compileToHtml({ type: 'com.example.UnknownWidget', props: {} });
+      expect(html).toBe('<div class="inlay-unresolved-component">Unsupported component: com.example.UnknownWidget</div>');
     });
 
     it('escapes the NSID in the fallback warning', () => {

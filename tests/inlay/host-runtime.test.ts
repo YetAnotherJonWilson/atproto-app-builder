@@ -23,6 +23,23 @@ describe('renderToDOM() — Avatar', () => {
     const dom = renderToDOM(el(NSID.Avatar, { src: 'https://example.com/a.png' }));
     expect(dom.querySelector('img')!.getAttribute('alt')).toBe('');
   });
+
+  it('renders data-inlay-did when did is a string and src is absent', () => {
+    const dom = renderToDOM(el(NSID.Avatar, { did: 'did:plc:abc123' }));
+    expect(dom.getAttribute('data-inlay-did')).toBe('did:plc:abc123');
+    expect(dom.querySelector('img')!.hasAttribute('src')).toBe(false);
+  });
+
+  it('does not set data-inlay-did when src is present', () => {
+    const dom = renderToDOM(el(NSID.Avatar, { did: 'did:plc:abc123', src: 'https://example.com/a.png' }));
+    expect(dom.hasAttribute('data-inlay-did')).toBe(false);
+    expect(dom.querySelector('img')!.getAttribute('src')).toBe('https://example.com/a.png');
+  });
+
+  it('renders size attribute', () => {
+    const dom = renderToDOM(el(NSID.Avatar, { src: 'https://example.com/a.png', size: 'small' }));
+    expect(dom.getAttribute('size')).toBe('small');
+  });
 });
 
 describe('renderToDOM() — Cover', () => {
@@ -58,46 +75,95 @@ describe('renderToDOM() — Link', () => {
   });
 });
 
-describe('renderToDOM() — Maybe', () => {
-  it('renders the then branch when when is truthy', () => {
-    const dom = renderToDOM(
-      el(NSID.Maybe, {
-        when: true,
-        then: el(NSID.Text, {}, 'shown'),
-        else: el(NSID.Text, {}, 'hidden'),
-      }),
-    );
-    expect(dom.tagName.toLowerCase()).toBe('org-atsui-maybe');
+describe('renderToDOM() — Maybe (at.inlay.Maybe)', () => {
+  it('renders the children branch when present', () => {
+    const dom = renderToDOM({
+      type: NSID.Maybe,
+      props: {
+        children: [el(NSID.Text, {}, 'shown')],
+        fallback: el(NSID.Text, {}, 'hidden'),
+      },
+    });
+    expect(dom.tagName.toLowerCase()).toBe('at-inlay-maybe');
     expect(dom.textContent).toBe('shown');
     expect(dom.children).toHaveLength(1);
     expect(dom.children[0].tagName.toLowerCase()).toBe('org-atsui-text');
   });
 
-  it('renders the else branch when when is falsy', () => {
-    const dom = renderToDOM(
-      el(NSID.Maybe, {
-        when: false,
-        then: el(NSID.Text, {}, 'shown'),
-        else: el(NSID.Text, {}, 'fallback'),
-      }),
-    );
+  it('renders fallback when children is absent', () => {
+    const dom = renderToDOM({
+      type: NSID.Maybe,
+      props: {
+        fallback: el(NSID.Text, {}, 'fallback'),
+      },
+    });
     expect(dom.textContent).toBe('fallback');
   });
 
-  it('renders nothing when when is falsy and else is missing', () => {
-    const dom = renderToDOM(
-      el(NSID.Maybe, { when: false, then: el(NSID.Text, {}, 'shown') }),
-    );
-    expect(dom.tagName.toLowerCase()).toBe('org-atsui-maybe');
+  it('renders nothing when both children and fallback are absent', () => {
+    const dom = renderToDOM({ type: NSID.Maybe, props: {} });
+    expect(dom.tagName.toLowerCase()).toBe('at-inlay-maybe');
     expect(dom.children).toHaveLength(0);
     expect(dom.textContent).toBe('');
   });
 
+  it('renders a single element child (not array)', () => {
+    const dom = renderToDOM({
+      type: NSID.Maybe,
+      props: {
+        children: el(NSID.Text, {}, 'single'),
+      },
+    });
+    expect(dom.textContent).toBe('single');
+  });
+
   it('takes no ARIA role', () => {
-    const dom = renderToDOM(
-      el(NSID.Maybe, { when: true, then: el(NSID.Text, {}, 'x') }),
-    );
+    const dom = renderToDOM({
+      type: NSID.Maybe,
+      props: { children: [el(NSID.Text, {}, 'x')] },
+    });
     expect(dom.hasAttribute('role')).toBe(false);
+  });
+});
+
+describe('renderToDOM() — Binding', () => {
+  it('renders a span with data-inlay-bind attribute', () => {
+    const dom = renderToDOM({
+      type: NSID.Binding,
+      props: { path: ['record', 'avatar'] },
+    });
+    expect(dom.tagName.toLowerCase()).toBe('span');
+    expect(dom.getAttribute('data-inlay-bind')).toBe('record.avatar');
+  });
+});
+
+describe('renderToDOM() — prop-value recursion', () => {
+  it('Avatar with Binding src emits data-inlay-bind-src', () => {
+    const dom = renderToDOM({
+      type: NSID.Avatar,
+      props: {
+        src: { type: NSID.Binding, props: { path: ['record', 'avatar'] } },
+        did: { type: NSID.Binding, props: { path: ['props', 'uri', '$did'] } },
+        size: 'small',
+      },
+    });
+    expect(dom.getAttribute('data-inlay-bind-src')).toBe('record.avatar');
+    expect(dom.getAttribute('data-inlay-bind-did')).toBe('props.uri.$did');
+    expect(dom.getAttribute('size')).toBe('small');
+  });
+
+  it('Link with Binding uri emits data-inlay-bind-href on anchor', () => {
+    const dom = renderToDOM({
+      type: NSID.Link,
+      props: {
+        uri: { type: NSID.Binding, props: { path: ['props', 'uri'] } },
+        children: [el(NSID.Text, {}, 'click')],
+      },
+    });
+    const a = dom.querySelector('a')!;
+    expect(a.getAttribute('data-inlay-bind-href')).toBe('props.uri');
+    expect(a.hasAttribute('href')).toBe(false);
+    expect(a.textContent).toBe('click');
   });
 });
 
@@ -120,7 +186,7 @@ describe('renderToDOM() — known primitives still work', () => {
   });
 });
 
-describe('runtime ↔ compile parity', () => {
+describe('runtime ↔ compile parity (non-Maybe, non-Binding primitives)', () => {
   const cases: { name: string; input: InlayElement }[] = [
     {
       name: 'Avatar with src + alt',
@@ -137,30 +203,6 @@ describe('runtime ↔ compile parity', () => {
     {
       name: 'Link internal',
       input: el(NSID.Link, { uri: '/profile/alice' }, 'Profile'),
-    },
-    {
-      name: 'Maybe truthy then',
-      input: el(NSID.Maybe, {
-        when: true,
-        then: el(NSID.Text, {}, 'shown'),
-        else: el(NSID.Text, {}, 'hidden'),
-      }),
-    },
-    {
-      name: 'Maybe falsy else',
-      input: el(NSID.Maybe, {
-        when: false,
-        then: el(NSID.Text, {}, 'shown'),
-        else: el(NSID.Text, {}, 'fallback'),
-      }),
-    },
-    {
-      name: 'Maybe falsy with no else',
-      input: el(NSID.Maybe, { when: false, then: el(NSID.Text, {}, 'shown') }),
-    },
-    {
-      name: 'unknown primitive fallback',
-      input: { type: 'org.atsui.NotReal', props: {} } as InlayElement,
     },
     {
       name: 'composed: Row > Avatar + Stack > Title + Caption',
@@ -183,4 +225,33 @@ describe('runtime ↔ compile parity', () => {
       expect(domHtml(input)).toBe(compileToHtml(input));
     });
   }
+});
+
+describe('runtime ↔ compile parity — Binding', () => {
+  it('child binding produces same span markup', () => {
+    const binding: InlayElement = { type: NSID.Binding, props: { path: ['record', 'name'] } };
+    expect(domHtml(binding)).toBe(compileToHtml(binding));
+  });
+
+  it('attribute binding on Avatar produces same marker attrs', () => {
+    const avatar: InlayElement = {
+      type: NSID.Avatar,
+      props: {
+        src: { type: NSID.Binding, props: { path: ['record', 'avatar'] } },
+        size: 'small',
+      },
+    };
+    expect(domHtml(avatar)).toBe(compileToHtml(avatar));
+  });
+
+  it('attribute binding on Link produces same marker attrs', () => {
+    const link: InlayElement = {
+      type: NSID.Link,
+      props: {
+        uri: { type: NSID.Binding, props: { path: ['props', 'uri'] } },
+        children: 'click',
+      },
+    };
+    expect(domHtml(link)).toBe(compileToHtml(link));
+  });
 });

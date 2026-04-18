@@ -45,5 +45,6 @@ export const NSID = {
   Avatar: 'org.atsui.Avatar',
   Cover: 'org.atsui.Cover',
   Link: 'org.atsui.Link',
-  Maybe: 'org.atsui.Maybe',
+  Maybe: 'at.inlay.Maybe',
+  Binding: 'at.inlay.Binding',
 } as const;

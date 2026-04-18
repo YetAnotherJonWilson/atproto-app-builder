@@ -7,6 +7,7 @@
  */
 
 import { NSID, type InlayElement } from './element';
+import { serializePath } from './binding-path';
 
 /** Convert NSID to custom element tag name: "org.atsui.Stack" → "org-atsui-stack" */
 export function nsidToTag(nsid: string): string {
@@ -58,6 +59,11 @@ export function renderToDOM(element: InlayElement): HTMLElement {
     return renderUnknownPrimitive(element.type);
   }
 
+  // Binding: render a placeholder span at runtime
+  if (element.type === NSID.Binding) {
+    return renderBinding(element);
+  }
+
   if (element.type === NSID.Maybe) {
     return renderMaybe(element);
   }
@@ -73,9 +79,10 @@ export function renderToDOM(element: InlayElement): HTMLElement {
     }
   }
 
-  // Set props as attributes
+  // Set props as attributes (skip children, skip element-valued props)
   for (const [key, value] of Object.entries(element.props)) {
     if (key === 'children') continue;
+    if (isInlayElement(value)) continue; // handled by prop-value recursion below
     if (ATTRIBUTE_PROPS.has(key) && value != null) {
       el.setAttribute(key, String(value));
     }
@@ -100,9 +107,28 @@ export function renderToDOM(element: InlayElement): HTMLElement {
   return el;
 }
 
+function renderBinding(element: InlayElement): HTMLElement {
+  const path = element.props.path;
+  const span = document.createElement('span');
+  if (Array.isArray(path)) {
+    span.setAttribute('data-inlay-bind', serializePath(path as string[]));
+  }
+  return span;
+}
+
 function renderImageInto(parent: HTMLElement, element: InlayElement): void {
   const src = element.props.src;
   const alt = element.props.alt;
+  const did = element.props.did;
+  // Prop-value recursion: element-typed props get binding attrs on the host
+  if (isInlayElement(src) && src.type === NSID.Binding) {
+    parent.setAttribute('data-inlay-bind-src', serializePath(src.props.path as string[]));
+  }
+  if (isInlayElement(did) && did.type === NSID.Binding) {
+    parent.setAttribute('data-inlay-bind-did', serializePath(did.props.path as string[]));
+  } else if (typeof did === 'string' && typeof src !== 'string') {
+    parent.setAttribute('data-inlay-did', did);
+  }
   const img = document.createElement('img');
   if (typeof src === 'string') img.setAttribute('src', src);
   img.setAttribute('alt', typeof alt === 'string' ? alt : '');
@@ -112,7 +138,10 @@ function renderImageInto(parent: HTMLElement, element: InlayElement): void {
 function renderLinkInto(parent: HTMLElement, element: InlayElement): void {
   const uri = element.props.uri;
   const a = document.createElement('a');
-  if (typeof uri === 'string') {
+  if (isInlayElement(uri) && uri.type === NSID.Binding) {
+    // Prop-value recursion: binding on uri → marker attr on anchor
+    a.setAttribute('data-inlay-bind-href', serializePath(uri.props.path as string[]));
+  } else if (typeof uri === 'string') {
     a.setAttribute('href', uri);
     if (isAbsoluteUrl(uri)) {
       a.setAttribute('target', '_blank');
@@ -128,8 +157,20 @@ function renderLinkInto(parent: HTMLElement, element: InlayElement): void {
 
 function renderMaybe(element: InlayElement): HTMLElement {
   const wrapper = document.createElement(nsidToTag(NSID.Maybe));
-  const branch = element.props.when ? element.props.then : element.props.else;
-  if (isInlayElement(branch)) {
+  const children = element.props.children;
+  const fallback = element.props.fallback;
+  // Render the children branch; if any descendant is at.inlay.Missing, use fallback instead.
+  // For now (no binding resolution at runtime), always render children if present.
+  const branch = children != null ? children : fallback;
+  if (Array.isArray(branch)) {
+    for (const child of branch) {
+      if (typeof child === 'string') {
+        wrapper.appendChild(document.createTextNode(child));
+      } else if (isInlayElement(child)) {
+        wrapper.appendChild(renderToDOM(child));
+      }
+    }
+  } else if (isInlayElement(branch)) {
     wrapper.appendChild(renderToDOM(branch));
   } else if (typeof branch === 'string') {
     wrapper.appendChild(document.createTextNode(branch));
