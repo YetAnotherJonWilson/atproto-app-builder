@@ -124,6 +124,7 @@ export interface Component {
   requirementIds: string[]; // ordered list of Requirement ids
   componentType?: ComponentType; // determines generator component rendering
   contentNodes?: ContentNode[]; // ordered content for text components
+  inlayComponentRef?: string; // AT-URI of an attached Inlay template component
 }
 
 export interface View {
