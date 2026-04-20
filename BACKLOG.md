@@ -41,7 +41,7 @@ Pick one item from "Up Next" before starting a coding session.
   - [x] Inlay component discovery (parallel with primitive expansion) — see `.specs/done/inlay-component-discovery.md` 4/11/26
   - [x] Inlay primitive expansion (parallel with discovery) — see `.specs/done/inlay-primitive-expansion.md` 4/13/26
   - [x] Inlay template foundation — primitive reconciliation + resolution (depends on above three) — see `.specs/done/inlay-template-foundation.md` 4/16/26
-  - [ ] Inlay template components — wizard wiring + generator + UI (depends on foundation; supersedes the old integration spec) — old draft at `.specs/active/inlay-template-components.md` pending rewrite
+  - [ ] Inlay template components — wizard wiring + generator + UI (depends on foundation) — see `.specs/active/inlay-template-components.md`. Spec is ready (rewritten + ambiguities resolved as of 2026-04-20). Step 1 (`inlayComponentRef` field) landed in 0a1a31a; remaining work is steps 2–8 in the spec's Implementation Approach. Start at step 2 (session resolution cache).
 - [ ] Wizard-built primitive trees (navigate/non-data requirements) — see `.specs/active/wizard-built-primitive-trees.md`
 - [ ] Menu component primitive-tree migration — see `.specs/active/menu-component-primitive-tree-migration.md`
 - [ ] Wizard walkthrough / guided tour — see `.specs/active/wizard-walkthrough.md`
