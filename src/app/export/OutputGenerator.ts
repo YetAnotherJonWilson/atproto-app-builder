@@ -27,7 +27,7 @@ export async function generateApp(): Promise<void> {
   wizardState.appConfig.domain = wizardState.appInfo.domain;
 
   // Generate all files using the generator
-  const files = generateAllFiles(wizardState, wizardState.appConfig);
+  const files = await generateAllFiles(wizardState, wizardState.appConfig);
 
   // Determine output method
   const outputMethod = wizardState.appConfig.outputMethod || 'zip';

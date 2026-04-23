@@ -38,6 +38,9 @@ import { generateNavMenuComponent } from './components/NavMenu';
 import { generateRecordLexicon, computeRecordTypeNsid } from './Lexicon';
 import { generateReadme } from './Readme';
 
+// Inlay template integration
+import { resolveAttachedTemplates } from './inlay/resolution';
+
 // ── Name/slug helpers with collision handling ─────────────────────────
 
 function buildUniqueNames(
@@ -74,10 +77,20 @@ function getAssignedComponents(views: View[], allComponents: Component[]): Compo
 
 // ── Main generation entry point ──────────────────────────────────────
 
-export function generateAllFiles(wizardState: WizardState, appConfig: AppConfig): FileOutput {
+export async function generateAllFiles(
+  wizardState: WizardState,
+  appConfig: AppConfig
+): Promise<FileOutput> {
   const files: FileOutput = {};
   const { appInfo, recordTypes, views, components } = wizardState;
   const domain = appInfo.domain;
+
+  // Resolve any attached Inlay template components up front so view
+  // generation has resolution outcomes on hand and the session cache is
+  // warm for the panel's broken-template badge. The map is consumed by
+  // ViewPage in a later step of the inlay-template-components spec.
+  const inlayResolutions = await resolveAttachedTemplates(components);
+  void inlayResolutions;
 
   // Build unique PascalCase filenames and camelCase slugs for views
   const viewFileNames = buildUniqueNames(views, toPascalCase);   // id → PascalCase
