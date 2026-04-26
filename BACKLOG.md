@@ -27,7 +27,7 @@ Pick one item from "Up Next" before starting a coding session.
 ### Independent (no blockers)
 
 - [ ] Add Vitest unit tests for generator output — see `.specs/active/001-example-add-tests-for-generators.md`
-- [ ] Add Vitest unit tests for utility functions (text, id, html, nsid)
+- [ ] Add Vitest unit tests for utility functions (text, id, html)
 - [ ] Tangled.sh export — feasibility spike (atproto-native git host as alternative/replacement for GitHub export) — see `.specs/active/tangled-export-spike.md`. Investigation only; deliverable is a go/no-go + a follow-up implementation spec on go.
 
 ### Post-Views Panel (depends on Phase 5)
