@@ -5,7 +5,7 @@
 import type { RecordType, Field } from '../../types/wizard';
 import { toPascalCase, toCamelCase } from '../../utils';
 
-export function generateTypesTs(recordTypes: RecordType[], domain: string): string {
+export function generateTypesTs(recordTypes: RecordType[]): string {
   let output = `/**
  * Shared type definitions for the app
  */

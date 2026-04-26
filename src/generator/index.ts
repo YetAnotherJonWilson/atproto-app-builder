@@ -83,7 +83,6 @@ export async function generateAllFiles(
 ): Promise<FileOutput> {
   const files: FileOutput = {};
   const { appInfo, recordTypes, views, components } = wizardState;
-  const domain = appInfo.domain;
 
   // Resolve any attached Inlay template components up front so view
   // generation has resolution outcomes on hand and the session cache is
@@ -111,7 +110,7 @@ export async function generateAllFiles(
 
   // ── Compute OAuth scope from record types ─────────────────────────
 
-  const nsids = recordTypes.map(rt => computeRecordTypeNsid(rt, domain));
+  const nsids = recordTypes.map(rt => computeRecordTypeNsid(rt));
   const scope = buildScopeFromNsids(nsids);
 
   // ── Root files ─────────────────────────────────────────────────────
@@ -134,8 +133,8 @@ export async function generateAllFiles(
 
   files['src/config/environment.ts'] = generateEnvironmentTs(scope);
   files['src/atproto/auth.ts'] = generateAuthTs();
-  files['src/atproto/types.ts'] = generateTypesTs(recordTypes, domain);
-  files['src/atproto/api.ts'] = generateApiTs(recordTypes, domain);
+  files['src/atproto/types.ts'] = generateTypesTs(recordTypes);
+  files['src/atproto/api.ts'] = generateApiTs(recordTypes);
   files['src/atproto/session.ts'] = generateSessionManagerTs(recordTypes);
 
   // ── NavMenu components (for menu-type components) ─────────────────
@@ -186,14 +185,14 @@ export async function generateAllFiles(
   // ── Lexicons ───────────────────────────────────────────────────────
 
   recordTypes.forEach(record => {
-    const nsid = computeRecordTypeNsid(record, domain);
-    const lexicon = generateRecordLexicon(record, domain, recordTypes);
+    const nsid = computeRecordTypeNsid(record);
+    const lexicon = generateRecordLexicon(record, recordTypes);
     files[`lexicons/${nsid.replace(/\./g, '/')}.json`] = JSON.stringify(lexicon, null, 2);
   });
 
   // ── README ─────────────────────────────────────────────────────────
 
-  files['README.md'] = generateReadme(appInfo, recordTypes, domain);
+  files['README.md'] = generateReadme(appInfo, recordTypes);
 
   return files;
 }

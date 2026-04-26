@@ -47,9 +47,9 @@ describe('computeRecordTypeNsid', () => {
     expect(computeRecordTypeNsid(rt)).toBe('com.example.groceryItem');
   });
 
-  it('falls back to domain-based NSID', () => {
+  it('returns bare name for incomplete records (no namespace configured)', () => {
     const rt = makeRecordType({ name: 'groceryItem' });
-    expect(computeRecordTypeNsid(rt, 'example.com')).toBe('com.example.groceryitem');
+    expect(computeRecordTypeNsid(rt)).toBe('groceryItem');
   });
 });
 
@@ -60,7 +60,7 @@ describe('generateRecordLexicon', () => {
     const rt = makeRecordType({
       fields: [makeField({ name: 'title', type: 'string', required: true })],
     });
-    const lexicon = generateRecordLexicon(rt, 'example.com');
+    const lexicon = generateRecordLexicon(rt);
     const record = lexicon.defs.main.record!;
 
     expect(record.properties.title).toEqual({ type: 'string' });
@@ -69,13 +69,13 @@ describe('generateRecordLexicon', () => {
 
   it('uses recordKeyType from the RecordType', () => {
     const rt = makeRecordType({ recordKeyType: 'any' });
-    const lexicon = generateRecordLexicon(rt, 'example.com');
+    const lexicon = generateRecordLexicon(rt);
     expect(lexicon.defs.main.key).toBe('any');
   });
 
   it('defaults recordKeyType to tid', () => {
     const rt = makeRecordType();
-    const lexicon = generateRecordLexicon(rt, 'example.com');
+    const lexicon = generateRecordLexicon(rt);
     expect(lexicon.defs.main.key).toBe('tid');
   });
 
@@ -101,7 +101,7 @@ describe('generateRecordLexicon', () => {
       adoptedNsid: 'app.bsky.feed.post',
       adoptedSchema,
     });
-    const result = generateRecordLexicon(rt, 'example.com');
+    const result = generateRecordLexicon(rt);
     expect(result).toBe(adoptedSchema);
   });
 
@@ -119,7 +119,7 @@ describe('generateRecordLexicon', () => {
         minGraphemes: 1,
       })],
     });
-    const schema = generateRecordLexicon(rt, 'example.com');
+    const schema = generateRecordLexicon(rt);
     const prop = schema.defs.main.record!.properties.bio as Record<string, unknown>;
     expect(prop.type).toBe('string');
     expect(prop.format).toBe('uri');
@@ -133,7 +133,7 @@ describe('generateRecordLexicon', () => {
     const rt = makeRecordType({
       fields: [makeField({ name: 'count', type: 'integer', minimum: 0, maximum: 100 })],
     });
-    const schema = generateRecordLexicon(rt, 'example.com');
+    const schema = generateRecordLexicon(rt);
     const prop = schema.defs.main.record!.properties.count as Record<string, unknown>;
     expect(prop.type).toBe('integer');
     expect(prop.minimum).toBe(0);
@@ -144,7 +144,7 @@ describe('generateRecordLexicon', () => {
     const rt = makeRecordType({
       fields: [makeField({ name: 'active', type: 'boolean' })],
     });
-    const schema = generateRecordLexicon(rt, 'example.com');
+    const schema = generateRecordLexicon(rt);
     const prop = schema.defs.main.record!.properties.active as Record<string, unknown>;
     expect(prop.type).toBe('boolean');
   });
@@ -158,7 +158,7 @@ describe('generateRecordLexicon', () => {
         maxSize: 1048576,
       })],
     });
-    const schema = generateRecordLexicon(rt, 'example.com');
+    const schema = generateRecordLexicon(rt);
     const prop = schema.defs.main.record!.properties.avatar as Record<string, unknown>;
     expect(prop.type).toBe('blob');
     expect(prop.accept).toEqual(['image/*']);
@@ -169,7 +169,7 @@ describe('generateRecordLexicon', () => {
     const rt = makeRecordType({
       fields: [makeField({ name: 'data', type: 'bytes', minLength: 1, maxLength: 1024 })],
     });
-    const schema = generateRecordLexicon(rt, 'example.com');
+    const schema = generateRecordLexicon(rt);
     const prop = schema.defs.main.record!.properties.data as Record<string, unknown>;
     expect(prop.type).toBe('bytes');
     expect(prop.minLength).toBe(1);
@@ -180,7 +180,7 @@ describe('generateRecordLexicon', () => {
     const rt = makeRecordType({
       fields: [makeField({ name: 'hash', type: 'cid-link' })],
     });
-    const schema = generateRecordLexicon(rt, 'example.com');
+    const schema = generateRecordLexicon(rt);
     const prop = schema.defs.main.record!.properties.hash as Record<string, unknown>;
     expect(prop.type).toBe('cid-link');
   });
@@ -189,7 +189,7 @@ describe('generateRecordLexicon', () => {
     const rt = makeRecordType({
       fields: [makeField({ name: 'tags', type: 'array-string', minLength: 1, maxLength: 10 })],
     });
-    const schema = generateRecordLexicon(rt, 'example.com');
+    const schema = generateRecordLexicon(rt);
     const prop = schema.defs.main.record!.properties.tags as Record<string, unknown>;
     expect(prop.type).toBe('array');
     expect(prop.items).toEqual({ type: 'string' });
@@ -201,7 +201,7 @@ describe('generateRecordLexicon', () => {
     const rt = makeRecordType({
       fields: [makeField({ name: 'scores', type: 'array-integer' })],
     });
-    const schema = generateRecordLexicon(rt, 'example.com');
+    const schema = generateRecordLexicon(rt);
     const prop = schema.defs.main.record!.properties.scores as Record<string, unknown>;
     expect(prop.type).toBe('array');
     expect(prop.items).toEqual({ type: 'integer' });
@@ -211,7 +211,7 @@ describe('generateRecordLexicon', () => {
     const rt = makeRecordType({
       fields: [makeField({ name: 'post', type: 'ref', refTarget: 'app.bsky.feed.post' })],
     });
-    const schema = generateRecordLexicon(rt, 'example.com');
+    const schema = generateRecordLexicon(rt);
     const prop = schema.defs.main.record!.properties.post as Record<string, unknown>;
     expect(prop.type).toBe('ref');
     expect(prop.ref).toBe('app.bsky.feed.post');
@@ -227,7 +227,7 @@ describe('generateRecordLexicon', () => {
     const rt = makeRecordType({
       fields: [makeField({ name: 'list', type: 'ref', refTarget: 'rt-target' })],
     });
-    const schema = generateRecordLexicon(rt, 'example.com', [rt, targetRt]);
+    const schema = generateRecordLexicon(rt, [rt, targetRt]);
     const prop = schema.defs.main.record!.properties.list as Record<string, unknown>;
     expect(prop.ref).toBe('com.thelexfiles.alice.groceryList');
   });
@@ -236,7 +236,7 @@ describe('generateRecordLexicon', () => {
     const rt = makeRecordType({
       fields: [makeField({ name: 'title', type: 'string', description: 'The item title' })],
     });
-    const schema = generateRecordLexicon(rt, 'example.com');
+    const schema = generateRecordLexicon(rt);
     const prop = schema.defs.main.record!.properties.title as Record<string, unknown>;
     expect(prop.description).toBe('The item title');
   });
@@ -245,7 +245,7 @@ describe('generateRecordLexicon', () => {
     const rt = makeRecordType({
       fields: [makeField({ name: 'photo', type: 'media-url' })],
     });
-    const schema = generateRecordLexicon(rt, 'example.com');
+    const schema = generateRecordLexicon(rt);
     const prop = schema.defs.main.record!.properties.photo as Record<string, unknown>;
     expect(prop.type).toBe('string');
     expect(prop.format).toBe('uri');
@@ -255,7 +255,7 @@ describe('generateRecordLexicon', () => {
     const rt = makeRecordType({
       fields: [makeField({ name: 'scores', type: 'array-number' })],
     });
-    const schema = generateRecordLexicon(rt, 'example.com');
+    const schema = generateRecordLexicon(rt);
     const prop = schema.defs.main.record!.properties.scores as Record<string, unknown>;
     expect(prop.type).toBe('array');
     expect(prop.items).toEqual({ type: 'integer' });
@@ -269,7 +269,7 @@ describe('generateRecordLexicon', () => {
         makeField({ id: 'f3', name: 'createdAt', type: 'string', format: 'datetime', required: true, isSystem: true }),
       ],
     });
-    const schema = generateRecordLexicon(rt, 'example.com');
+    const schema = generateRecordLexicon(rt);
     expect(schema.defs.main.record!.required).toEqual(['title', 'createdAt']);
   });
 });

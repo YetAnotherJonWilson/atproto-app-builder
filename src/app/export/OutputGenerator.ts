@@ -23,9 +23,6 @@ export async function generateApp(): Promise<void> {
     wizardState.appConfig.primaryRecordType = wizardState.recordTypes[0].name;
   }
 
-  // Add domain to appConfig for generator
-  wizardState.appConfig.domain = wizardState.appInfo.domain;
-
   // Generate all files using the generator
   const files = await generateAllFiles(wizardState, wizardState.appConfig);
 

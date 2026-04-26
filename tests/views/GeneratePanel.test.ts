@@ -4,7 +4,6 @@ import {
   renderGeneratePanel,
   wireGeneratePanel,
   updateGenerateSidebar,
-  isDomainNeeded,
 } from '../../src/app/views/panels/GeneratePanel';
 import {
   getWizardState,
@@ -30,7 +29,6 @@ function makeRecordType(
 
 function setupState(opts: {
   appName?: string;
-  domain?: string;
   description?: string;
   authorName?: string;
   recordTypes?: RecordType[];
@@ -38,7 +36,6 @@ function setupState(opts: {
 }): void {
   const state = initializeWizardState();
   state.appInfo.appName = opts.appName ?? '';
-  state.appInfo.domain = opts.domain ?? '';
   state.appInfo.description = opts.description ?? '';
   state.appInfo.authorName = opts.authorName ?? '';
   if (opts.recordTypes) state.recordTypes = opts.recordTypes;
@@ -77,6 +74,11 @@ describe('GeneratePanel — initial render', () => {
     expect(html).toContain('gen-author');
   });
 
+  it('does not render a domain input', () => {
+    const html = renderGeneratePanel();
+    expect(html).not.toContain('gen-domain');
+  });
+
   it('shows Review section', () => {
     const html = renderGeneratePanel();
     expect(html).toContain('Review');
@@ -100,131 +102,22 @@ describe('GeneratePanel — initial render', () => {
   });
 });
 
-// ── Domain field visibility ──────────────────────────────────────────
-
-describe('GeneratePanel — domain field visibility', () => {
-  it('hides domain field when no record types exist', () => {
-    setupState({});
-    const html = renderGeneratePanel();
-    expect(html).not.toContain('gen-domain');
-  });
-
-  it('shows domain field when a record type needs fallback domain', () => {
-    const rt = makeRecordType({ name: 'post' }); // no namespace option → needs domain
-    setupState({ recordTypes: [rt] });
-    const html = renderGeneratePanel();
-    expect(html).toContain('gen-domain');
-  });
-
-  it('hides domain field when all record types use thelexfiles', () => {
-    const rt = makeRecordType({
-      name: 'post',
-      namespaceOption: 'thelexfiles',
-      lexUsername: 'alice',
-    });
-    setupState({ recordTypes: [rt] });
-    const html = renderGeneratePanel();
-    expect(html).not.toContain('gen-domain');
-  });
-
-  it('hides domain field when all record types use thelexfiles-temp', () => {
-    const rt = makeRecordType({
-      name: 'post',
-      namespaceOption: 'thelexfiles-temp',
-      lexUsername: 'alice',
-    });
-    setupState({ recordTypes: [rt] });
-    const html = renderGeneratePanel();
-    expect(html).not.toContain('gen-domain');
-  });
-
-  it('hides domain field when all record types are adopted', () => {
-    const rt = makeRecordType({
-      name: 'post',
-      source: 'adopted',
-      adoptedNsid: 'com.example.post',
-    });
-    setupState({ recordTypes: [rt] });
-    const html = renderGeneratePanel();
-    expect(html).not.toContain('gen-domain');
-  });
-
-  it('hides domain field when all record types use byo-domain', () => {
-    const rt = makeRecordType({
-      name: 'post',
-      namespaceOption: 'byo-domain',
-      customDomain: 'mysite.com',
-    });
-    setupState({ recordTypes: [rt] });
-    const html = renderGeneratePanel();
-    expect(html).not.toContain('gen-domain');
-  });
-
-  it('shows domain field when mix of thelexfiles and fallback records', () => {
-    const rts = [
-      makeRecordType({ name: 'post', namespaceOption: 'thelexfiles', lexUsername: 'alice' }),
-      makeRecordType({ name: 'profile' }), // needs fallback domain
-    ];
-    setupState({ recordTypes: rts });
-    const html = renderGeneratePanel();
-    expect(html).toContain('gen-domain');
-  });
-});
-
-// ── isDomainNeeded ───────────────────────────────────────────────────
-
-describe('isDomainNeeded', () => {
-  it('returns false with no record types', () => {
-    setupState({});
-    expect(isDomainNeeded()).toBe(false);
-  });
-
-  it('returns true when a record type has no namespace option', () => {
-    setupState({ recordTypes: [makeRecordType({ name: 'post' })] });
-    expect(isDomainNeeded()).toBe(true);
-  });
-
-  it('returns false when all use thelexfiles', () => {
-    setupState({
-      recordTypes: [
-        makeRecordType({ name: 'post', namespaceOption: 'thelexfiles', lexUsername: 'alice' }),
-      ],
-    });
-    expect(isDomainNeeded()).toBe(false);
-  });
-
-  it('returns true when thelexfiles record lacks lexUsername', () => {
-    setupState({
-      recordTypes: [
-        makeRecordType({ name: 'post', namespaceOption: 'thelexfiles' }),
-      ],
-    });
-    expect(isDomainNeeded()).toBe(true);
-  });
-});
-
 // ── Form pre-population ──────────────────────────────────────────────
 
 describe('GeneratePanel — form pre-population', () => {
   it('pre-populates fields from wizard state', () => {
-    // Include a record type needing domain so domain field renders
-    const rt = makeRecordType({ name: 'post' });
     setupState({
       appName: 'My App',
-      domain: 'example.com',
       description: 'A test app',
       authorName: 'Jon',
-      recordTypes: [rt],
     });
     renderAndWire();
 
     const appName = document.getElementById('gen-app-name') as HTMLInputElement;
-    const domain = document.getElementById('gen-domain') as HTMLInputElement;
     const desc = document.getElementById('gen-description') as HTMLTextAreaElement;
     const author = document.getElementById('gen-author') as HTMLInputElement;
 
     expect(appName.value).toBe('My App');
-    expect(domain.value).toBe('example.com');
     expect(desc.value).toBe('A test app');
     expect(author.value).toBe('Jon');
   });
@@ -234,9 +127,7 @@ describe('GeneratePanel — form pre-population', () => {
 
 describe('GeneratePanel — form persistence', () => {
   beforeEach(() => {
-    // Include a record type so domain field renders
-    const rt = makeRecordType({ name: 'post' });
-    setupState({ recordTypes: [rt] });
+    setupState({});
     renderAndWire();
   });
 
@@ -247,15 +138,6 @@ describe('GeneratePanel — form persistence', () => {
 
     const state = getWizardState();
     expect(state.appInfo.appName).toBe('New App');
-  });
-
-  it('persists domain on input', () => {
-    const input = document.getElementById('gen-domain') as HTMLInputElement;
-    input.value = 'test.com';
-    input.dispatchEvent(new Event('input'));
-
-    const state = getWizardState();
-    expect(state.appInfo.domain).toBe('test.com');
   });
 
   it('persists description on input', () => {
@@ -280,48 +162,25 @@ describe('GeneratePanel — form persistence', () => {
 // ── Download button state ────────────────────────────────────────────
 
 describe('GeneratePanel — download button state', () => {
-  it('enables when app name and domain are filled (domain needed)', () => {
-    const rt = makeRecordType({ name: 'post' });
-    setupState({ appName: 'My App', domain: 'example.com', recordTypes: [rt] });
-    renderAndWire();
-
-    const btn = document.getElementById('gen-download-btn') as HTMLButtonElement;
-    expect(btn.disabled).toBe(false);
-  });
-
-  it('disabled when only app name is filled but domain is needed', () => {
-    const rt = makeRecordType({ name: 'post' });
-    setupState({ appName: 'My App', recordTypes: [rt] });
-    renderAndWire();
-
-    const btn = document.getElementById('gen-download-btn') as HTMLButtonElement;
-    expect(btn.disabled).toBe(true);
-  });
-
-  it('disabled when only domain is filled', () => {
-    const rt = makeRecordType({ name: 'post' });
-    setupState({ domain: 'example.com', recordTypes: [rt] });
-    renderAndWire();
-
-    const btn = document.getElementById('gen-download-btn') as HTMLButtonElement;
-    expect(btn.disabled).toBe(true);
-  });
-
-  it('enables with just app name when domain is not needed', () => {
-    const rt = makeRecordType({
-      name: 'post',
-      namespaceOption: 'thelexfiles',
-      lexUsername: 'alice',
-    });
-    setupState({ appName: 'My App', recordTypes: [rt] });
-    renderAndWire();
-
-    const btn = document.getElementById('gen-download-btn') as HTMLButtonElement;
-    expect(btn.disabled).toBe(false);
-  });
-
-  it('enables with just app name when no record types exist', () => {
+  it('enabled when app name is filled', () => {
     setupState({ appName: 'My App' });
+    renderAndWire();
+
+    const btn = document.getElementById('gen-download-btn') as HTMLButtonElement;
+    expect(btn.disabled).toBe(false);
+  });
+
+  it('disabled when app name is empty', () => {
+    setupState({ appName: '' });
+    renderAndWire();
+
+    const btn = document.getElementById('gen-download-btn') as HTMLButtonElement;
+    expect(btn.disabled).toBe(true);
+  });
+
+  it('enabled with app name even when records are incomplete (validation runs on click)', () => {
+    const rt = makeRecordType({ name: 'post' }); // no namespaceOption
+    setupState({ appName: 'My App', recordTypes: [rt] });
     renderAndWire();
 
     const btn = document.getElementById('gen-download-btn') as HTMLButtonElement;
@@ -332,40 +191,7 @@ describe('GeneratePanel — download button state', () => {
 // ── Review section ───────────────────────────────────────────────────
 
 describe('GeneratePanel — review section', () => {
-  it('shows record type count and names with NSIDs', () => {
-    const rt = makeRecordType({ name: 'post', displayName: 'Post' });
-    setupState({ domain: 'example.com', recordTypes: [rt] });
-
-    const html = renderGeneratePanel();
-    expect(html).toContain('1');
-    expect(html).toContain('Post');
-    expect(html).toContain('com.example.post');
-  });
-
-  it('shows multiple record types', () => {
-    const rts = [
-      makeRecordType({ name: 'post', displayName: 'Post' }),
-      makeRecordType({ name: 'profile', displayName: 'Profile' }),
-    ];
-    setupState({ domain: 'example.com', recordTypes: rts });
-
-    const html = renderGeneratePanel();
-    expect(html).toContain('2');
-    expect(html).toContain('Post');
-    expect(html).toContain('Profile');
-    expect(html).toContain('com.example.post');
-    expect(html).toContain('com.example.profile');
-  });
-
-  it('shows placeholder NSID when domain is empty', () => {
-    const rt = makeRecordType({ name: 'post', displayName: 'Post' });
-    setupState({ recordTypes: [rt] });
-
-    const html = renderGeneratePanel();
-    expect(html).toContain('[domain].post');
-  });
-
-  it('shows thelexfiles NSID without domain', () => {
+  it('shows record type count and names with NSIDs from namespaceOption', () => {
     const rt = makeRecordType({
       name: 'post',
       displayName: 'Post',
@@ -375,10 +201,45 @@ describe('GeneratePanel — review section', () => {
     setupState({ recordTypes: [rt] });
 
     const html = renderGeneratePanel();
+    expect(html).toContain('1');
+    expect(html).toContain('Post');
     expect(html).toContain('com.thelexfiles.alice.post');
   });
 
-  it('shows adopted NSID without requiring domain', () => {
+  it('shows multiple record types', () => {
+    const rts = [
+      makeRecordType({
+        name: 'post',
+        displayName: 'Post',
+        namespaceOption: 'thelexfiles',
+        lexUsername: 'alice',
+      }),
+      makeRecordType({
+        name: 'profile',
+        displayName: 'Profile',
+        namespaceOption: 'byo-domain',
+        customDomain: 'alice.example',
+      }),
+    ];
+    setupState({ recordTypes: rts });
+
+    const html = renderGeneratePanel();
+    expect(html).toContain('2');
+    expect(html).toContain('Post');
+    expect(html).toContain('Profile');
+    expect(html).toContain('com.thelexfiles.alice.post');
+    expect(html).toContain('example.alice.profile');
+  });
+
+  it('shows placeholder NSID when record has no namespaceOption configured', () => {
+    const rt = makeRecordType({ name: 'post', displayName: 'Post' });
+    setupState({ recordTypes: [rt] });
+
+    const html = renderGeneratePanel();
+    expect(html).toContain('[namespace].post');
+  });
+
+  it('shows adopted NSID directly', () => {
     const rt = makeRecordType({
       name: 'post',
       displayName: 'Post',
@@ -389,18 +250,31 @@ describe('GeneratePanel — review section', () => {
 
     const html = renderGeneratePanel();
     expect(html).toContain('app.bsky.feed.post');
-    expect(html).not.toContain('[domain].post');
+    expect(html).not.toContain('[namespace].post');
   });
 
-  it('shows lexicon preview in details element', () => {
-    const rt = makeRecordType({ name: 'post', displayName: 'Post' });
-    setupState({ domain: 'example.com', recordTypes: [rt] });
+  it('shows lexicon preview for records with a configured namespace', () => {
+    const rt = makeRecordType({
+      name: 'post',
+      displayName: 'Post',
+      namespaceOption: 'thelexfiles',
+      lexUsername: 'alice',
+    });
+    setupState({ recordTypes: [rt] });
 
     const html = renderGeneratePanel();
     expect(html).toContain('<details>');
     expect(html).toContain('<summary>');
     expect(html).toContain('wizard-code');
     expect(html).toContain('&quot;lexicon&quot;');
+  });
+
+  it('does not render a lexicon preview for records without a namespace', () => {
+    const rt = makeRecordType({ name: 'post', displayName: 'Post' });
+    setupState({ recordTypes: [rt] });
+
+    const html = renderGeneratePanel();
+    expect(html).not.toContain('<details>');
   });
 
   it('shows warning when no record types exist', () => {
@@ -412,8 +286,12 @@ describe('GeneratePanel — review section', () => {
   });
 
   it('does not show warning when record types exist', () => {
-    const rt = makeRecordType({ name: 'post' });
-    setupState({ domain: 'example.com', recordTypes: [rt] });
+    const rt = makeRecordType({
+      name: 'post',
+      namespaceOption: 'thelexfiles',
+      lexUsername: 'alice',
+    });
+    setupState({ recordTypes: [rt] });
 
     const html = renderGeneratePanel();
     expect(html).not.toContain('generate-warning');

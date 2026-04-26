@@ -26,7 +26,6 @@ Pick one item from "Up Next" before starting a coding session.
 
 ### Independent (no blockers)
 
-- [ ] Bug: Review section shows malformed `com.example.` NSID for undefined record types — see `.specs/active/review-nsid-undefined-record.md` (start here next session)
 - [ ] Add Vitest unit tests for generator output — see `.specs/active/001-example-add-tests-for-generators.md`
 - [ ] Add Vitest unit tests for utility functions (text, id, html, nsid)
 - [ ] Tangled.sh export — feasibility spike (atproto-native git host as alternative/replacement for GitHub export) — see `.specs/active/tangled-export-spike.md`. Investigation only; deliverable is a go/no-go + a follow-up implementation spec on go.
@@ -64,6 +63,7 @@ Pick one item from "Up Next" before starting a coding session.
 
 <!-- Move completed items here with date -->
 
+- [x] Remove dead `appInfo.domain` field (also fixed `api.ts` ignoring `namespaceOption`) — see `.specs/done/remove-dead-domain-field.md` 4/25/26
 - [x] Inlay template foundation — see `.specs/done/inlay-template-foundation.md` 4/16/26
 - [x] Inlay primitive expansion — see `.specs/done/inlay-primitive-expansion.md` 4/13/26
 - [x] Inlay component discovery — see `.specs/done/inlay-component-discovery.md` 4/11/26

@@ -3,10 +3,11 @@
  */
 
 import type { RecordType } from '../../types/wizard';
-import { toPascalCase, toCamelCase, generateNSID } from '../../utils';
+import { toPascalCase, toCamelCase } from '../../utils';
+import { computeRecordTypeNsid } from '../Lexicon';
 import { getTypeScriptType } from './Types';
 
-export function generateApiTs(recordTypes: RecordType[], domain: string): string {
+export function generateApiTs(recordTypes: RecordType[]): string {
   let output = `import { OAuthSession } from '@atproto/oauth-client-browser';
 import { Agent } from '@atproto/api';
 import { session } from './auth';
@@ -42,7 +43,7 @@ function createAgent(): Agent {
   recordTypes.forEach(record => {
     const pascalName = toPascalCase(record.name);
     const camelName = toCamelCase(record.name);
-    const nsid = generateNSID(domain, record.name);
+    const nsid = computeRecordTypeNsid(record);
 
     // CREATE function
     output += `/**

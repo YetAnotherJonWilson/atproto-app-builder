@@ -6,8 +6,7 @@ import type { AppInfo, RecordType } from '../types/wizard';
 
 export function generateReadme(
   appInfo: AppInfo,
-  recordTypes: RecordType[],
-  domain: string
+  recordTypes: RecordType[]
 ): string {
   return `# ${appInfo.appName}
 

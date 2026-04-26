@@ -70,7 +70,6 @@ export interface ProcedureMethod {
 
 export interface AppInfo {
   appName: string;
-  domain: string;
   description: string;
   authorName: string;
 
@@ -83,7 +82,6 @@ export interface AppConfig {
   primaryRecordType: string;
   listDisplayFields: string[];
   outputMethod: 'zip' | 'github';
-  domain?: string;
 }
 
 export type SectionName = 'requirements' | 'data' | 'components' | 'views' | 'generate';

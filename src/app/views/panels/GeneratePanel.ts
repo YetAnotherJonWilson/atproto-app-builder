@@ -1,7 +1,7 @@
 /**
  * Generate panel — workspace content for the Generate section.
  *
- * Collects app identity (name, domain, description, author), shows a review
+ * Collects app identity (name, description, author), shows a review
  * summary of the user's work, and provides a Download ZIP button that
  * generates and downloads the AT Protocol app.
  */
@@ -14,12 +14,11 @@ import { publishLexicons } from '../../services/LexiconPublisher';
 import type { RecordType } from '../../../types/wizard';
 import type { PublishResult } from '../../services/LexiconPublisher';
 
-/** Display NSID for a record type, using adoptedNsid, domain, or fallback. */
-function displayNsid(rt: RecordType, domain: string): string {
+/** Display NSID for a record type, or a placeholder when not yet configured. */
+function displayNsid(rt: RecordType): string {
   if (rt.source === 'adopted' && rt.adoptedNsid) return rt.adoptedNsid;
-  if (domain) return computeRecordTypeNsid(rt, domain);
   if (rt.namespaceOption) return computeRecordTypeNsid(rt);
-  return `[domain].${rt.name}`;
+  return `[namespace].${rt.name}`;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────
@@ -30,24 +29,6 @@ function escapeHtml(str: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
-}
-
-/**
- * Returns true when at least one record type needs `appInfo.domain` for NSID
- * generation — i.e., it would fall through to the domain-based fallback in
- * `computeRecordTypeNsid`. When all record types have self-contained namespaces
- * (thelexfiles, byo-domain, or adopted), the domain field is unnecessary.
- */
-export function isDomainNeeded(): boolean {
-  const { recordTypes } = getWizardState();
-  if (recordTypes.length === 0) return false;
-  return recordTypes.some((rt) => {
-    if (rt.source === 'adopted' && rt.adoptedNsid) return false;
-    if (rt.namespaceOption === 'byo-domain' && rt.customDomain) return false;
-    if (rt.namespaceOption === 'thelexfiles' && rt.lexUsername) return false;
-    if (rt.namespaceOption === 'thelexfiles-temp' && rt.lexUsername) return false;
-    return true;
-  });
 }
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -78,18 +59,7 @@ export function renderGeneratePanel(): string {
   return desc + appInfoSection + reviewSection + exportSection;
 }
 
-function renderAppInfoSection(appInfo: { appName: string; domain: string; description: string; authorName: string }): string {
-  const domainField = isDomainNeeded()
-    ? `<div class="form-group">
-    <label for="gen-domain">Domain <span class="required">*</span></label>
-    <input type="text" id="gen-domain" placeholder="e.g., example.com"
-      value="${escapeHtml(appInfo.domain)}">
-    <div class="form-hint">
-      Used for lexicon NSID generation (e.g., com.example.myRecord).
-    </div>
-  </div>`
-    : '';
-
+function renderAppInfoSection(appInfo: { appName: string; description: string; authorName: string }): string {
   return `<div class="generate-section">
   <h3 class="generate-section-title">App Identity</h3>
   <div class="form-group">
@@ -98,7 +68,6 @@ function renderAppInfoSection(appInfo: { appName: string; domain: string; descri
       value="${escapeHtml(appInfo.appName)}">
     <div class="form-hint">Used in package.json, page title, and ZIP filename.</div>
   </div>
-  ${domainField}
   <div class="form-group">
     <label for="gen-description">Description</label>
     <textarea id="gen-description" rows="2"
@@ -115,8 +84,7 @@ function renderAppInfoSection(appInfo: { appName: string; domain: string; descri
 }
 
 function renderReviewSection(): string {
-  const { recordTypes, views, components, requirements, appInfo } = getWizardState();
-  const domain = appInfo.domain;
+  const { recordTypes, views, components, requirements } = getWizardState();
 
   // Record types with NSIDs
   let recordTypesValue: string;
@@ -124,23 +92,26 @@ function renderReviewSection(): string {
     recordTypesValue = '0';
   } else {
     const items = recordTypes.map((rt) => {
-      const nsid = displayNsid(rt, domain);
+      const nsid = displayNsid(rt);
       return `${escapeHtml(rt.displayName || rt.name)} (${escapeHtml(nsid)})`;
     });
     recordTypesValue = `${recordTypes.length} &mdash; ${items.join(', ')}`;
   }
 
-  // Lexicon previews
+  // Lexicon previews — only render for records with a fully configured namespace.
   let lexiconPreviews = '';
   if (recordTypes.length > 0) {
-    lexiconPreviews = recordTypes.map((rt) => {
-      const nsid = displayNsid(rt, domain);
-      const lexicon = generateRecordLexicon(rt, domain || '', recordTypes);
-      return `<details>
+    lexiconPreviews = recordTypes
+      .filter((rt) => (rt.source === 'adopted' && rt.adoptedNsid) || rt.namespaceOption)
+      .map((rt) => {
+        const nsid = displayNsid(rt);
+        const lexicon = generateRecordLexicon(rt, recordTypes);
+        return `<details>
   <summary>${escapeHtml(nsid)}</summary>
   <pre class="wizard-code">${escapeHtml(JSON.stringify(lexicon, null, 2))}</pre>
 </details>`;
-    }).join('');
+      })
+      .join('');
   }
 
   // Views
@@ -183,8 +154,7 @@ function renderReviewSection(): string {
 
 function renderExportSection(): string {
   const { appInfo } = getWizardState();
-  const needsDomain = isDomainNeeded();
-  const disabled = !appInfo.appName.trim() || (needsDomain && !appInfo.domain.trim());
+  const disabled = !appInfo.appName.trim();
 
   return `<div class="generate-section">
   <h3 class="generate-section-title">Export</h3>
@@ -203,14 +173,12 @@ function renderExportSection(): string {
 
 export function wireGeneratePanel(): void {
   const appNameInput = document.getElementById('gen-app-name') as HTMLInputElement | null;
-  const domainInput = document.getElementById('gen-domain') as HTMLInputElement | null;
   const descInput = document.getElementById('gen-description') as HTMLTextAreaElement | null;
   const authorInput = document.getElementById('gen-author') as HTMLInputElement | null;
 
   const persistAndUpdate = () => {
     const state = getWizardState();
     if (appNameInput) state.appInfo.appName = appNameInput.value;
-    if (domainInput) state.appInfo.domain = domainInput.value;
     if (descInput) state.appInfo.description = descInput.value;
     if (authorInput) state.appInfo.authorName = authorInput.value;
     saveWizardState(state);
@@ -218,7 +186,6 @@ export function wireGeneratePanel(): void {
   };
 
   appNameInput?.addEventListener('input', persistAndUpdate);
-  domainInput?.addEventListener('input', persistAndUpdate);
   descInput?.addEventListener('input', persistAndUpdate);
   authorInput?.addEventListener('input', persistAndUpdate);
 
@@ -252,14 +219,12 @@ function handleDownload(): void {
 function showConfirmationDialog(): void {
   const publishable = getPublishableRecordTypes();
   const hasPublishable = publishable.length > 0;
-  const { appInfo } = getWizardState();
-  const domain = appInfo.domain;
 
   // Build NSID list
   const nsidListHtml = hasPublishable
     ? `<li>Publish your lexicons as experimental (.temp) versions via the AT Protocol:
         <ul class="dialog-nsid-list">
-          ${publishable.map((rt) => `<li><code>${escapeHtml(computeRecordTypeNsid(rt, domain))}</code></li>`).join('')}
+          ${publishable.map((rt) => `<li><code>${escapeHtml(computeRecordTypeNsid(rt))}</code></li>`).join('')}
         </ul>
       </li>`
     : '';
@@ -327,10 +292,10 @@ async function executePublishAndGenerate(
   if (hasPublishable) {
     confirmBtn.textContent = 'Publishing...';
 
-    const { appInfo, recordTypes } = getWizardState();
+    const { recordTypes } = getWizardState();
     const entries = publishable.map((rt) => ({
-      nsid: computeRecordTypeNsid(rt, appInfo.domain),
-      schema: generateRecordLexicon(rt, appInfo.domain || '', recordTypes),
+      nsid: computeRecordTypeNsid(rt),
+      schema: generateRecordLexicon(rt, recordTypes),
     }));
 
     try {
@@ -487,8 +452,7 @@ function updateDownloadButtonState(): void {
   const btn = document.getElementById('gen-download-btn') as HTMLButtonElement | null;
   if (!btn) return;
   const { appInfo } = getWizardState();
-  const needsDomain = isDomainNeeded();
-  btn.disabled = !appInfo.appName.trim() || (needsDomain && !appInfo.domain.trim());
+  btn.disabled = !appInfo.appName.trim();
 }
 
 // ── Re-render ────────────────────────────────────────────────────────

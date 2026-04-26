@@ -129,7 +129,6 @@ export function initializeWizardState(): WizardState {
     currentRecordTypeIndex: 0,
     appInfo: {
       appName: '',
-      domain: '',
       description: '',
       authorName: ''
     },
@@ -162,6 +161,16 @@ export function setWizardState(state: WizardState): void {
   // Migrate: ensure nonDataElements array exists for old saved states
   if (!state.nonDataElements) {
     state.nonDataElements = [];
+  }
+  // Migrate: drop legacy `domain` field from appInfo and appConfig — the
+  // global domain field was removed in favor of per-record `namespaceOption`.
+  if (state.appInfo) {
+    const legacyAppInfo = state.appInfo as unknown as Record<string, unknown>;
+    delete legacyAppInfo.domain;
+  }
+  if (state.appConfig) {
+    const legacyAppConfig = state.appConfig as unknown as Record<string, unknown>;
+    delete legacyAppConfig.domain;
   }
   // Migrate: rename legacy `blocks` field to `components` (and migrate per-
   // component `blockType` → `componentType`). Applies to both localStorage
@@ -378,7 +387,6 @@ export function hasMeaningfulState(state: WizardState): boolean {
 
   // Even on early steps, check if any actual data was entered
   const hasAppInfo = state.appInfo.appName.trim() !== '' ||
-                     state.appInfo.domain.trim() !== '' ||
                      state.appInfo.description.trim() !== '' ||
                      state.appInfo.authorName.trim() !== '';
   const hasRecordTypes = state.recordTypes.length > 0;

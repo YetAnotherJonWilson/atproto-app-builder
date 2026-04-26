@@ -7,9 +7,11 @@ import type { LexiconSchema } from '../types/generation';
 
 /**
  * Compute the NSID for a RecordType using its namespace settings.
- * Falls back to domain-based generation for backward compatibility.
+ * Returns the bare record name when no namespace is configured (incomplete
+ * record); generation is gated by isRecordTypeReady so this only happens in
+ * preview/display callers.
  */
-export function computeRecordTypeNsid(rt: RecordType, fallbackDomain?: string): string {
+export function computeRecordTypeNsid(rt: RecordType): string {
   // Adopted lexicons use their adopted NSID directly
   if (rt.source === 'adopted' && rt.adoptedNsid) {
     return rt.adoptedNsid;
@@ -30,18 +32,11 @@ export function computeRecordTypeNsid(rt: RecordType, fallbackDomain?: string): 
     return `com.thelexfiles.${rt.lexUsername}.${name}`;
   }
 
-  // Fallback: use domain-based NSID (backward compat)
-  if (fallbackDomain) {
-    const parts = fallbackDomain.split('.').reverse();
-    return [...parts, name.toLowerCase().replace(/[^a-z0-9]/g, '')].join('.');
-  }
-
   return name;
 }
 
 export function generateRecordLexicon(
   recordType: RecordType,
-  domain: string,
   allRecordTypes?: RecordType[],
 ): LexiconSchema {
   // For adopted lexicons with a stored schema, pass it through directly
@@ -49,7 +44,7 @@ export function generateRecordLexicon(
     return recordType.adoptedSchema;
   }
 
-  const nsid = computeRecordTypeNsid(recordType, domain);
+  const nsid = computeRecordTypeNsid(recordType);
 
   const properties: Record<string, unknown> = {};
   const required: string[] = [];
