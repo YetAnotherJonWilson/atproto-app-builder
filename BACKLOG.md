@@ -26,8 +26,10 @@ Pick one item from "Up Next" before starting a coding session.
 
 ### Independent (no blockers)
 
+- [ ] Bug: Review section shows malformed `com.example.` NSID for undefined record types — see `.specs/active/review-nsid-undefined-record.md` (start here next session)
 - [ ] Add Vitest unit tests for generator output — see `.specs/active/001-example-add-tests-for-generators.md`
 - [ ] Add Vitest unit tests for utility functions (text, id, html, nsid)
+- [ ] Tangled.sh export — feasibility spike (atproto-native git host as alternative/replacement for GitHub export) — see `.specs/active/tangled-export-spike.md`. Investigation only; deliverable is a go/no-go + a follow-up implementation spec on go.
 
 ### Post-Views Panel (depends on Phase 5)
 
@@ -41,7 +43,7 @@ Pick one item from "Up Next" before starting a coding session.
   - [x] Inlay component discovery (parallel with primitive expansion) — see `.specs/done/inlay-component-discovery.md` 4/11/26
   - [x] Inlay primitive expansion (parallel with discovery) — see `.specs/done/inlay-primitive-expansion.md` 4/13/26
   - [x] Inlay template foundation — primitive reconciliation + resolution (depends on above three) — see `.specs/done/inlay-template-foundation.md` 4/16/26
-  - [ ] Inlay template components — wizard wiring + generator + UI (depends on foundation) — see `.specs/active/inlay-template-components.md`. Spec is ready (rewritten + ambiguities resolved as of 2026-04-20). Steps 1–3 landed; remaining work is steps 4–8 in the spec's Implementation Approach. Start at step 4 (DID → avatar resolver in the generated app).
+  - [ ] Inlay template components — wizard wiring + generator + UI (depends on foundation) — see `.specs/active/inlay-template-components.md`. Spec is ready (rewritten + ambiguities resolved as of 2026-04-20). Steps 1–5 landed (data-binding codegen done 2026-04-24); remaining work is steps 6–8 in the spec's Implementation Approach. Start at step 6 (ViewPage branch — wire the resolution map and emit `bindComponent<i>` calls into the generated view file).
 - [ ] Wizard-built primitive trees (navigate/non-data requirements) — see `.specs/active/wizard-built-primitive-trees.md`
 - [ ] Menu component primitive-tree migration — see `.specs/active/menu-component-primitive-tree-migration.md`
 - [ ] Wizard walkthrough / guided tour — see `.specs/active/wizard-walkthrough.md`

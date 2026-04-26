@@ -83,7 +83,7 @@ A brief recap — full detail in the foundation spec and
 
 ## Acceptance Criteria
 
-- [ ] **`inlayComponentRef` field on Component** — the `Component` type
+- [x] **`inlayComponentRef` field on Component** — the `Component` type
       in `src/types/wizard.ts` gains `inlayComponentRef?: string` (AT-URI).
   - Existing persisted projects load without error; the field is simply
     absent. No migration required unless validation rejects unknown
@@ -112,7 +112,7 @@ A brief recap — full detail in the foundation spec and
       selected data type has no published NSID, do not show the control.
       The placeholder fallback continues to render for them.
 
-- [ ] **Generator resolves attached templates at generation time** —
+- [x] **Generator resolves attached templates at generation time** —
       during `generator/index.ts` orchestration, each component with an
       `inlayComponentRef` is resolved via `resolveInlayTemplate` before
       `ViewPage.ts` runs.
@@ -135,7 +135,7 @@ A brief recap — full detail in the foundation spec and
     error code. This is the same shape the compile path already uses
     for unresolved primitives — `<div class="inlay-unresolved-component">`.
 
-- [ ] **Runtime data-binding codegen** — a new module
+- [x] **Runtime data-binding codegen** — a new module
       `src/generator/inlay/data-binding.ts` exports a function that, given
       a resolved template and the wizard component's chosen record type,
       emits a TypeScript snippet that:
@@ -173,7 +173,7 @@ A brief recap — full detail in the foundation spec and
     For non-`<img>` elements, the DID is set as the attribute value
     as today.
 
-- [ ] **DID → avatar URL resolver in the generated app** — a new
+- [x] **DID → avatar URL resolver in the generated app** — a new
       runtime helper (e.g.
       `src/generator/atproto/Identity.ts` →
       `generated-app/atproto/identity.ts`) exports
@@ -207,7 +207,7 @@ A brief recap — full detail in the foundation spec and
       picker opens with the incompatible toggle on by default so the
       user isn't blocked.
 
-- [ ] **Session resolution cache shared by panel and generator** — a
+- [x] **Session resolution cache shared by panel and generator** — a
       new module-level cache (e.g.
       `src/inlay/resolve-cache.ts` exporting
       `resolveInlayTemplateCached(uri)` and `_resetResolveCache()`)
