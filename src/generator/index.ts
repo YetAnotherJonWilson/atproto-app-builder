@@ -23,6 +23,7 @@ import { generateAuthTs } from './atproto/Auth';
 import { generateTypesTs } from './atproto/Types';
 import { generateApiTs } from './atproto/Api';
 import { generateSessionManagerTs } from './atproto/Session';
+import { generateIdentityTs } from './atproto/Identity';
 
 // App generators
 import { generateMainTs } from './app/Main';
@@ -40,6 +41,7 @@ import { generateReadme } from './Readme';
 
 // Inlay template integration
 import { resolveAttachedTemplates } from './inlay/resolution';
+import { isResolveError } from '../inlay/resolve';
 
 // ── Name/slug helpers with collision handling ─────────────────────────
 
@@ -86,10 +88,11 @@ export async function generateAllFiles(
 
   // Resolve any attached Inlay template components up front so view
   // generation has resolution outcomes on hand and the session cache is
-  // warm for the panel's broken-template badge. The map is consumed by
-  // ViewPage in a later step of the inlay-template-components spec.
+  // warm for the panel's broken-template badge.
   const inlayResolutions = await resolveAttachedTemplates(components);
-  void inlayResolutions;
+  const hasInlaySuccess = [...inlayResolutions.values()].some(
+    r => !isResolveError(r) && r.unresolvedComponents.length === 0
+  );
 
   // Build unique PascalCase filenames and camelCase slugs for views
   const viewFileNames = buildUniqueNames(views, toPascalCase);   // id → PascalCase
@@ -137,6 +140,14 @@ export async function generateAllFiles(
   files['src/atproto/api.ts'] = generateApiTs(recordTypes);
   files['src/atproto/session.ts'] = generateSessionManagerTs(recordTypes);
 
+  // identity.ts is only needed by inlay templates that bind a DID to an
+  // <img>. Emitting it whenever any inlay template resolved successfully
+  // keeps the rule simple — at worst an unused 1KB file lands in projects
+  // whose templates don't bind a DID.
+  if (hasInlaySuccess) {
+    files['src/atproto/identity.ts'] = generateIdentityTs();
+  }
+
   // ── NavMenu components (for menu-type components) ─────────────────
 
   const menuComponents = assignedComponents.filter(c => c.componentType === 'menu');
@@ -178,7 +189,8 @@ export async function generateAllFiles(
       view,
       functionName,
       viewComponents,
-      wizardState
+      wizardState,
+      inlayResolutions
     );
   }
 

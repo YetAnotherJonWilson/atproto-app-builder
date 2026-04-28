@@ -122,7 +122,7 @@ A brief recap — full detail in the foundation spec and
     with entries) is recorded on the component's entry; generation
     does **not** abort.
 
-- [ ] **ViewPage emits a new branch for `inlayComponentRef`
+- [x] **ViewPage emits a new branch for `inlayComponentRef`
       components** — `src/generator/views/ViewPage.ts` gets a branch that
       runs before the text/menu/placeholder branches:
   - Successful resolution: emit
@@ -191,7 +191,7 @@ A brief recap — full detail in the foundation spec and
     Maybe branches (so a Maybe wrapper around the avatar collapses
     to its fallback as expected).
 
-- [ ] **Runtime imports in the generated view file** — the view page
+- [x] **Runtime imports in the generated view file** — the view page
       file imports the generated `bindComponent${i}` functions and calls
       them after constructing the DOM. The bind functions ship as
       per-component inline code inside the view file (not a separate

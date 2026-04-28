@@ -42,7 +42,7 @@ Pick one item from "Up Next" before starting a coding session.
   - [x] Inlay component discovery (parallel with primitive expansion) — see `.specs/done/inlay-component-discovery.md` 4/11/26
   - [x] Inlay primitive expansion (parallel with discovery) — see `.specs/done/inlay-primitive-expansion.md` 4/13/26
   - [x] Inlay template foundation — primitive reconciliation + resolution (depends on above three) — see `.specs/done/inlay-template-foundation.md` 4/16/26
-  - [ ] Inlay template components — wizard wiring + generator + UI (depends on foundation) — see `.specs/active/inlay-template-components.md`. Spec is ready (rewritten + ambiguities resolved as of 2026-04-20). Steps 1–5 landed (data-binding codegen done 2026-04-24); remaining work is steps 6–8 in the spec's Implementation Approach. Start at step 6 (ViewPage branch — wire the resolution map and emit `bindComponent<i>` calls into the generated view file).
+  - [ ] Inlay template components — wizard wiring + generator + UI (depends on foundation) — see `.specs/active/inlay-template-components.md`. Spec is ready (rewritten + ambiguities resolved as of 2026-04-20). Steps 1–6 landed (ViewPage branch + identity.ts emission done 2026-04-26); remaining work is steps 7–8 in the spec's Implementation Approach. Start at step 7 (Picker UI in ComponentsPanel + broken-template badge).
 - [ ] Wizard-built primitive trees (navigate/non-data requirements) — see `.specs/active/wizard-built-primitive-trees.md`
 - [ ] Menu component primitive-tree migration — see `.specs/active/menu-component-primitive-tree-migration.md`
 - [ ] Wizard walkthrough / guided tour — see `.specs/active/wizard-walkthrough.md`
@@ -54,6 +54,11 @@ Pick one item from "Up Next" before starting a coding session.
 
 - [ ] Field length guidance (graphemes + bytes auto-conversion) — see `.specs/active/field-length-guidance.md`
 - [ ] Data modeling hints (AT Protocol guidance for users) — see `.specs/active/data-modeling-hints.md`
+
+### Generated-app theming prep (do after `inlay-template-components`)
+
+- [ ] Generated app — CSS custom properties for colors and radii — see `.specs/active/generated-app-css-tokens.md` (draft)
+- [ ] Generator — shared class-name constants module — see `.specs/active/generator-classname-constants.md` (draft)
 
 ## Ideas / Unrefined
 
