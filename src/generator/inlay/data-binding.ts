@@ -15,13 +15,21 @@
  * Special-cases `<img>`-host elements (org-atsui-avatar, org-atsui-cover):
  *   - `data-inlay-bind-src` writes to the inner `<img>` element, not
  *     the host.
+ *   - `data-inlay-bind-src` resolving to a blob ref (the AT Proto record
+ *     shape `{ $type: 'blob', ref: { $link } }`) is converted to a
+ *     Bluesky CDN URL using the bound record's DID. Avatar host →
+ *     `/img/avatar/plain/<did>/<cid>@jpeg`; Cover host → `/img/banner/...`.
  *   - `data-inlay-bind-did` (and `data-inlay-did`) calls
  *     `resolveDidToAvatar` and writes the returned URL as the inner
  *     `<img>`'s `src`. If `bind-src` already produced a value, the DID
  *     resolver is skipped.
  *
- * `props.*` paths are unsupported in this pass and resolve to missing —
- * see the spec ambiguity resolution.
+ * Path aliasing:
+ *   - `props.<view.prop>` is treated as `record.uri` (the bound record's
+ *     AT-URI). E.g. for a template whose `view.prop = "uri"`,
+ *     `props.uri.$did` resolves to the DID portion of the record's URI.
+ *   - Any other `props.*` path resolves to missing (no component
+ *     nesting in this spec).
  */
 
 import type { RecordType } from '../../types/wizard';
@@ -62,6 +70,7 @@ export function compileBindFunction(
   const storeListKey = `${camel}s`;
   const storeSetterName = `set${pascal}s`;
   const bindFunctionName = `bindComponent${componentIndex}`;
+  const viewProp = typeof resolved.view?.prop === 'string' ? (resolved.view.prop as string) : null;
 
   const code = renderBindFunction({
     bindFunctionName,
@@ -69,6 +78,7 @@ export function compileBindFunction(
     storeListKey,
     storeSetterName,
     needsIdentityImport,
+    viewProp,
   });
 
   return {
@@ -88,10 +98,18 @@ interface RenderArgs {
   storeListKey: string;
   storeSetterName: string;
   needsIdentityImport: boolean;
+  /**
+   * The template's entry-level view prop (e.g. "uri"). Paths starting
+   * with `props.<viewProp>` are aliased to `record.uri`. `null` skips
+   * the aliasing branch entirely.
+   */
+  viewProp: string | null;
 }
 
 function renderBindFunction(args: RenderArgs): string {
-  const { bindFunctionName, apiGetterName, storeListKey, storeSetterName, needsIdentityImport } = args;
+  const { bindFunctionName, apiGetterName, storeListKey, storeSetterName, needsIdentityImport, viewProp } = args;
+  // JSON-encode for safe interpolation as a string literal in emitted code.
+  const viewPropLiteral = viewProp == null ? 'null' : JSON.stringify(viewProp);
 
   const didBlock = needsIdentityImport
     ? `
@@ -106,19 +124,20 @@ function renderBindFunction(args: RenderArgs): string {
         if (!attr.name.startsWith('data-inlay-bind-')) return;
         const targetAttr = attr.name.substring('data-inlay-bind-'.length);
         if (targetAttr === 'did') return;
-        const value = resolvePath(record, attr.value);
+        const value: any = resolvePath(record, attr.value);
         if (value == null || value === '') {
           missing.add(el);
           return;
         }
-        const valueStr = String(value);
         if (isImgHost && targetAttr === 'src') {
+          const url = typeof value === 'string' ? value : tryBlobToCdnUrl(value, el, record);
+          if (url == null) { missing.add(el); return; }
           const img = el.querySelector('img');
-          if (img) img.setAttribute('src', valueStr);
+          if (img) img.setAttribute('src', url);
           srcSetOn.add(el);
-        } else {
-          el.setAttribute(targetAttr, valueStr);
+          return;
         }
+        el.setAttribute(targetAttr, String(value));
       });
       // Pass 2: bind-did
       const didMarker = el.getAttribute('data-inlay-bind-did');
@@ -141,18 +160,19 @@ function renderBindFunction(args: RenderArgs): string {
       Array.from(el.attributes).forEach((attr) => {
         if (!attr.name.startsWith('data-inlay-bind-')) return;
         const targetAttr = attr.name.substring('data-inlay-bind-'.length);
-        const value = resolvePath(record, attr.value);
+        const value: any = resolvePath(record, attr.value);
         if (value == null || value === '') {
           missing.add(el);
           return;
         }
-        const valueStr = String(value);
         if (isImgHost && targetAttr === 'src') {
+          const url = typeof value === 'string' ? value : tryBlobToCdnUrl(value, el, record);
+          if (url == null) { missing.add(el); return; }
           const img = el.querySelector('img');
-          if (img) img.setAttribute('src', valueStr);
-        } else {
-          el.setAttribute(targetAttr, valueStr);
+          if (img) img.setAttribute('src', url);
+          return;
         }
+        el.setAttribute(targetAttr, String(value));
       });`;
 
   const didResolver = needsIdentityImport
@@ -169,11 +189,20 @@ function renderBindFunction(args: RenderArgs): string {
     : '';
 
   return `async function ${bindFunctionName}(container: HTMLElement): Promise<void> {
+  const viewProp: string | null = ${viewPropLiteral};
+
   function resolvePath(record: any, marker: string): any {
     const parts = marker.split('.');
-    if (parts.length < 2) return undefined;
-    if (parts[0] !== 'record' || record == null) return undefined;
+    if (parts.length < 2 || record == null) return undefined;
+    let head = parts[0];
     let rest = parts.slice(1);
+    // Alias the entry-level view prop to the bound record's URI.
+    // E.g. for view.prop = "uri", \`props.uri.$did\` ≡ \`record.uri.$did\`.
+    if (head === 'props' && viewProp != null && rest[0] === viewProp) {
+      head = 'record';
+      rest = ['uri', ...rest.slice(1)];
+    }
+    if (head !== 'record') return undefined;
     const last = rest[rest.length - 1];
     const isSpecial = last === '$did' || last === '$collection' || last === '$rkey';
     if (isSpecial) rest = rest.slice(0, -1);
@@ -191,6 +220,40 @@ function renderBindFunction(args: RenderArgs): string {
       return m[3];
     }
     return current;
+  }
+
+  // Extract a CID string from any of the blob shapes the AT Proto stack
+  // returns: plain typed JSON (\`{ \$type: 'blob', ref: { \$link } }\`),
+  // \`@atproto/lexicon\` BlobRef class instances (with a CID-instance ref),
+  // and the legacy untyped \`{ cid: '...' }\` form.
+  function extractBlobCid(v: any): string | null {
+    if (v == null || typeof v !== 'object') return null;
+    if (v.ref != null && typeof v.ref.$link === 'string') return v.ref.$link;
+    if (typeof v.toJSON === 'function') {
+      try {
+        const j: any = v.toJSON();
+        if (j && j.ref && typeof j.ref.$link === 'string') return j.ref.$link;
+        if (j && typeof j.cid === 'string') return j.cid;
+      } catch {}
+    }
+    if (v.ref != null && typeof v.ref.toString === 'function') {
+      try {
+        const s = v.ref.toString();
+        if (typeof s === 'string' && s.length > 0 && s !== '[object Object]') return s;
+      } catch {}
+    }
+    if (typeof v.cid === 'string') return v.cid;
+    return null;
+  }
+
+  function tryBlobToCdnUrl(v: any, host: Element, rec: any): string | null {
+    const cid = extractBlobCid(v);
+    if (cid == null) return null;
+    const did = resolvePath(rec, 'record.uri.$did');
+    if (typeof did !== 'string') return null;
+    // Avatar host (org-atsui-avatar) → /img/avatar/...; Cover host → /img/banner/...
+    const variant = host.tagName === 'ORG-ATSUI-COVER' ? 'banner' : 'avatar';
+    return 'https://cdn.bsky.app/img/' + variant + '/plain/' + did + '/' + cid + '@jpeg';
   }
 
   // Hydrate record list from the store (or fetch via the generated Api).

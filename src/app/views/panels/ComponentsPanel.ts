@@ -21,6 +21,9 @@ import {
 import type { Component, ComponentType, Requirement, ContentNode, ContentNodeType } from '../../../types/wizard';
 import { renderToDOM } from '../../../inlay/host-runtime';
 import { buildContentNodeTree } from '../../../inlay/text-variants';
+import { resolveInlayTemplateCached } from '../../../inlay/resolve-cache';
+import { isResolveError, type ResolveResult } from '../../../inlay/resolve';
+import { showInlayComponentPicker } from '../../dialogs/InlayComponentPickerDialog';
 
 // ── Module-level state ────────────────────────────────────────────────
 
@@ -28,6 +31,20 @@ let editingComponentId: string | null = null;
 let selectedReqIds: string[] = [];
 let editingContentNodes: ContentNode[] = [];
 let isContentEditorMode = false;
+
+/**
+ * Synchronously-readable mirror of resolved Inlay template results, keyed
+ * by AT-URI. Populated as `resolveInlayTemplateCached` settles so the panel
+ * can render the broken-template badge without re-awaiting on every render.
+ */
+const syncTemplateResults = new Map<string, ResolveResult>();
+const inflightTemplateLookups = new Set<string>();
+
+/** Test-only: clear the panel's local resolution mirror. */
+export function _resetComponentsPanelResolution(): void {
+  syncTemplateResults.clear();
+  inflightTemplateLookups.clear();
+}
 
 // ── Quick-create name options by requirement type ─────────────────────
 
@@ -190,6 +207,11 @@ function renderComponentCard(component: Component): string {
   // Check if this is a text component with content nodes for Inlay preview
   const hasInlayPreview = component.componentType === 'text' && (component.contentNodes?.length ?? 0) > 0;
 
+  // Inlay attach control — applicable when component's primary requirement
+  // is `do` with at least one dataTypeIds entry pointing to a record type
+  // that has a published NSID.
+  const inlayAttachHtml = renderInlayAttachControl(component, validReqs);
+
   // Inlay preview container — filled in by wireComponentsPanel via DOM rendering
   const previewHtml = hasInlayPreview
     ? `<div class="component-card-inlay-preview inlay-root" data-component-id="${component.id}"></div>`
@@ -240,7 +262,118 @@ function renderComponentCard(component: Component): string {
     </div>
     ${previewHtml}
     ${footerHtml}
+    ${inlayAttachHtml}
   </div>`;
+}
+
+// ── Inlay attach control ─────────────────────────────────────────────
+
+/**
+ * Returns the data type's published NSID for a component, or null when
+ * the attach control should be hidden (no `do` requirement, no
+ * `dataTypeIds`, missing record type, no published NSID).
+ */
+function getPublishedNsidForCardComponent(component: Component, validReqs: Requirement[]): string | null {
+  const doReq = validReqs.find((r) => r.type === 'do' && (r.dataTypeIds?.length ?? 0) > 0);
+  if (!doReq) return null;
+  const dataTypeId = doReq.dataTypeIds?.[0];
+  if (!dataTypeId) return null;
+  const { recordTypes } = getWizardState();
+  const rt = recordTypes.find((r) => r.id === dataTypeId);
+  if (!rt) return null;
+  if (rt.source === 'adopted' && rt.adoptedNsid) return rt.adoptedNsid;
+  if (rt.namespaceOption) {
+    // Lazy import to avoid circular module load — Lexicon imports types only.
+    // (computeRecordTypeNsid is pure.)
+    return computeRecordTypeNsidLocal(rt);
+  }
+  return null;
+}
+
+function computeRecordTypeNsidLocal(rt: import('../../../types/wizard').RecordType): string {
+  // Mirror computeRecordTypeNsid from generator/Lexicon.ts to keep this
+  // file decoupled from the generator. If the rules diverge, update both.
+  if (rt.source === 'adopted' && rt.adoptedNsid) return rt.adoptedNsid;
+  const name = rt.name;
+  if (rt.namespaceOption === 'byo-domain' && rt.customDomain) {
+    const reversed = rt.customDomain.split('.').reverse().join('.');
+    return `${reversed}.${name}`;
+  }
+  if (rt.namespaceOption === 'thelexfiles-temp' && rt.lexUsername) {
+    return `com.thelexfiles.${rt.lexUsername}.temp.${name}`;
+  }
+  if (rt.namespaceOption === 'thelexfiles' && rt.lexUsername) {
+    return `com.thelexfiles.${rt.lexUsername}.${name}`;
+  }
+  return name;
+}
+
+function nsidShortLabel(uri: string): string {
+  // AT-URI format: at://did/at.inlay.component/<rkey>
+  const parts = uri.split('/');
+  return parts[parts.length - 1] || uri;
+}
+
+function renderInlayAttachControl(component: Component, validReqs: Requirement[]): string {
+  const nsid = getPublishedNsidForCardComponent(component, validReqs);
+  if (nsid === null) return '';
+
+  if (component.inlayComponentRef) {
+    const uri = component.inlayComponentRef;
+    const label = escapeHtml(nsidShortLabel(uri));
+    const cached = syncTemplateResults.get(uri);
+    let badgeHtml = '';
+    if (cached === undefined) {
+      badgeHtml = '<span class="inlay-attach-checking">Checking template&hellip;</span>';
+    } else if (isResolveError(cached)) {
+      badgeHtml = '<span class="inlay-attach-badge">Template no longer available</span>';
+    }
+    return `<div class="component-card-inlay-attach">
+      <span>Inlay: <code>${label}</code></span>
+      ${badgeHtml}
+      <span class="inlay-attach-actions">
+        <button class="inlay-attach-change-btn" data-component-id="${component.id}">Change</button>
+        <button class="inlay-attach-remove-btn" data-component-id="${component.id}">Remove</button>
+      </span>
+    </div>`;
+  }
+
+  return `<div class="component-card-inlay-attach">
+    <span>No Inlay component attached.</span>
+    <span class="inlay-attach-actions">
+      <button class="inlay-attach-add-btn" data-component-id="${component.id}">Attach Inlay component</button>
+    </span>
+  </div>`;
+}
+
+/**
+ * Kick off resolution lookups for any cards whose URI we haven't seen yet.
+ * Each lookup re-renders the panel when it settles so the badge can update
+ * synchronously on subsequent renders.
+ */
+function ensureInlayResolutionStarted(): void {
+  const { components } = getWizardState();
+  for (const c of components) {
+    const uri = c.inlayComponentRef;
+    if (!uri) continue;
+    if (syncTemplateResults.has(uri)) continue;
+    if (inflightTemplateLookups.has(uri)) continue;
+    inflightTemplateLookups.add(uri);
+    resolveInlayTemplateCached(uri)
+      .then((result) => {
+        syncTemplateResults.set(uri, result);
+      })
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : String(err);
+        syncTemplateResults.set(uri, { error: message, code: 'network' });
+      })
+      .finally(() => {
+        inflightTemplateLookups.delete(uri);
+        // Only re-render if the user is still on the components panel.
+        const stillVisible = document.querySelector('.component-card-inlay-attach');
+        if (stillVisible) rerender();
+      });
+  }
 }
 
 function renderUnassignedSection(unassigned: Requirement[]): string {
@@ -453,6 +586,9 @@ export function wireComponentsPanel(): void {
   // Render Inlay previews into placeholder containers
   renderInlayPreviews();
 
+  // Kick off resolution lookups for cards with attached templates
+  ensureInlayResolutionStarted();
+
   // Add button
   const addBtn = document.getElementById('components-add-btn');
   addBtn?.addEventListener('click', openNewForm);
@@ -510,6 +646,46 @@ function handleGridClick(e: Event): void {
     reorderRequirement(downBtn.dataset.componentId!, parseInt(downBtn.dataset.reqIndex!, 10), 1);
     return;
   }
+
+  // Inlay attach: add / change
+  const addBtn = target.closest('.inlay-attach-add-btn') as HTMLElement | null;
+  if (addBtn) {
+    openInlayPicker(addBtn.dataset.componentId!);
+    return;
+  }
+  const changeBtn = target.closest('.inlay-attach-change-btn') as HTMLElement | null;
+  if (changeBtn) {
+    openInlayPicker(changeBtn.dataset.componentId!);
+    return;
+  }
+  const removeBtn = target.closest('.inlay-attach-remove-btn') as HTMLElement | null;
+  if (removeBtn) {
+    clearInlayAttachment(removeBtn.dataset.componentId!);
+    return;
+  }
+}
+
+async function openInlayPicker(componentId: string): Promise<void> {
+  const state = getWizardState();
+  const component = state.components.find((c) => c.id === componentId);
+  if (!component) return;
+  const chosen = await showInlayComponentPicker(component);
+  if (chosen === null) return;
+  const fresh = getWizardState();
+  const target = fresh.components.find((c) => c.id === componentId);
+  if (!target) return;
+  target.inlayComponentRef = chosen;
+  saveWizardState(fresh);
+  rerender();
+}
+
+function clearInlayAttachment(componentId: string): void {
+  const state = getWizardState();
+  const target = state.components.find((c) => c.id === componentId);
+  if (!target) return;
+  delete target.inlayComponentRef;
+  saveWizardState(state);
+  rerender();
 }
 
 function handleUnassignedClick(e: Event): void {

@@ -42,7 +42,8 @@ Pick one item from "Up Next" before starting a coding session.
   - [x] Inlay component discovery (parallel with primitive expansion) — see `.specs/done/inlay-component-discovery.md` 4/11/26
   - [x] Inlay primitive expansion (parallel with discovery) — see `.specs/done/inlay-primitive-expansion.md` 4/13/26
   - [x] Inlay template foundation — primitive reconciliation + resolution (depends on above three) — see `.specs/done/inlay-template-foundation.md` 4/16/26
-  - [ ] Inlay template components — wizard wiring + generator + UI (depends on foundation) — see `.specs/active/inlay-template-components.md`. Spec is ready (rewritten + ambiguities resolved as of 2026-04-20). Steps 1–6 landed (ViewPage branch + identity.ts emission done 2026-04-26); remaining work is steps 7–8 in the spec's Implementation Approach. Start at step 7 (Picker UI in ComponentsPanel + broken-template badge).
+  - [x] Inlay template components — wizard wiring + generator + UI — see `.specs/done/inlay-template-components.md` 4/29/26
+  - [ ] NowPlaying live-PDS E2E verification — needs a real `fm.teal.alpha.actor.status` record on a test PDS (e.g. via TealFM at https://teal.fm or a manual `putRecord`). Bind paths are covered by unit tests; this is incremental confidence rather than new coverage. Captured during inlay-template-components step 8.
 - [ ] Wizard-built primitive trees (navigate/non-data requirements) — see `.specs/active/wizard-built-primitive-trees.md`
 - [ ] Menu component primitive-tree migration — see `.specs/active/menu-component-primitive-tree-migration.md`
 - [ ] Wizard walkthrough / guided tour — see `.specs/active/wizard-walkthrough.md`
@@ -68,6 +69,7 @@ Pick one item from "Up Next" before starting a coding session.
 
 <!-- Move completed items here with date -->
 
+- [x] Inlay template components — wizard wiring + generator + UI — see `.specs/done/inlay-template-components.md` 4/29/26
 - [x] Remove dead `appInfo.domain` field (also fixed `api.ts` ignoring `namespaceOption`) — see `.specs/done/remove-dead-domain-field.md` 4/25/26
 - [x] Inlay template foundation — see `.specs/done/inlay-template-foundation.md` 4/16/26
 - [x] Inlay primitive expansion — see `.specs/done/inlay-primitive-expansion.md` 4/13/26

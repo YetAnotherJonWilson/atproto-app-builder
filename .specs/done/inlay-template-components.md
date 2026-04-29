@@ -1,7 +1,7 @@
 # Spec: Inlay Template Components — Wizard Wiring, Generator, UI
 
-**Status:** ready
-**Date:** 2026-04-18 (rewritten against the foundation that landed 2026-04-16)
+**Status:** done (2026-04-29)
+**Date:** 2026-04-18 (rewritten against the foundation that landed 2026-04-16; closed out 2026-04-29)
 
 ## What
 
@@ -90,7 +90,7 @@ A brief recap — full detail in the foundation spec and
     fields (grep `WizardState.ts` — if strict, add a pass-through).
   - Field round-trips through save/load. Unit test covers this.
 
-- [ ] **Attach control in the Components panel** — when a component's
+- [x] **Attach control in the Components panel** — when a component's
       primary requirement is `do` with a `dataTypeIds` selection, its
       card in `ComponentsPanel` shows an "Attach Inlay component" control.
   - Clicking opens a picker dialog.
@@ -107,7 +107,7 @@ A brief recap — full detail in the foundation spec and
   - The picker is purely selection — no preview, no search, no
     filtering beyond compatibility.
 
-- [ ] **Attach control is hidden when not applicable** — components
+- [x] **Attach control is hidden when not applicable** — components
       whose primary requirement isn't `do` with `dataTypeIds`, or whose
       selected data type has no published NSID, do not show the control.
       The placeholder fallback continues to render for them.
@@ -161,8 +161,21 @@ A brief recap — full detail in the foundation spec and
     - `$did` / `$collection` / `$rkey` — parse them from the
       record's `uri` (it's already an AT-URI string).
     - Plain `record.<field>` — index into the record object.
-    - `props.*` — not supported in this spec (no component nesting);
-      resolves to missing.
+    - `props.<view.prop>` — aliased to `record.uri` (entry-level
+      view prop). E.g. for a template with `view.prop = "uri"`,
+      `props.uri.$did` resolves to the DID portion of the bound
+      record's URI. _(Expanded during step 8 — see Step 8 Outcomes.)_
+    - Other `props.*` paths — resolve to missing (no component
+      nesting in this spec).
+  - **Blob-ref handling for `bind-src` on Avatar/Cover hosts**:
+    when `record.<field>` resolves to a blob-shaped value (the
+    `@atproto/lexicon` `BlobRef` class instance, the typed JSON
+    form `{ $type: 'blob', ref: { $link } }`, or the legacy
+    untyped `{ cid }` form), the bind function constructs a
+    Bluesky CDN URL using the bound record's DID and the blob's
+    CID. Avatar host → `/img/avatar/plain/<did>/<cid>@jpeg`;
+    Cover host → `/img/banner/...`. _(Expanded during step 8 —
+    see Step 8 Outcomes.)_
   - Missing / null / undefined field values flow through the Maybe
     branch-toggle logic as "missing".
   - When a binding writes the `did` attribute on an `<img>` element
@@ -199,7 +212,7 @@ A brief recap — full detail in the foundation spec and
       `resolveDidToAvatar` from `./atproto/identity` when any bind
       function in that view writes a DID to an `<img>`.
 
-- [ ] **Data type NSID match drives picker compatibility** — the
+- [x] **Data type NSID match drives picker compatibility** — the
       picker compares the wizard data type's published NSID against each
       discovered template's `view.accepts`. Matching is exact string
       equality. If the data type has no published NSID (user hasn't
@@ -221,7 +234,7 @@ A brief recap — full detail in the foundation spec and
   - Test reset hook follows the same `_reset…` convention as
     `discovery.ts`.
 
-- [ ] **Wizard-time broken-template badge** — when ComponentsPanel
+- [x] **Wizard-time broken-template badge** — when ComponentsPanel
       renders a card whose component has `inlayComponentRef`:
   - On render, kick off `resolveInlayTemplateCached(uri)`. If the
     cache already holds a result, use it synchronously; otherwise
@@ -241,23 +254,34 @@ A brief recap — full detail in the foundation spec and
   - Re-attaching (Change → pick a working template) clears the
     badge on the next render once the new URI resolves successfully.
 
-- [ ] **No `@inlay/*` packages in the generated app** — the generator
+- [x] **No `@inlay/*` packages in the generated app** — the generator
       output imports nothing from `@inlay/core`, `@inlay/render`, or the
       wizard's `src/inlay/*` modules. All required logic is inlined into
       the generated code or uses the existing generated `Api`/`Store`.
-      (A grep in the generated `dist/` output would confirm this.)
+      Verified by inspecting the generator's emitted import strings —
+      only `'../router'`, `'../components/...'`, `'../store'`,
+      `'../atproto/api'`, `'../atproto/identity'` appear. Existing
+      `tests/generator/ViewPage.test.ts` asserts this directly.
 
-- [ ] **End-to-end verification with two real templates** — verified
-      manually against a live PDS:
+- [x] **End-to-end verification with real templates** — verified
+      manually against a live PDS (2026-04-29):
   1. Wizard project with a data type published against
      `app.bsky.actor.profile` + a component with `do` requirement →
-     attach `at://did:plc:fpruhuo22xkm5o7ttr2ktxdo/at.inlay.component/mov.danabra.AviHandle`
-     → generate → run → log in → profile fields render.
-  2. Same flow with a NowPlaying-compatible record type and
-     `mov.danabra.NowPlaying` attached.
+     attach AviHandle → generate → run → log in → profile fields
+     render correctly. Avatar `<img>` resolves to a Bluesky CDN URL
+     derived from the profile's blob ref; displayName populates the
+     heading; the wrapping `<a>` href points to the profile AT-URI;
+     Maybe fallback stays hidden.
+  2. NowPlaying live-PDS verification deferred — the test user's
+     PDS has no `fm.teal.alpha.actor.status` records, so live data
+     wasn't available. The bind path NowPlaying exercises (deep
+     `record.*` paths with array indexing, no blobs, no DID
+     resolution) is fully covered by unit tests
+     (`tests/generator/inlay/data-binding.test.ts`). Captured as a
+     follow-up in `BACKLOG.md`.
 
-- [ ] **Verify pipeline is green** — `npm run verify` (build + vitest
-  - playwright) passes.
+- [x] **Verify pipeline is green** — `npm run verify` (build + vitest
+  - playwright) passes (663 tests + 1 e2e).
 
 ## Scope
 
@@ -549,3 +573,80 @@ componentIndex)`. Special-cases `<img>`+DID by emitting a
 3. `npm run verify` — build + vitest + playwright all green.
 4. Manual E2E per Behavioral Scenarios 1–2 above against
    `did:plc:fpruhuo22xkm5o7ttr2ktxdo`'s templates.
+
+## Step 8 Outcomes (2026-04-29)
+
+End-to-end verification surfaced two real bugs in `bindComponent<i>`
+runtime resolution that prevented AviHandle from rendering against a
+live `app.bsky.actor.profile` record. Both were fixed in this spec
+rather than deferred, expanding the spec's runtime scope.
+
+### Scope expansion 1 — `BlobRef` handling for `bind-src`
+
+**Symptom:** `<img src="[object Object]">` for AviHandle's avatar.
+
+**Root cause:** `record.avatar` on a profile record returned by
+`agent.com.atproto.repo.listRecords` is a `BlobRef` class instance from
+`@atproto/lexicon`, not a plain JSON object. Its `ref` is a multiformats
+`CID` instance — there is no `ref.$link` and no `$type` on the wrapper.
+The original bind code did `String(value)`, producing `[object Object]`.
+
+**Fix** (`src/generator/inlay/data-binding.ts`):
+- New `extractBlobCid()` helper duck-types three blob shapes:
+  - Plain typed JSON: `{ $type: 'blob', ref: { $link } }`
+  - `BlobRef` instance: extract via `ref.toString()` (CID stringifier)
+    or `toJSON()` if available
+  - Untyped legacy: `{ cid: '...' }`
+- New `tryBlobToCdnUrl()` constructs
+  `https://cdn.bsky.app/img/{avatar|banner}/plain/<did>/<cid>@jpeg`
+  using the bound record's URI for DID extraction. Avatar host →
+  `avatar`; Cover host → `banner`.
+- `bind-src` on Avatar/Cover now: string URL passes through; otherwise
+  attempt blob extraction; otherwise mark missing. Eliminates the
+  unconditional `String(value)` that produced the bug.
+
+This is consistent with the spec's other Bluesky-CDN coupling (the
+`resolveDidToAvatar` helper). Pluggable identity / image resolution
+remains an explicit follow-up.
+
+### Scope expansion 2 — `props.<view.prop>` aliasing
+
+**Symptom:** AviHandle's avatar DID binding never resolved. AviHandle
+binds `Avatar.did` to `["props", "uri", "$did"]` — without aliasing
+support, this fell into the original spec's "props.* resolves to
+missing" branch and the avatar resolver path was never exercised.
+
+**Fix** (`src/generator/inlay/data-binding.ts`):
+- `compileBindFunction` now reads `resolved.view.prop` and threads it
+  into the emitted `bindComponent<i>` function as `viewProp`.
+- The emitted `resolvePath` function aliases `props.<viewProp>` →
+  `record.uri` before path-walking. So for a template with
+  `view.prop = "uri"`, `props.uri` resolves to the bound record's
+  AT-URI string, and `props.uri.$did` resolves through the existing
+  `$did` extraction logic to the DID portion.
+- Other `props.*` paths (component nesting) still resolve to missing
+  — out of scope as before.
+
+This is consistent with how Inlay templates with a collection-typed
+view prop are bound: the bound record's identity (its URI) is the
+prop value.
+
+### Deferred — NowPlaying live-PDS verification
+
+The test user's PDS (`did:plc:uwx2usnabkorq3ekzzuplb2a`) has no
+`fm.teal.alpha.actor.status` records, so NowPlaying was not run
+end-to-end against live data. The bind paths NowPlaying exercises
+(deep `record.*` paths, array indexing, no blobs, no DID resolution)
+are fully covered by unit tests in
+`tests/generator/inlay/data-binding.test.ts`, and the generation
+chain (resolution → ViewPage → bind function → DOM) is exercised by
+AviHandle's successful run. Captured as a follow-up in `BACKLOG.md`.
+
+### Tests added
+
+`tests/generator/inlay/data-binding.test.ts` grew from 13 to 17 tests:
+- `props.<view.prop>` aliasing to `record.uri`
+- `props.<view.prop>.$did` resolving through to DID extraction
+- Plain-JSON blob ref → CDN URL
+- `BlobRef` class instance (with CID-instance ref) → CDN URL
+- Blob ref with no extractable DID → missing

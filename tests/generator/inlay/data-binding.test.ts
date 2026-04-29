@@ -291,7 +291,7 @@ describe('compileBindFunction()', () => {
       expect(fallbackBranch.style.display).toBe('');
     });
 
-    it('treats props.* paths as missing (no component nesting in this spec)', async () => {
+    it('aliases props.<view.prop> to record.uri so the entry-level prop resolves', async () => {
       const compiled = compileBindFunction(toResolved(avihandleFixture), PROFILE_RT, 0);
       const harness = makeHarness(compiled.code, compiled, {
         records: [
@@ -307,9 +307,128 @@ describe('compileBindFunction()', () => {
       container.innerHTML = compiled.html;
       await harness.bindFn(container);
 
-      // The <a> has data-inlay-bind-href="props.uri" — should NOT be set.
+      // <a data-inlay-bind-href="props.uri"> aliases to record.uri.
       const anchor = container.querySelector('a[data-inlay-bind-href]')!;
-      expect(anchor.getAttribute('href')).toBeNull();
+      expect(anchor.getAttribute('href')).toBe(profileUri);
+    });
+
+    it('aliases props.<view.prop>.$did so DID resolution works without a record.* binding', async () => {
+      // AviHandle's avatar binds did to props.uri.$did. With the alias,
+      // that resolves to the DID portion of record.uri — no HTML patch
+      // needed. Drop record.avatar so bind-src is missing and the resolver
+      // path runs.
+      const compiled = compileBindFunction(toResolved(avihandleFixture), PROFILE_RT, 0);
+      const harness = makeHarness(compiled.code, compiled, {
+        records: [
+          {
+            uri: profileUri,
+            displayName: 'Dana',
+          },
+        ],
+        avatarLookup: { 'did:plc:abc': 'https://cdn.example/avatar.jpg' },
+      });
+
+      const container = document.createElement('div');
+      container.innerHTML = compiled.html;
+      await harness.bindFn(container);
+
+      expect(harness.avatarCalls).toEqual(['did:plc:abc']);
+      const img = container.querySelector('org-atsui-avatar img') as HTMLImageElement;
+      expect(img.getAttribute('src')).toBe('https://cdn.example/avatar.jpg');
+    });
+
+    it('converts a blob-ref avatar to a Bluesky CDN URL', async () => {
+      const compiled = compileBindFunction(toResolved(avihandleFixture), PROFILE_RT, 0);
+      const harness = makeHarness(compiled.code, compiled, {
+        records: [
+          {
+            uri: profileUri,
+            displayName: 'Dana',
+            avatar: {
+              $type: 'blob',
+              ref: { $link: 'bafyabc123' },
+              mimeType: 'image/jpeg',
+              size: 12345,
+            },
+          },
+        ],
+      });
+
+      const container = document.createElement('div');
+      container.innerHTML = compiled.html;
+      await harness.bindFn(container);
+
+      const img = container.querySelector('org-atsui-avatar img') as HTMLImageElement;
+      expect(img.getAttribute('src')).toBe(
+        'https://cdn.bsky.app/img/avatar/plain/did:plc:abc/bafyabc123@jpeg'
+      );
+      // Skip the resolver path because bind-src already produced a value.
+      expect(harness.avatarCalls).toEqual([]);
+    });
+
+    it('converts a BlobRef class instance (with CID-instance ref) to a CDN URL', async () => {
+      // @atproto/api returns BlobRef class instances, not plain JSON. The
+      // ref is a multiformats CID instance whose toString() yields the CID.
+      // Older detection that required `$type: 'blob'` and `ref.$link` would
+      // miss this shape and stringify the instance to '[object Object]'.
+      class FakeCid {
+        constructor(private value: string) {}
+        toString() { return this.value; }
+      }
+      class FakeBlobRef {
+        ref: FakeCid;
+        mimeType: string;
+        size: number;
+        constructor(cid: string) {
+          this.ref = new FakeCid(cid);
+          this.mimeType = 'image/jpeg';
+          this.size = 12345;
+        }
+        toJSON() {
+          return { $type: 'blob', ref: { $link: this.ref.toString() }, mimeType: this.mimeType, size: this.size };
+        }
+      }
+
+      const compiled = compileBindFunction(toResolved(avihandleFixture), PROFILE_RT, 0);
+      const harness = makeHarness(compiled.code, compiled, {
+        records: [
+          {
+            uri: profileUri,
+            displayName: 'Dana',
+            avatar: new FakeBlobRef('bafyclassinst'),
+          },
+        ],
+      });
+
+      const container = document.createElement('div');
+      container.innerHTML = compiled.html;
+      await harness.bindFn(container);
+
+      const img = container.querySelector('org-atsui-avatar img') as HTMLImageElement;
+      expect(img.getAttribute('src')).toBe(
+        'https://cdn.bsky.app/img/avatar/plain/did:plc:abc/bafyclassinst@jpeg'
+      );
+      expect(harness.avatarCalls).toEqual([]);
+    });
+
+    it('marks the avatar as missing when blob-ref bind-src has no extractable DID on the record', async () => {
+      const compiled = compileBindFunction(toResolved(avihandleFixture), PROFILE_RT, 0);
+      const harness = makeHarness(compiled.code, compiled, {
+        records: [
+          {
+            // No `uri` field — DID extraction returns null.
+            displayName: 'Dana',
+            avatar: { $type: 'blob', ref: { $link: 'bafyabc123' }, mimeType: 'image/jpeg', size: 1 },
+          },
+        ],
+      });
+
+      const container = document.createElement('div');
+      container.innerHTML = compiled.html;
+      await harness.bindFn(container);
+
+      const img = container.querySelector('org-atsui-avatar img') as HTMLImageElement;
+      expect(img.getAttribute('src')).toBeNull();
     });
 
     it('falls back to the avatar resolver when bind-src is missing but bind-did resolves', async () => {
