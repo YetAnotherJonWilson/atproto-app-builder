@@ -116,7 +116,8 @@
     background: var(--accent-glow);
   }
 
-  #req-add-btn {
+  #req-add-btn,
+  #components-add-btn {
     align-self: flex-start;
     margin-bottom: 0.75rem;
     font-size: 0.9375rem;
