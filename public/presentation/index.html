@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Building on the AT Protocol</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/white.css"
+      id="theme"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="reveal">
+      <div class="slides">
+        <!-- ============================================================ -->
+        <!-- TITLE                                                         -->
+        <!-- ============================================================ -->
+        <section data-background-color="#fafbfc">
+          <div class="title-slide">
+            <h1 class="display">Building on the AT&nbsp;Protocol</h1>
+            <p class="lede">
+              Why the protocol matters, and a live tour of the App Wizard.
+            </p>
+            <p class="byline">
+              Jon Wilson &middot;
+              <a href="https://thelexfiles.com">thelexfiles.com</a>
+            </p>
+          </div>
+          <aside class="notes">
+            Welcome — we'll spend most of our time on a live demo, but I want to
+            start with why this protocol is worth caring about, and end with
+            where to go next if you want to keep building or just stay in the
+            loop.
+          </aside>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- PART 1 — WHY ATPROTO                                          -->
+        <!-- ============================================================ -->
+
+        <section>
+          <h2 class="section-eyebrow">Part 1</h2>
+          <h1>Why the AT&nbsp;Protocol matters</h1>
+          <aside class="notes">
+            Three slides on the problem, three on the answer, then we get to the
+            demo.
+          </aside>
+        </section>
+
+        <section>
+          <h2>Today, your identity and data live <em>inside</em> apps.</h2>
+          <div class="figure">
+            <img
+              src="/media/centralized_architecture.svg"
+              alt="Centralized architecture: identity and data trapped inside each app"
+            />
+          </div>
+          <aside class="notes">
+            Each app you use holds its own copy of you — your account, your
+            posts, your follows, your photos. None of it follows you out the
+            door.
+          </aside>
+        </section>
+
+        <section>
+          <h2>That's where the rot comes from.</h2>
+          <ul class="bullets-large">
+            <li>
+              <strong>Lock-in</strong> — leaving means losing your network and
+              history.
+            </li>
+            <li>
+              <strong>Monopolization</strong> — the network effect rewards one
+              winner.
+            </li>
+            <li>
+              <strong>Enshittification</strong> — platforms degrade the
+              experience to extract more value from users.
+            </li>
+          </ul>
+          <aside class="notes">
+            These aren't separate problems. They all flow from the same root
+            cause: the platform owns your identity and data, so the platform
+            sets the terms.
+          </aside>
+        </section>
+
+        <section>
+          <h2>AT Protocol pulls them apart.</h2>
+          <div class="figure">
+            <img
+              src="decentralized_architecture.svg"
+              alt="Decentralized architecture: identity and data live with the user; apps are interchangeable views"
+            />
+          </div>
+          <p class="caption">
+            Identity and data live with <em>you</em>. Apps are interchangeable
+            views.
+          </p>
+          <aside class="notes">
+            Your identity is a DID you control. Your data lives in a personal
+            data server you can move. Apps read and write to your repo — they
+            don't own it.
+          </aside>
+        </section>
+
+        <section>
+          <h2>What this unlocks</h2>
+          <div class="two-col">
+            <div>
+              <h3 class="col-heading">For people</h3>
+              <ul>
+                <li>Own your data</li>
+                <li>Switch apps without starting over</li>
+                <li>Choose who hosts your stuff</li>
+                <li>An exit ramp, always</li>
+              </ul>
+            </div>
+            <div>
+              <h3 class="col-heading">For developers</h3>
+              <ul>
+                <li>Plug into an existing network</li>
+                <li>Compose with what others have built</li>
+                <li>
+                  <strong>Build without a landlord</strong> &mdash; no platform
+                  can evict you
+                </li>
+                <li>
+                  <strong>Lower the bar to try your app</strong> &mdash; users
+                  adopt faster when leaving is painless
+                </li>
+                <li>Win by being good, not by being captive</li>
+              </ul>
+            </div>
+          </div>
+          <aside class="notes">
+            The thing I want to stick: this isn't just better for users at the
+            expense of devs. It's mutually beneficial. Devs get a public network
+            they don't have to bootstrap. Users get the right to leave. Both
+            sides stop being held hostage.
+          </aside>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- PART 2 — DEMO                                                 -->
+        <!-- ============================================================ -->
+
+        <section data-background-color="#0b1220" class="dark-slide">
+          <h2 class="section-eyebrow light">Part 2</h2>
+          <h1 class="light">Demo: The App Wizard</h1>
+          <p class="lede light">
+            A guided tour of scaffolding an AT Protocol app.
+          </p>
+          <p class="link-out">
+            <a href="https://thelexfiles.com">thelexfiles.com</a>
+          </p>
+          <aside class="notes">
+            Switch to live App Wizard now. Walk through the wizard end-to-end.
+            When you finish, switch back here for Part 3.
+          </aside>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- PART 3 — WHAT'S NEXT                                          -->
+        <!-- ============================================================ -->
+
+        <section>
+          <h2 class="section-eyebrow">Part 3</h2>
+          <h1>What's next</h1>
+          <aside class="notes">
+            Resources for getting deeper, where the App Wizard is going, and how
+            to plug in.
+          </aside>
+        </section>
+
+        <section>
+          <h2>The App Wizard, where it's going</h2>
+          <ul class="bullets-large">
+            <li>Interactive tutorial mode for first-timers</li>
+            <li>Community-contributed components and views</li>
+            <li>Better previews of components and views</li>
+            <li>
+              Export to GitHub &mdash; and tangled.sh, its atproto equivalent
+            </li>
+            <li>
+              Lower the floor for first-time builders, raise the ceiling for
+              experienced ones
+            </li>
+          </ul>
+          <p class="caption">
+            Want to build with it &mdash; or help build it? Let's talk after.
+          </p>
+          <aside class="notes">
+            The roadmap isn't fixed. If you want a feature, ask. If you want to
+            contribute, even better.
+          </aside>
+        </section>
+
+        <section>
+          <h2>Other ways to get involved</h2>
+          <ul class="bullets-large">
+            <li>
+              <strong>Use an ATProto app</strong> &mdash; not just Bluesky. Try
+              a few.
+            </li>
+            <li>
+              <strong>Run a personal data server</strong> &mdash; own your data
+              for real.
+            </li>
+            <li>
+              <strong>Publish a lexicon</strong> &mdash; define a new kind of
+              record.
+            </li>
+            <li>
+              <strong>Build something small</strong> &mdash; a feed, a viewer, a
+              bot, a tool.
+            </li>
+            <li>
+              <strong>Show up</strong> &mdash; on the forum, in threads, at
+              meetups.
+            </li>
+          </ul>
+          <aside class="notes">
+            Pick one. The protocol gets better the more people are actually
+            using and shipping on it.
+          </aside>
+        </section>
+
+        <section data-background-color="#fafbfc">
+          <div class="qr-slide qr-slide--with-links">
+            <div class="qr-text">
+              <h2>Slides &amp; resources</h2>
+              <div class="resource-groups">
+                <div class="resource-group">
+                  <h3 class="resource-group-heading">Find the ATmosphere</h3>
+                  <ul class="resource-list resource-list--compact">
+                    <li>
+                      <a href="https://blueskydirectory.com/"
+                        >blueskydirectory.com</a
+                      >
+                      <span class="resource-desc"
+                        >Directory of apps and tools</span
+                      >
+                    </li>
+                    <li>
+                      <a href="https://atmosphere.community/"
+                        >atmosphere.community</a
+                      >
+                      <span class="resource-desc">Community projects</span>
+                    </li>
+                    <li>
+                      <a href="https://discourse.atprotocol.community/"
+                        >discourse.atprotocol.community</a
+                      >
+                      <span class="resource-desc">Community forum</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="resource-group">
+                  <h3 class="resource-group-heading">Learn &amp; build</h3>
+                  <ul class="resource-list resource-list--compact">
+                    <li>
+                      <a href="https://atproto.com/">atproto.com</a>
+                      <span class="resource-desc">Protocol docs</span>
+                    </li>
+                    <li>
+                      <a href="https://advent.codes/">advent.codes</a>
+                      <span class="resource-desc">Hands-on challenges</span>
+                    </li>
+                    <li>
+                      <a href="https://pds.ls/">pds.ls</a>
+                      <span class="resource-desc">PDS inspection tool</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="resource-group">
+                  <h3 class="resource-group-heading">From the community</h3>
+                  <ul class="resource-list resource-list--compact">
+                    <li>
+                      <a
+                        href="https://semble.so/profile/byarielm.fyi/collections"
+                        >semble.so/profile/byarielm.fyi/collections</a
+                      >
+                      <span class="resource-desc"
+                        >Curated reading by Ariel</span
+                      >
+                    </li>
+                    <li>
+                      <a
+                        href="https://semble.so/profile/tynanpurdy.com/collections"
+                        >semble.so/profile/tynanpurdy.com/collections</a
+                      >
+                      <span class="resource-desc"
+                        >Curated reading by Tynan</span
+                      >
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="qr-image">
+              <img
+                src="qr.png"
+                alt="QR code linking to thelexfiles.com/presentation"
+              />
+              <p class="big-url">
+                <a href="https://thelexfiles.com/presentation/"
+                  >thelexfiles.com/presentation</a
+                >
+              </p>
+              <p class="caption">Thanks for coming!</p>
+            </div>
+          </div>
+          <aside class="notes">
+            Last slide. Leave this up while people scan or write down the URL.
+            Take questions.
+          </aside>
+        </section>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+    <script>
+      Reveal.initialize({
+        hash: true,
+        slideNumber: 'c/t',
+        controls: true,
+        progress: true,
+        transition: 'fade',
+        backgroundTransition: 'fade',
+        plugins: [RevealNotes],
+      });
+    </script>
+  </body>
+</html>
