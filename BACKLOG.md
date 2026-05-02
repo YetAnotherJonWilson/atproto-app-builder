@@ -51,6 +51,11 @@ Pick one item from "Up Next" before starting a coding session.
 - [ ] Generated code view — see `.specs/active/generated-code-view.md`
 - [ ] AI implementation specs output — see `.specs/active/ai-implementation-specs-output.md`
 
+### Demo readiness
+
+- [x] Checklist component type (Grocery List demo centerpiece) — see `.specs/done/checklist-component.md` 5/2/26
+- [ ] Grocery List demo script — see `.specs/active/grocery-list-demo.md`
+
 ### UX Improvements
 
 - [ ] Inlay component library — browse and preview — see `.specs/active/inlay-component-library.md`
@@ -70,6 +75,7 @@ Pick one item from "Up Next" before starting a coding session.
 
 <!-- Move completed items here with date -->
 
+- [x] Checklist component type (Grocery List demo centerpiece) — see `.specs/done/checklist-component.md` 5/2/26
 - [x] Components panel — "+ New Component" creation flow rework — see `.specs/done/components-panel-creation-flow.md` 5/1/26
 - [x] Inlay template components — wizard wiring + generator + UI — see `.specs/done/inlay-template-components.md` 4/29/26
 - [x] Remove dead `appInfo.domain` field (also fixed `api.ts` ignoring `namespaceOption`) — see `.specs/done/remove-dead-domain-field.md` 4/25/26

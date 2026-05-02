@@ -422,6 +422,65 @@
     pointer-events: none;
   }
 
+  /* ===== CHECKLIST CONFIG (component card) ===== */
+
+  .checklist-config {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+    padding: 0.5rem 0.6rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+  }
+
+  .checklist-config-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .checklist-config-row label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  .checklist-config-row select {
+    flex: 1;
+    margin: 0;
+    padding: 0.25rem 0.4rem;
+    font-size: 0.8rem;
+    background: var(--bg-secondary, #fff);
+    border: 1px solid var(--border-subtle);
+    border-radius: 3px;
+    color: black;
+  }
+
+  .checklist-config-warning {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1.35;
+  }
+
+  .checklist-config-warning code {
+    background: rgba(0, 229, 255, 0.08);
+    color: var(--accent);
+    padding: 0.05rem 0.3rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+  }
+
+  .checklist-config-stale {
+    font-size: 0.7rem;
+    color: var(--accent-red, #c62828);
+    margin-left: 0.25rem;
+  }
+
   /* ===== FULFILLS BADGE ===== */
 
   .component-card-fulfills {
@@ -482,7 +541,6 @@
   .content-node-actions button:hover {
     color: var(--accent);
   }
-
 
   .content-node-actions button:disabled {
     opacity: 0.3;

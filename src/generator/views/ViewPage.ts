@@ -14,6 +14,10 @@
 import type { View, Component, RecordType, WizardState } from '../../types/wizard';
 import { escapeHtml } from '../../utils';
 import { generatePlaceholderHtml } from '../components/Placeholder';
+import {
+  resolveChecklistConfig,
+  describeChecklistFailure,
+} from '../components/Checklist';
 import { buildContentNodeTree } from '../../inlay/text-variants';
 import { compileToHtml } from '../inlay/compile';
 import { compileBindFunction } from '../inlay/data-binding';
@@ -40,9 +44,12 @@ export function generateViewPage(
 ): string {
   const { requirements, recordTypes, nonDataElements, views } = wizardState;
 
-  // Collect menu component imports
+  // Collect menu + checklist component imports
   const menuImports = components
     .filter(c => c.component.componentType === 'menu' && c.componentFile && c.componentFunction)
+    .map(c => `import { ${c.componentFunction} } from '../components/${c.componentFile}';`);
+  const checklistImports = components
+    .filter(c => c.component.componentType === 'checklist' && c.componentFile && c.componentFunction)
     .map(c => `import { ${c.componentFunction} } from '../components/${c.componentFile}';`);
 
   // Inlay-driven imports + module-scope bind function declarations are
@@ -93,6 +100,19 @@ export function generateViewPage(
   ${c.componentFunction}(${varName}, router);
   container.appendChild(${varName});
 `;
+      } else if (c.component.componentType === 'checklist' && c.componentFunction) {
+        // Real Checklist component
+        body += `
+  // Component: ${c.component.name} (checklist)
+  const ${varName} = document.createElement('section');
+  ${varName}.className = 'app-component';
+  ${c.componentFunction}(${varName});
+  container.appendChild(${varName});
+`;
+      } else if (c.component.componentType === 'checklist') {
+        // Checklist with unresolvable config — emit placeholder with the
+        // most specific message we can derive.
+        body += emitChecklistFailure(c.component, varName, wizardState);
       } else if (c.component.componentType === 'text') {
         // Inlay text component — compile-time rendering from contentNodes
         const tree = c.component.contentNodes?.length
@@ -153,6 +173,9 @@ export function generateViewPage(
   let imports = `import type { Router } from '../router';\n`;
   if (menuImports.length > 0) {
     imports += menuImports.join('\n') + '\n';
+  }
+  if (checklistImports.length > 0) {
+    imports += checklistImports.join('\n') + '\n';
   }
   if (needsStore) {
     imports += `import Store, { storeManager } from '../store';\n`;
@@ -258,6 +281,44 @@ function emitInlayFailure(
   const ${varName} = document.createElement('section');
   ${varName}.className = 'app-component inlay-root';
   ${varName}.innerHTML = \`<div class="inlay-unresolved-component">${message}</div>\`;
+  container.appendChild(${varName});
+`;
+}
+
+function emitChecklistFailure(
+  component: Component,
+  varName: string,
+  wizardState: WizardState,
+): string {
+  const recordType = findBoundRecordType(component, wizardState);
+  let message: string;
+  if (!recordType) {
+    message = 'Checklist needs a do requirement bound to a data type.';
+  } else {
+    const resolution = resolveChecklistConfig(component, recordType);
+    if (resolution.kind === 'ok') {
+      // Should not normally happen — the index loop emitted a file. Fall
+      // back to a generic message to keep the output non-fatal.
+      message = `Checklist component generated without a callable function.`;
+    } else {
+      message = describeChecklistFailure(resolution);
+    }
+  }
+  const safe = escapeHtml(message)
+    .replace(/`/g, '\\`')
+    .replace(/\$/g, '\\$');
+  const safeName = escapeHtml(component.name)
+    .replace(/`/g, '\\`')
+    .replace(/\$/g, '\\$');
+  return `
+  // Component: ${component.name} (checklist) — unresolvable
+  const ${varName} = document.createElement('section');
+  ${varName}.className = 'app-component app-component-placeholder';
+  ${varName}.innerHTML = \`
+    <h3>${safeName}</h3>
+    <div class="placeholder-type">Checklist</div>
+    <p class="placeholder-message">${safe}</p>
+  \`;
   container.appendChild(${varName});
 `;
 }

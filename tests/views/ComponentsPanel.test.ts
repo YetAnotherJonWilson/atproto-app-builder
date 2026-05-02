@@ -11,7 +11,12 @@ import {
   setWizardState,
   initializeWizardState,
 } from '../../src/app/state/WizardState';
-import type { Requirement, Component } from '../../src/types/wizard';
+import type {
+  Requirement,
+  Component,
+  RecordType,
+  Field,
+} from '../../src/types/wizard';
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
@@ -30,11 +35,31 @@ function makeComponent(
 function setupState(opts: {
   requirements?: Requirement[];
   components?: Component[];
+  recordTypes?: RecordType[];
 }): void {
   const state = initializeWizardState();
   state.requirements = opts.requirements ?? [];
   state.components = opts.components ?? [];
+  if (opts.recordTypes) state.recordTypes = opts.recordTypes;
   setWizardState(state);
+}
+
+function makeField(
+  overrides: Partial<Field> & { name: string; type: string },
+): Field {
+  return { id: `field-${overrides.name}`, required: false, ...overrides };
+}
+
+function makeRecordType(
+  overrides: Partial<RecordType> & { id: string; name: string },
+): RecordType {
+  return {
+    displayName: overrides.name,
+    description: '',
+    fields: [],
+    source: 'new',
+    ...overrides,
+  };
 }
 
 function renderAndWire(): void {
@@ -71,7 +96,12 @@ describe('ComponentsPanel — requirements, no components', () => {
     reqs = [
       makeRequirement({ type: 'know', text: 'App description' }),
       makeRequirement({ type: 'do', verb: 'create', data: 'Post' }),
-      makeRequirement({ type: 'navigate', navType: 'direct', fromView: 'Home', toView: 'Profile' }),
+      makeRequirement({
+        type: 'navigate',
+        navType: 'direct',
+        fromView: 'Home',
+        toView: 'Profile',
+      }),
     ];
     setupState({ requirements: reqs });
   });
@@ -134,11 +164,19 @@ describe('ComponentsPanel — with components', () => {
       makeRequirement({ type: 'know', text: 'App description' }),
       makeRequirement({ type: 'do', verb: 'create', data: 'Post' }),
       makeRequirement({ type: 'do', verb: 'search', data: 'Post' }),
-      makeRequirement({ type: 'navigate', navType: 'direct', fromView: 'Home', toView: 'Profile' }),
+      makeRequirement({
+        type: 'navigate',
+        navType: 'direct',
+        fromView: 'Home',
+        toView: 'Profile',
+      }),
     ];
     components = [
       makeComponent({ name: 'About Section', requirementIds: [reqs[0].id] }),
-      makeComponent({ name: 'Post Feed', requirementIds: [reqs[1].id, reqs[2].id] }),
+      makeComponent({
+        name: 'Post Feed',
+        requirementIds: [reqs[1].id, reqs[2].id],
+      }),
     ];
     setupState({ requirements: reqs, components });
   });
@@ -228,17 +266,23 @@ describe('ComponentsPanel — form interaction', () => {
   });
 
   function pickContentMode(): void {
-    const card = document.querySelector('.component-mode-card[data-mode="content"]') as HTMLElement;
+    const card = document.querySelector(
+      '.component-mode-card[data-mode="content"]',
+    ) as HTMLElement;
     card.click();
   }
 
   function pickChipMode(): void {
-    const card = document.querySelector('.component-mode-card[data-mode="chip"]') as HTMLElement;
+    const card = document.querySelector(
+      '.component-mode-card[data-mode="chip"]',
+    ) as HTMLElement;
     card.click();
   }
 
   it('opens mode picker when add button is clicked', () => {
-    const addBtn = document.getElementById('components-add-btn') as HTMLButtonElement;
+    const addBtn = document.getElementById(
+      'components-add-btn',
+    ) as HTMLButtonElement;
     addBtn.click();
 
     const form = document.getElementById('components-form');
@@ -250,10 +294,14 @@ describe('ComponentsPanel — form interaction', () => {
   });
 
   it('cancels from mode picker without saving', () => {
-    const addBtn = document.getElementById('components-add-btn') as HTMLButtonElement;
+    const addBtn = document.getElementById(
+      'components-add-btn',
+    ) as HTMLButtonElement;
     addBtn.click();
 
-    const cancelBtn = document.getElementById('component-cancel-btn') as HTMLButtonElement;
+    const cancelBtn = document.getElementById(
+      'component-cancel-btn',
+    ) as HTMLButtonElement;
     cancelBtn.click();
 
     const form = document.getElementById('components-form');
@@ -265,7 +313,9 @@ describe('ComponentsPanel — form interaction', () => {
   });
 
   it('transitions to content editor when "Text / info content" card is picked', () => {
-    const addBtn = document.getElementById('components-add-btn') as HTMLButtonElement;
+    const addBtn = document.getElementById(
+      'components-add-btn',
+    ) as HTMLButtonElement;
     addBtn.click();
     pickContentMode();
 
@@ -275,11 +325,15 @@ describe('ComponentsPanel — form interaction', () => {
     expect(addContentBtn).toBeTruthy();
     // Linked know section is present
     expect(document.getElementById('component-linked-know-chips')).toBeTruthy();
-    expect(document.getElementById('component-linked-know-available')).toBeTruthy();
+    expect(
+      document.getElementById('component-linked-know-available'),
+    ).toBeTruthy();
   });
 
-  it('transitions to chip selector when "Combine requirements" card is picked', () => {
-    const addBtn = document.getElementById('components-add-btn') as HTMLButtonElement;
+  it('transitions to chip selector when "Add one or more requirements" card is picked', () => {
+    const addBtn = document.getElementById(
+      'components-add-btn',
+    ) as HTMLButtonElement;
     addBtn.click();
     pickChipMode();
 
@@ -290,72 +344,104 @@ describe('ComponentsPanel — form interaction', () => {
   });
 
   it('disables save button initially in content editor', () => {
-    const addBtn = document.getElementById('components-add-btn') as HTMLButtonElement;
+    const addBtn = document.getElementById(
+      'components-add-btn',
+    ) as HTMLButtonElement;
     addBtn.click();
     pickContentMode();
 
-    const saveBtn = document.getElementById('component-save-btn') as HTMLButtonElement;
+    const saveBtn = document.getElementById(
+      'component-save-btn',
+    ) as HTMLButtonElement;
     expect(saveBtn.disabled).toBe(true);
   });
 
   it('enables save button when name is entered (content editor)', () => {
-    const addBtn = document.getElementById('components-add-btn') as HTMLButtonElement;
+    const addBtn = document.getElementById(
+      'components-add-btn',
+    ) as HTMLButtonElement;
     addBtn.click();
     pickContentMode();
 
-    const nameInput = document.getElementById('component-name-input') as HTMLInputElement;
+    const nameInput = document.getElementById(
+      'component-name-input',
+    ) as HTMLInputElement;
     nameInput.value = 'About Section';
     nameInput.dispatchEvent(new Event('input'));
 
-    const saveBtn = document.getElementById('component-save-btn') as HTMLButtonElement;
+    const saveBtn = document.getElementById(
+      'component-save-btn',
+    ) as HTMLButtonElement;
     expect(saveBtn.disabled).toBe(false);
   });
 
   it('adds content node via dropdown', () => {
-    const addBtn = document.getElementById('components-add-btn') as HTMLButtonElement;
+    const addBtn = document.getElementById(
+      'components-add-btn',
+    ) as HTMLButtonElement;
     addBtn.click();
     pickContentMode();
 
     // Open dropdown and select Heading
-    const addContentBtn = document.getElementById('content-add-btn') as HTMLButtonElement;
+    const addContentBtn = document.getElementById(
+      'content-add-btn',
+    ) as HTMLButtonElement;
     addContentBtn.click();
-    const option = document.querySelector('.content-add-option[data-node-type="heading"]') as HTMLElement;
+    const option = document.querySelector(
+      '.content-add-option[data-node-type="heading"]',
+    ) as HTMLElement;
     option.click();
 
     const cards = document.querySelectorAll('.content-node-card');
     expect(cards.length).toBe(1);
-    expect(cards[0].querySelector('.content-node-type-label')?.textContent).toBe('Heading');
+    expect(
+      cards[0].querySelector('.content-node-type-label')?.textContent,
+    ).toBe('Heading');
   });
 
   it('saves text component with content nodes and empty requirementIds (no auto-fab)', () => {
-    const addBtn = document.getElementById('components-add-btn') as HTMLButtonElement;
+    const addBtn = document.getElementById(
+      'components-add-btn',
+    ) as HTMLButtonElement;
     addBtn.click();
     pickContentMode();
 
     // Enter name
-    const nameInput = document.getElementById('component-name-input') as HTMLInputElement;
+    const nameInput = document.getElementById(
+      'component-name-input',
+    ) as HTMLInputElement;
     nameInput.value = 'About Section';
     nameInput.dispatchEvent(new Event('input'));
 
     // Add a heading node
-    const addContentBtn = document.getElementById('content-add-btn') as HTMLButtonElement;
+    const addContentBtn = document.getElementById(
+      'content-add-btn',
+    ) as HTMLButtonElement;
     addContentBtn.click();
-    const option = document.querySelector('.content-add-option[data-node-type="heading"]') as HTMLElement;
+    const option = document.querySelector(
+      '.content-add-option[data-node-type="heading"]',
+    ) as HTMLElement;
     option.click();
 
     // Type text into the node
-    const textarea = document.querySelector('.content-node-text') as HTMLTextAreaElement;
+    const textarea = document.querySelector(
+      '.content-node-text',
+    ) as HTMLTextAreaElement;
     textarea.value = 'Welcome';
 
     // Save
-    const saveBtn = document.getElementById('component-save-btn') as HTMLButtonElement;
+    const saveBtn = document.getElementById(
+      'component-save-btn',
+    ) as HTMLButtonElement;
     saveBtn.click();
 
     const state = getWizardState();
     expect(state.components.length).toBe(1);
     expect(state.components[0].name).toBe('About Section');
     expect(state.components[0].componentType).toBe('text');
-    expect(state.components[0].contentNodes).toEqual([{ type: 'heading', text: 'Welcome' }]);
+    expect(state.components[0].contentNodes).toEqual([
+      { type: 'heading', text: 'Welcome' },
+    ]);
     // No auto-fabricated requirement: requirementIds is empty
     expect(state.components[0].requirementIds).toEqual([]);
     // Original requirements untouched
@@ -365,39 +451,53 @@ describe('ComponentsPanel — form interaction', () => {
   it('saves text component with multiple linked know requirements', () => {
     // Add a second know req for this test
     const state = getWizardState();
-    state.requirements.push(makeRequirement({ type: 'know', text: 'Subheadline copy' }));
+    state.requirements.push(
+      makeRequirement({ type: 'know', text: 'Subheadline copy' }),
+    );
     saveWizardState(state);
     renderAndWire();
 
-    const knowReqIds = getWizardState().requirements
-      .filter(r => r.type === 'know')
-      .map(r => r.id);
+    const knowReqIds = getWizardState()
+      .requirements.filter((r) => r.type === 'know')
+      .map((r) => r.id);
     expect(knowReqIds.length).toBe(2);
 
-    const addBtn = document.getElementById('components-add-btn') as HTMLButtonElement;
+    const addBtn = document.getElementById(
+      'components-add-btn',
+    ) as HTMLButtonElement;
     addBtn.click();
     pickContentMode();
 
-    const nameInput = document.getElementById('component-name-input') as HTMLInputElement;
+    const nameInput = document.getElementById(
+      'component-name-input',
+    ) as HTMLInputElement;
     nameInput.value = 'Hero text';
     nameInput.dispatchEvent(new Event('input'));
 
     // Click both available know reqs
-    const items = document.querySelectorAll('#component-linked-know-available .linked-know-add');
+    const items = document.querySelectorAll(
+      '#component-linked-know-available .linked-know-add',
+    );
     expect(items.length).toBe(2);
     (items[0] as HTMLElement).click();
     // Re-query after re-render
-    const itemsAfter = document.querySelectorAll('#component-linked-know-available .linked-know-add');
+    const itemsAfter = document.querySelectorAll(
+      '#component-linked-know-available .linked-know-add',
+    );
     (itemsAfter[0] as HTMLElement).click();
 
     // Restore name (refreshFormContents preserves it via input.value, but type again to be safe)
-    const newNameInput = document.getElementById('component-name-input') as HTMLInputElement;
+    const newNameInput = document.getElementById(
+      'component-name-input',
+    ) as HTMLInputElement;
     if (newNameInput.value !== 'Hero text') {
       newNameInput.value = 'Hero text';
       newNameInput.dispatchEvent(new Event('input'));
     }
 
-    const saveBtn = document.getElementById('component-save-btn') as HTMLButtonElement;
+    const saveBtn = document.getElementById(
+      'component-save-btn',
+    ) as HTMLButtonElement;
     saveBtn.click();
 
     const final = getWizardState();
@@ -405,49 +505,66 @@ describe('ComponentsPanel — form interaction', () => {
     expect(final.components[0].componentType).toBe('text');
     expect(final.components[0].requirementIds.length).toBe(2);
     // The linked ids are both know requirements
-    const linkedTypes = final.components[0].requirementIds
-      .map(id => final.requirements.find(r => r.id === id)?.type);
+    const linkedTypes = final.components[0].requirementIds.map(
+      (id) => final.requirements.find((r) => r.id === id)?.type,
+    );
     expect(linkedTypes).toEqual(['know', 'know']);
   });
 
   it('removes a linked know requirement chip via × button', () => {
-    const addBtn = document.getElementById('components-add-btn') as HTMLButtonElement;
+    const addBtn = document.getElementById(
+      'components-add-btn',
+    ) as HTMLButtonElement;
     addBtn.click();
     pickContentMode();
 
     // Add the know req as a chip
-    const addItem = document.querySelector('#component-linked-know-available .linked-know-add') as HTMLElement;
+    const addItem = document.querySelector(
+      '#component-linked-know-available .linked-know-add',
+    ) as HTMLElement;
     addItem.click();
 
     let chips = document.querySelectorAll('#component-linked-know-chips .chip');
     expect(chips.length).toBe(1);
 
     // Remove it
-    const removeBtn = document.querySelector('#component-linked-know-chips .linked-know-remove') as HTMLElement;
+    const removeBtn = document.querySelector(
+      '#component-linked-know-chips .linked-know-remove',
+    ) as HTMLElement;
     removeBtn.click();
 
     chips = document.querySelectorAll('#component-linked-know-chips .chip');
     expect(chips.length).toBe(0);
     // Now back in available list
-    const avail = document.querySelectorAll('#component-linked-know-available .linked-know-add');
+    const avail = document.querySelectorAll(
+      '#component-linked-know-available .linked-know-add',
+    );
     expect(avail.length).toBe(1);
   });
 
-  it('saves multi-requirement composite via Combine requirements', () => {
-    const addBtn = document.getElementById('components-add-btn') as HTMLButtonElement;
+  it('saves multi-requirement composite via Add one or more requirements', () => {
+    const addBtn = document.getElementById(
+      'components-add-btn',
+    ) as HTMLButtonElement;
     addBtn.click();
     pickChipMode();
 
-    const nameInput = document.getElementById('component-name-input') as HTMLInputElement;
+    const nameInput = document.getElementById(
+      'component-name-input',
+    ) as HTMLInputElement;
     nameInput.value = 'Feedback widget';
     nameInput.dispatchEvent(new Event('input'));
 
     // Click both available requirements
-    const items = document.querySelectorAll('#component-available-list .available-item');
+    const items = document.querySelectorAll(
+      '#component-available-list .available-item',
+    );
     (items[0] as HTMLElement).click();
     (items[1] as HTMLElement).click();
 
-    const saveBtn = document.getElementById('component-save-btn') as HTMLButtonElement;
+    const saveBtn = document.getElementById(
+      'component-save-btn',
+    ) as HTMLButtonElement;
     saveBtn.click();
 
     const state = getWizardState();
@@ -460,15 +577,21 @@ describe('ComponentsPanel — form interaction', () => {
   });
 
   it('closes form after save', () => {
-    const addBtn = document.getElementById('components-add-btn') as HTMLButtonElement;
+    const addBtn = document.getElementById(
+      'components-add-btn',
+    ) as HTMLButtonElement;
     addBtn.click();
     pickContentMode();
 
-    const nameInput = document.getElementById('component-name-input') as HTMLInputElement;
+    const nameInput = document.getElementById(
+      'component-name-input',
+    ) as HTMLInputElement;
     nameInput.value = 'Test Component';
     nameInput.dispatchEvent(new Event('input'));
 
-    const saveBtn = document.getElementById('component-save-btn') as HTMLButtonElement;
+    const saveBtn = document.getElementById(
+      'component-save-btn',
+    ) as HTMLButtonElement;
     saveBtn.click();
 
     const form = document.getElementById('components-form');
@@ -476,11 +599,15 @@ describe('ComponentsPanel — form interaction', () => {
   });
 
   it('cancels content editor without saving', () => {
-    const addBtn = document.getElementById('components-add-btn') as HTMLButtonElement;
+    const addBtn = document.getElementById(
+      'components-add-btn',
+    ) as HTMLButtonElement;
     addBtn.click();
     pickContentMode();
 
-    const cancelBtn = document.getElementById('component-cancel-btn') as HTMLButtonElement;
+    const cancelBtn = document.getElementById(
+      'component-cancel-btn',
+    ) as HTMLButtonElement;
     cancelBtn.click();
 
     const form = document.getElementById('components-form');
@@ -501,16 +628,23 @@ describe('ComponentsPanel — editing', () => {
       makeRequirement({ type: 'do', verb: 'create', data: 'Post' }),
       makeRequirement({ type: 'do', verb: 'search', data: 'Post' }),
     ];
-    component = makeComponent({ name: 'About Section', requirementIds: [reqs[0].id] });
+    component = makeComponent({
+      name: 'About Section',
+      requirementIds: [reqs[0].id],
+    });
     setupState({ requirements: reqs, components: [component] });
     renderAndWire();
   });
 
   it('opens form pre-populated when edit is clicked', () => {
-    const editBtn = document.querySelector(`.component-edit-btn[data-component-id="${component.id}"]`) as HTMLButtonElement;
+    const editBtn = document.querySelector(
+      `.component-edit-btn[data-component-id="${component.id}"]`,
+    ) as HTMLButtonElement;
     editBtn.click();
 
-    const nameInput = document.getElementById('component-name-input') as HTMLInputElement;
+    const nameInput = document.getElementById(
+      'component-name-input',
+    ) as HTMLInputElement;
     expect(nameInput.value).toBe('About Section');
 
     const chips = document.querySelectorAll('.chip');
@@ -519,32 +653,47 @@ describe('ComponentsPanel — editing', () => {
   });
 
   it('saves edits to existing component', () => {
-    const editBtn = document.querySelector(`.component-edit-btn[data-component-id="${component.id}"]`) as HTMLButtonElement;
+    const editBtn = document.querySelector(
+      `.component-edit-btn[data-component-id="${component.id}"]`,
+    ) as HTMLButtonElement;
     editBtn.click();
 
     // Change name
-    const nameInput = document.getElementById('component-name-input') as HTMLInputElement;
+    const nameInput = document.getElementById(
+      'component-name-input',
+    ) as HTMLInputElement;
     nameInput.value = 'Info Section';
     nameInput.dispatchEvent(new Event('input'));
 
     // Add another requirement
-    const items = document.querySelectorAll('#component-available-list .available-item');
+    const items = document.querySelectorAll(
+      '#component-available-list .available-item',
+    );
     (items[1] as HTMLElement).click(); // create Post
 
-    const saveBtn = document.getElementById('component-save-btn') as HTMLButtonElement;
+    const saveBtn = document.getElementById(
+      'component-save-btn',
+    ) as HTMLButtonElement;
     saveBtn.click();
 
     const state = getWizardState();
     expect(state.components.length).toBe(1);
     expect(state.components[0].name).toBe('Info Section');
-    expect(state.components[0].requirementIds).toEqual([reqs[0].id, reqs[1].id]);
+    expect(state.components[0].requirementIds).toEqual([
+      reqs[0].id,
+      reqs[1].id,
+    ]);
   });
 
   it('shows Update Component label when editing', () => {
-    const editBtn = document.querySelector(`.component-edit-btn[data-component-id="${component.id}"]`) as HTMLButtonElement;
+    const editBtn = document.querySelector(
+      `.component-edit-btn[data-component-id="${component.id}"]`,
+    ) as HTMLButtonElement;
     editBtn.click();
 
-    const saveBtn = document.getElementById('component-save-btn') as HTMLButtonElement;
+    const saveBtn = document.getElementById(
+      'component-save-btn',
+    ) as HTMLButtonElement;
     expect(saveBtn.textContent?.trim()).toBe('Update Component');
   });
 });
@@ -566,17 +715,23 @@ describe('ComponentsPanel — editing text component', () => {
     setupState({ requirements: reqs, components: [component] });
     renderAndWire();
 
-    const editBtn = document.querySelector(`.component-edit-btn[data-component-id="${component.id}"]`) as HTMLButtonElement;
+    const editBtn = document.querySelector(
+      `.component-edit-btn[data-component-id="${component.id}"]`,
+    ) as HTMLButtonElement;
     editBtn.click();
 
     // Content editor is open (text component)
     expect(document.getElementById('content-nodes-list')).toBeTruthy();
     // Chip is pre-populated with the linked know req
-    const chips = document.querySelectorAll('#component-linked-know-chips .chip');
+    const chips = document.querySelectorAll(
+      '#component-linked-know-chips .chip',
+    );
     expect(chips.length).toBe(1);
     expect(chips[0].textContent).toContain('Welcome message');
     // The other unassigned know req is in available list
-    const avail = document.querySelectorAll('#component-linked-know-available .linked-know-add');
+    const avail = document.querySelectorAll(
+      '#component-linked-know-available .linked-know-add',
+    );
     expect(avail.length).toBe(1);
     expect(avail[0].textContent).toContain('Tagline');
   });
@@ -595,24 +750,30 @@ describe('ComponentsPanel — editing text component', () => {
     setupState({ requirements: reqs, components: [component] });
     renderAndWire();
 
-    const editBtn = document.querySelector(`.component-edit-btn[data-component-id="${component.id}"]`) as HTMLButtonElement;
+    const editBtn = document.querySelector(
+      `.component-edit-btn[data-component-id="${component.id}"]`,
+    ) as HTMLButtonElement;
     editBtn.click();
 
     // Click the available Tagline
-    const addItem = document.querySelector('#component-linked-know-available .linked-know-add') as HTMLElement;
+    const addItem = document.querySelector(
+      '#component-linked-know-available .linked-know-add',
+    ) as HTMLElement;
     addItem.click();
 
-    const saveBtn = document.getElementById('component-save-btn') as HTMLButtonElement;
+    const saveBtn = document.getElementById(
+      'component-save-btn',
+    ) as HTMLButtonElement;
     saveBtn.click();
 
     const state = getWizardState();
-    expect(state.components[0].requirementIds.sort()).toEqual([reqs[0].id, reqs[1].id].sort());
+    expect(state.components[0].requirementIds.sort()).toEqual(
+      [reqs[0].id, reqs[1].id].sort(),
+    );
   });
 
   it('saves with empty requirementIds when chips are removed', () => {
-    const reqs = [
-      makeRequirement({ type: 'know', text: 'Welcome message' }),
-    ];
+    const reqs = [makeRequirement({ type: 'know', text: 'Welcome message' })];
     const component = makeComponent({
       name: 'Greeting',
       requirementIds: [reqs[0].id],
@@ -622,13 +783,19 @@ describe('ComponentsPanel — editing text component', () => {
     setupState({ requirements: reqs, components: [component] });
     renderAndWire();
 
-    const editBtn = document.querySelector(`.component-edit-btn[data-component-id="${component.id}"]`) as HTMLButtonElement;
+    const editBtn = document.querySelector(
+      `.component-edit-btn[data-component-id="${component.id}"]`,
+    ) as HTMLButtonElement;
     editBtn.click();
 
-    const removeBtn = document.querySelector('#component-linked-know-chips .linked-know-remove') as HTMLElement;
+    const removeBtn = document.querySelector(
+      '#component-linked-know-chips .linked-know-remove',
+    ) as HTMLElement;
     removeBtn.click();
 
-    const saveBtn = document.getElementById('component-save-btn') as HTMLButtonElement;
+    const saveBtn = document.getElementById(
+      'component-save-btn',
+    ) as HTMLButtonElement;
     saveBtn.click();
 
     const state = getWizardState();
@@ -645,16 +812,19 @@ describe('ComponentsPanel — deletion', () => {
   let component: Component;
 
   beforeEach(() => {
-    reqs = [
-      makeRequirement({ type: 'know', text: 'App description' }),
-    ];
-    component = makeComponent({ name: 'About Section', requirementIds: [reqs[0].id] });
+    reqs = [makeRequirement({ type: 'know', text: 'App description' })];
+    component = makeComponent({
+      name: 'About Section',
+      requirementIds: [reqs[0].id],
+    });
     setupState({ requirements: reqs, components: [component] });
     renderAndWire();
   });
 
   it('deletes component when delete button is clicked', () => {
-    const deleteBtn = document.querySelector(`.component-delete-btn[data-component-id="${component.id}"]`) as HTMLButtonElement;
+    const deleteBtn = document.querySelector(
+      `.component-delete-btn[data-component-id="${component.id}"]`,
+    ) as HTMLButtonElement;
     deleteBtn.click();
 
     const state = getWizardState();
@@ -662,7 +832,9 @@ describe('ComponentsPanel — deletion', () => {
   });
 
   it('does not delete requirements when component is deleted', () => {
-    const deleteBtn = document.querySelector(`.component-delete-btn[data-component-id="${component.id}"]`) as HTMLButtonElement;
+    const deleteBtn = document.querySelector(
+      `.component-delete-btn[data-component-id="${component.id}"]`,
+    ) as HTMLButtonElement;
     deleteBtn.click();
 
     const state = getWizardState();
@@ -699,7 +871,9 @@ describe('ComponentsPanel — reordering', () => {
 
     const state = getWizardState();
     expect(state.components[0].requirementIds).toEqual([
-      reqs[1].id, reqs[0].id, reqs[2].id,
+      reqs[1].id,
+      reqs[0].id,
+      reqs[2].id,
     ]);
   });
 
@@ -711,7 +885,9 @@ describe('ComponentsPanel — reordering', () => {
 
     const state = getWizardState();
     expect(state.components[0].requirementIds).toEqual([
-      reqs[1].id, reqs[0].id, reqs[2].id,
+      reqs[1].id,
+      reqs[0].id,
+      reqs[2].id,
     ]);
   });
 
@@ -740,7 +916,10 @@ describe('ComponentsPanel — multi-assignment', () => {
       makeRequirement({ type: 'do', verb: 'view', data: 'Post' }),
       makeRequirement({ type: 'do', verb: 'search', data: 'Post' }),
     ];
-    const component1 = makeComponent({ name: 'Post Feed', requirementIds: [reqs[0].id, reqs[1].id] });
+    const component1 = makeComponent({
+      name: 'Post Feed',
+      requirementIds: [reqs[0].id, reqs[1].id],
+    });
     setupState({ requirements: reqs, components: [component1] });
   });
 
@@ -763,7 +942,9 @@ describe('ComponentsPanel — multi-assignment', () => {
 
   it('opens mode picker when creating new component', () => {
     renderAndWire();
-    const addBtn = document.getElementById('components-add-btn') as HTMLButtonElement;
+    const addBtn = document.getElementById(
+      'components-add-btn',
+    ) as HTMLButtonElement;
     addBtn.click();
 
     // New component form opens in mode-picker mode
@@ -803,7 +984,12 @@ describe('ComponentsPanel — quick-create', () => {
   beforeEach(() => {
     reqs = [
       makeRequirement({ type: 'know', text: 'App description' }),
-      makeRequirement({ type: 'navigate', navType: 'direct', fromView: 'Home', toView: 'Profile' }),
+      makeRequirement({
+        type: 'navigate',
+        navType: 'direct',
+        fromView: 'Home',
+        toView: 'Profile',
+      }),
     ];
     setupState({ requirements: reqs });
     renderAndWire();
@@ -827,9 +1013,7 @@ describe('ComponentsPanel — quick-create', () => {
 
 describe('ComponentsPanel — sidebar', () => {
   it('updates sidebar badge and items', () => {
-    const reqs = [
-      makeRequirement({ type: 'know', text: 'Desc' }),
-    ];
+    const reqs = [makeRequirement({ type: 'know', text: 'Desc' })];
     const components = [
       makeComponent({ name: 'About', requirementIds: [reqs[0].id] }),
       makeComponent({ name: 'Hero', requirementIds: [reqs[0].id] }),
@@ -905,5 +1089,165 @@ describe('ComponentsPanel — non-data element requirements', () => {
     const html = renderComponentsPanel();
     // Should have auto-name button, not a dropdown
     expect(html).toContain('data-auto-name="Timer"');
+  });
+});
+
+// ── Checklist component type ─────────────────────────────────────────
+
+describe('ComponentsPanel — checklist component', () => {
+  function setupChecklistState(opts: { staleLabel?: boolean } = {}): {
+    req: Requirement;
+    rt: RecordType;
+  } {
+    const rt = makeRecordType({
+      id: 'rt-task',
+      name: 'task',
+      displayName: 'Task',
+      fields: [
+        makeField({ name: 'notes', type: 'string', required: false }),
+        makeField({ name: 'text', type: 'string', required: true }),
+        makeField({ name: 'done', type: 'boolean' }),
+      ],
+    });
+    const req = makeRequirement({
+      type: 'do',
+      description: 'manage tasks',
+      dataTypeIds: [rt.id],
+    });
+    setupState({ requirements: [req], recordTypes: [rt] });
+    if (opts.staleLabel) {
+      // Add a checklist component with a stale label field.
+      const state = getWizardState();
+      state.components.push({
+        id: 'comp-stale',
+        name: 'manage tasks',
+        requirementIds: [req.id],
+        componentType: 'checklist',
+        checklistConfig: { labelField: 'wasText', checkedField: 'done' },
+      });
+      setWizardState(state);
+    }
+    return { req, rt };
+  }
+
+  it('shows Checklist option in quick-create for do-data requirements', () => {
+    setupChecklistState();
+    const html = renderComponentsPanel();
+    expect(html).toContain('Checklist');
+    expect(html).toContain('data-component-type="checklist"');
+  });
+
+  it('quick-create populates checklistConfig with default-pick convention (required string wins)', () => {
+    const { req } = setupChecklistState();
+    renderAndWire();
+
+    const option = document.querySelector(
+      `.quick-create-option[data-req-id="${req.id}"][data-component-type="checklist"]`,
+    ) as HTMLButtonElement;
+    expect(option).toBeTruthy();
+    option.click();
+
+    const state = getWizardState();
+    expect(state.components.length).toBe(1);
+    const c = state.components[0];
+    expect(c.componentType).toBe('checklist');
+    // Required string 'text' beats first-listed optional 'notes'.
+    expect(c.checklistConfig).toEqual({
+      labelField: 'text',
+      checkedField: 'done',
+    });
+  });
+
+  it('renders both dropdowns on the component card with default selections', () => {
+    const { req, rt } = setupChecklistState();
+    const state = getWizardState();
+    state.components.push({
+      id: 'comp-checklist',
+      name: 'My Checklist',
+      requirementIds: [req.id],
+      componentType: 'checklist',
+      checklistConfig: { labelField: 'text', checkedField: 'done' },
+    });
+    setWizardState(state);
+    void rt;
+
+    const html = renderComponentsPanel();
+    expect(html).toContain('checklist-config');
+    expect(html).toContain('Label field');
+    expect(html).toContain('Checked field');
+    // Both candidate string fields appear as options.
+    expect(html).toContain('value="text"');
+    expect(html).toContain('value="notes"');
+    // Boolean field appears.
+    expect(html).toContain('value="done"');
+  });
+
+  it('updates checklistConfig.labelField when the dropdown changes', () => {
+    const { req } = setupChecklistState();
+    const state = getWizardState();
+    state.components.push({
+      id: 'comp-checklist',
+      name: 'My Checklist',
+      requirementIds: [req.id],
+      componentType: 'checklist',
+      checklistConfig: { labelField: 'text', checkedField: 'done' },
+    });
+    setWizardState(state);
+    renderAndWire();
+
+    const select = document.querySelector(
+      '.checklist-config-select[data-component-id="comp-checklist"][data-config-key="labelField"]',
+    ) as HTMLSelectElement;
+    expect(select).toBeTruthy();
+    select.value = 'notes';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+
+    const updated = getWizardState().components.find(
+      (c) => c.id === 'comp-checklist',
+    )!;
+    expect(updated.checklistConfig).toEqual({
+      labelField: 'notes',
+      checkedField: 'done',
+    });
+  });
+
+  it('shows Missing: <name> disabled option and stale warning when label field is gone', () => {
+    setupChecklistState({ staleLabel: true });
+    const html = renderComponentsPanel();
+    expect(html).toContain('Missing: wasText');
+    expect(html).toContain('disabled');
+    expect(html).toContain('This field no longer exists');
+  });
+
+  it('shows the structural warning when the bound record type lacks compatible fields', () => {
+    const rt = makeRecordType({
+      id: 'rt-bad',
+      name: 'bad',
+      displayName: 'Bad',
+      fields: [
+        makeField({ name: 'text', type: 'string', required: true }),
+        // No boolean field.
+      ],
+    });
+    const req = makeRequirement({
+      type: 'do',
+      description: 'manage bad',
+      dataTypeIds: [rt.id],
+    });
+    const c: Component = {
+      id: 'comp-bad',
+      name: 'Bad Checklist',
+      requirementIds: [req.id],
+      componentType: 'checklist',
+    };
+    setupState({ requirements: [req], components: [c], recordTypes: [rt] });
+
+    const html = renderComponentsPanel();
+    expect(html).toContain(
+      'Checklist needs a string field and a boolean field',
+    );
+    expect(html).toContain('Bad');
+    // No dropdowns rendered in the warning case.
+    expect(html).not.toContain('checklist-config-select');
   });
 });

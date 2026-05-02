@@ -13,17 +13,26 @@
 
 import { getWizardState, saveWizardState } from '../../state/WizardState';
 import { generateId } from '../../../utils/id';
-import { updateAccordionSummaries, switchSection, isNarrowViewport } from '../WorkspaceLayout';
 import {
-  getDisplayText,
-  getSidebarText,
-} from './RequirementsPanel';
-import type { Component, ComponentType, Requirement, ContentNode, ContentNodeType } from '../../../types/wizard';
+  updateAccordionSummaries,
+  switchSection,
+  isNarrowViewport,
+} from '../WorkspaceLayout';
+import { getDisplayText, getSidebarText } from './RequirementsPanel';
+import type {
+  Component,
+  ComponentType,
+  Requirement,
+  RecordType,
+  ContentNode,
+  ContentNodeType,
+} from '../../../types/wizard';
 import { renderToDOM } from '../../../inlay/host-runtime';
 import { buildContentNodeTree } from '../../../inlay/text-variants';
 import { resolveInlayTemplateCached } from '../../../inlay/resolve-cache';
 import { isResolveError, type ResolveResult } from '../../../inlay/resolve';
 import { showInlayComponentPicker } from '../../dialogs/InlayComponentPickerDialog';
+import { pickDefaultChecklistConfig } from '../../../generator/components/Checklist';
 
 // ── Module-level state ────────────────────────────────────────────────
 
@@ -71,12 +80,9 @@ const QUICK_NAMES: Record<string, QuickNameOption[]> = {
     { label: 'Card', componentType: 'card' },
     { label: 'Table', componentType: 'table' },
     { label: 'Detail View', componentType: 'detail' },
+    { label: 'Checklist', componentType: 'checklist' },
   ],
-  'do-element': [
-    { label: 'Widget' },
-    { label: 'Tool' },
-    { label: 'Control' },
-  ],
+  'do-element': [{ label: 'Widget' }, { label: 'Tool' }, { label: 'Control' }],
   navigate: [
     { label: 'Menu', componentType: 'menu' },
     { label: 'Link' },
@@ -104,7 +110,11 @@ function getElementAutoName(req: Requirement): string | null {
 // ── Helpers ───────────────────────────────────────────────────────────
 
 function escapeHtml(str: string): string {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 function getRequirementShortText(req: Requirement): string {
@@ -121,8 +131,9 @@ function getRequirementShortText(req: Requirement): string {
           return `Fwd/back (${req.navControlType === 'buttons' ? 'buttons' : 'arrows'})`;
         default: {
           const { views } = getWizardState();
-          const fromName = views.find(v => v.id === req.fromView)?.name ?? '?';
-          const toName = views.find(v => v.id === req.toView)?.name ?? '?';
+          const fromName =
+            views.find((v) => v.id === req.fromView)?.name ?? '?';
+          const toName = views.find((v) => v.id === req.toView)?.name ?? '?';
           return `${fromName} → ${toName}`;
         }
       }
@@ -138,6 +149,33 @@ function getTypeLabel(req: Requirement): string {
   if (req.type === 'know') return 'know';
   if (req.type === 'do') return 'do';
   return 'nav';
+}
+
+function getBoundRecordTypeForComponent(
+  component: Component,
+): RecordType | null {
+  const { requirements, recordTypes } = getWizardState();
+  for (const reqId of component.requirementIds) {
+    const req = requirements.find((r) => r.id === reqId);
+    if (
+      req?.type !== 'do' ||
+      !req.dataTypeIds ||
+      req.dataTypeIds.length === 0
+    ) {
+      continue;
+    }
+    const rt = recordTypes.find((r) => r.id === req.dataTypeIds![0]);
+    if (rt) return rt;
+  }
+  return null;
+}
+
+function getBoundRecordTypeForRequirement(req: Requirement): RecordType | null {
+  if (req.type !== 'do' || !req.dataTypeIds || req.dataTypeIds.length === 0) {
+    return null;
+  }
+  const { recordTypes } = getWizardState();
+  return recordTypes.find((r) => r.id === req.dataTypeIds![0]) ?? null;
 }
 
 function getUnassignedRequirements(): Requirement[] {
@@ -176,14 +214,14 @@ export function renderComponentsPanel(): string {
 
   const formHtml = `<div class="inline-form" id="components-form" style="display:none;"></div>`;
 
-  const gridHtml = components.length > 0
-    ? `<div class="component-grid" id="components-grid">${components.map(renderComponentCard).join('')}</div>`
-    : '';
+  const gridHtml =
+    components.length > 0
+      ? `<div class="component-grid" id="components-grid">${components.map(renderComponentCard).join('')}</div>`
+      : '';
 
   const unassigned = getUnassignedRequirements();
-  const unassignedHtml = unassigned.length > 0
-    ? renderUnassignedSection(unassigned)
-    : '';
+  const unassignedHtml =
+    unassigned.length > 0 ? renderUnassignedSection(unassigned) : '';
 
   const nextStep = `
     <div class="next-step">
@@ -208,12 +246,20 @@ function renderComponentCard(component: Component): string {
   const showReorder = validReqs.length > 1;
 
   // Check if this is a text component with content nodes for Inlay preview
-  const hasInlayPreview = component.componentType === 'text' && (component.contentNodes?.length ?? 0) > 0;
+  const hasInlayPreview =
+    component.componentType === 'text' &&
+    (component.contentNodes?.length ?? 0) > 0;
 
   // Inlay attach control — applicable when component's primary requirement
   // is `do` with at least one dataTypeIds entry pointing to a record type
   // that has a published NSID.
   const inlayAttachHtml = renderInlayAttachControl(component, validReqs);
+
+  // Checklist config — two dropdowns or a structural warning.
+  const checklistConfigHtml =
+    component.componentType === 'checklist'
+      ? renderChecklistConfig(component)
+      : '';
 
   // Inlay preview container — filled in by wireComponentsPanel via DOM rendering
   const previewHtml = hasInlayPreview
@@ -225,8 +271,8 @@ function renderComponentCard(component: Component): string {
   let footerHtml: string;
   if (hasInlayPreview && validReqs.length > 0) {
     const fulfillsText = validReqs
-      .filter(r => r.type === 'know')
-      .map(r => escapeHtml(truncate(r.text ?? '', 50)))
+      .filter((r) => r.type === 'know')
+      .map((r) => escapeHtml(truncate(r.text ?? '', 50)))
       .join(', ');
     footerHtml = fulfillsText
       ? `<div class="component-card-fulfills">Fulfills: ${fulfillsText}</div>`
@@ -264,9 +310,96 @@ function renderComponentCard(component: Component): string {
       </div>
     </div>
     ${previewHtml}
+    ${checklistConfigHtml}
     ${footerHtml}
     ${inlayAttachHtml}
   </div>`;
+}
+
+// ── Checklist config ─────────────────────────────────────────────────
+
+function renderChecklistConfig(component: Component): string {
+  const recordType = getBoundRecordTypeForComponent(component);
+  if (!recordType) {
+    return `<div class="checklist-config">
+      <div class="checklist-config-warning">
+        Checklist needs a <code>do</code> requirement bound to a data type.
+      </div>
+    </div>`;
+  }
+
+  const stringFields = recordType.fields.filter(
+    (f) => f.type === 'string' && !f.isSystem,
+  );
+  const boolFields = recordType.fields.filter((f) => f.type === 'boolean');
+
+  if (stringFields.length === 0 || boolFields.length === 0) {
+    return `<div class="checklist-config">
+      <div class="checklist-config-warning">
+        Checklist needs a string field and a boolean field on
+        <code>${escapeHtml(recordType.displayName || recordType.name)}</code>.
+        Add them in the Data section.
+      </div>
+    </div>`;
+  }
+
+  const cfg = component.checklistConfig;
+  const labelOptions = renderChecklistFieldOptions(
+    stringFields.map((f) => f.name),
+    cfg?.labelField,
+  );
+  const checkedOptions = renderChecklistFieldOptions(
+    boolFields.map((f) => f.name),
+    cfg?.checkedField,
+  );
+
+  const labelStaleWarning =
+    cfg?.labelField && !stringFields.some((f) => f.name === cfg.labelField)
+      ? `<div class="checklist-config-stale">This field no longer exists. Pick another.</div>`
+      : '';
+  const checkedStaleWarning =
+    cfg?.checkedField && !boolFields.some((f) => f.name === cfg.checkedField)
+      ? `<div class="checklist-config-stale">This field no longer exists. Pick another.</div>`
+      : '';
+
+  return `<div class="checklist-config">
+    <div class="checklist-config-row">
+      <label>
+        Label field
+        <select class="checklist-config-select" data-component-id="${component.id}" data-config-key="labelField">
+          ${labelOptions}
+        </select>
+      </label>
+      ${labelStaleWarning}
+    </div>
+    <div class="checklist-config-row">
+      <label>
+        Checked field
+        <select class="checklist-config-select" data-component-id="${component.id}" data-config-key="checkedField">
+          ${checkedOptions}
+        </select>
+      </label>
+      ${checkedStaleWarning}
+    </div>
+  </div>`;
+}
+
+function renderChecklistFieldOptions(
+  fieldNames: string[],
+  selected: string | undefined,
+): string {
+  const valid = selected !== undefined && fieldNames.includes(selected);
+  const stale = selected !== undefined && !valid;
+
+  let html = '';
+  if (stale) {
+    html += `<option value="__stale__" disabled selected>Missing: ${escapeHtml(selected!)}</option>`;
+  }
+  for (const name of fieldNames) {
+    const isSelected = valid && name === selected;
+    html += `<option value="${escapeHtml(name)}"${isSelected ? ' selected' : ''}>${escapeHtml(name)}</option>`;
+  }
+  return html;
 }
 
 // ── Inlay attach control ─────────────────────────────────────────────
@@ -276,8 +409,13 @@ function renderComponentCard(component: Component): string {
  * the attach control should be hidden (no `do` requirement, no
  * `dataTypeIds`, missing record type, no published NSID).
  */
-function getPublishedNsidForCardComponent(component: Component, validReqs: Requirement[]): string | null {
-  const doReq = validReqs.find((r) => r.type === 'do' && (r.dataTypeIds?.length ?? 0) > 0);
+function getPublishedNsidForCardComponent(
+  component: Component,
+  validReqs: Requirement[],
+): string | null {
+  const doReq = validReqs.find(
+    (r) => r.type === 'do' && (r.dataTypeIds?.length ?? 0) > 0,
+  );
   if (!doReq) return null;
   const dataTypeId = doReq.dataTypeIds?.[0];
   if (!dataTypeId) return null;
@@ -293,7 +431,9 @@ function getPublishedNsidForCardComponent(component: Component, validReqs: Requi
   return null;
 }
 
-function computeRecordTypeNsidLocal(rt: import('../../../types/wizard').RecordType): string {
+function computeRecordTypeNsidLocal(
+  rt: import('../../../types/wizard').RecordType,
+): string {
   // Mirror computeRecordTypeNsid from generator/Lexicon.ts to keep this
   // file decoupled from the generator. If the rules diverge, update both.
   if (rt.source === 'adopted' && rt.adoptedNsid) return rt.adoptedNsid;
@@ -317,7 +457,10 @@ function nsidShortLabel(uri: string): string {
   return parts[parts.length - 1] || uri;
 }
 
-function renderInlayAttachControl(component: Component, validReqs: Requirement[]): string {
+function renderInlayAttachControl(
+  component: Component,
+  validReqs: Requirement[],
+): string {
   const nsid = getPublishedNsidForCardComponent(component, validReqs);
   if (nsid === null) return '';
 
@@ -327,9 +470,11 @@ function renderInlayAttachControl(component: Component, validReqs: Requirement[]
     const cached = syncTemplateResults.get(uri);
     let badgeHtml = '';
     if (cached === undefined) {
-      badgeHtml = '<span class="inlay-attach-checking">Checking template&hellip;</span>';
+      badgeHtml =
+        '<span class="inlay-attach-checking">Checking template&hellip;</span>';
     } else if (isResolveError(cached)) {
-      badgeHtml = '<span class="inlay-attach-badge">Template no longer available</span>';
+      badgeHtml =
+        '<span class="inlay-attach-badge">Template no longer available</span>';
     }
     return `<div class="component-card-inlay-attach">
       <span>Inlay: <code>${label}</code></span>
@@ -373,7 +518,9 @@ function ensureInlayResolutionStarted(): void {
       .finally(() => {
         inflightTemplateLookups.delete(uri);
         // Only re-render if the user is still on the components panel.
-        const stillVisible = document.querySelector('.component-card-inlay-attach');
+        const stillVisible = document.querySelector(
+          '.component-card-inlay-attach',
+        );
         if (stillVisible) rerender();
       });
   }
@@ -392,7 +539,10 @@ function renderUnassignedSection(unassigned: Requirement[]): string {
             <button class="quick-btn" data-req-id="${req.id}">+ Component</button>
             <div class="quick-create-dropdown" data-req-id="${req.id}">
               ${(quickNames ?? [])
-                .map((n) => `<button class="quick-create-option" data-name="${escapeHtml(n.label)}"${n.componentType ? ` data-component-type="${n.componentType}"` : ''}${n.contentNodeType ? ` data-content-node-type="${n.contentNodeType}"` : ''} data-req-id="${req.id}">${escapeHtml(n.label)}</button>`)
+                .map(
+                  (n) =>
+                    `<button class="quick-create-option" data-name="${escapeHtml(n.label)}"${n.componentType ? ` data-component-type="${n.componentType}"` : ''}${n.contentNodeType ? ` data-content-node-type="${n.contentNodeType}"` : ''} data-req-id="${req.id}">${escapeHtml(n.label)}</button>`,
+                )
                 .join('')}
             </div>
           </div>`;
@@ -438,7 +588,7 @@ function renderModePicker(): string {
         <div class="component-mode-card-desc">Headings, paragraphs, info boxes &mdash; fulfills know requirements</div>
       </button>
       <button class="component-mode-card" data-mode="chip" type="button">
-        <div class="component-mode-card-title">Combine requirements</div>
+        <div class="component-mode-card-title">Add one or more requirements</div>
         <div class="component-mode-card-desc">Pick existing requirements (any type) and bundle them as one component</div>
       </button>
     </div>
@@ -467,15 +617,20 @@ function renderContentEditorForm(): string {
   // ── Linked know requirements section ────────────────────────────────
   const { requirements, components } = getWizardState();
   const linkedReqs = linkedKnowReqIds
-    .map(id => requirements.find(r => r.id === id))
+    .map((id) => requirements.find((r) => r.id === id))
     .filter((r): r is Requirement => r !== undefined && r.type === 'know');
 
-  const chipsHtml = linkedReqs.length > 0
-    ? linkedReqs.map(r => `<span class="chip" data-req-id="${r.id}">
+  const chipsHtml =
+    linkedReqs.length > 0
+      ? linkedReqs
+          .map(
+            (r) => `<span class="chip" data-req-id="${r.id}">
         ${escapeHtml(getRequirementShortText(r))}
         <button class="linked-know-remove chip-remove" data-req-id="${r.id}">&#10005;</button>
-      </span>`).join('')
-    : '<span class="chips-placeholder">Optional &mdash; link existing know requirements this component fulfills</span>';
+      </span>`,
+          )
+          .join('')
+      : '<span class="chips-placeholder">Optional &mdash; link existing know requirements this component fulfills</span>';
 
   // Available = know reqs not in linkedKnowReqIds AND
   // (unassigned OR linked to the component currently being edited)
@@ -485,16 +640,24 @@ function renderContentEditorForm(): string {
     if (c.id === editingComponentId) continue;
     for (const rid of c.requirementIds) assignedToOthers.add(rid);
   }
-  const availableKnowReqs = requirements.filter(r =>
-    r.type === 'know' && !linkedSet.has(r.id) && !assignedToOthers.has(r.id),
+  const availableKnowReqs = requirements.filter(
+    (r) =>
+      r.type === 'know' && !linkedSet.has(r.id) && !assignedToOthers.has(r.id),
   );
 
-  const availableHtml = availableKnowReqs.length > 0
-    ? availableKnowReqs.map(r => `<li class="available-item linked-know-add" data-req-id="${r.id}">
+  const availableHtml =
+    availableKnowReqs.length > 0
+      ? availableKnowReqs
+          .map(
+            (
+              r,
+            ) => `<li class="available-item linked-know-add" data-req-id="${r.id}">
         <span class="avail-type">know</span>
         <span class="avail-text">${escapeHtml(getRequirementShortText(r))}</span>
-      </li>`).join('')
-    : '<li class="available-item-empty">No unassigned know requirements available.</li>';
+      </li>`,
+          )
+          .join('')
+      : '<li class="available-item-empty">No unassigned know requirements available.</li>';
 
   const linkedSection = `
     <div class="form-group">
@@ -505,9 +668,12 @@ function renderContentEditorForm(): string {
     </div>`;
 
   // Render content node cards
-  const nodesHtml = editingContentNodes.length > 0
-    ? editingContentNodes.map((node, i) => renderContentNodeCard(node, i)).join('')
-    : '<div class="form-hint">No content yet. Click &ldquo;+ Add Content&rdquo; to get started.</div>';
+  const nodesHtml =
+    editingContentNodes.length > 0
+      ? editingContentNodes
+          .map((node, i) => renderContentNodeCard(node, i))
+          .join('')
+      : '<div class="form-hint">No content yet. Click &ldquo;+ Add Content&rdquo; to get started.</div>';
 
   const saveDisabled = !nameValue;
 
@@ -527,8 +693,9 @@ function renderContentEditorForm(): string {
       <div class="content-add-wrapper">
         <button class="quick-btn" id="content-add-btn">+ Add Content</button>
         <div class="quick-create-dropdown" id="content-add-dropdown">
-          ${CONTENT_NODE_TYPE_LABELS.map(t =>
-            `<button class="quick-create-option content-add-option" data-node-type="${t.value}">${escapeHtml(t.label)}</button>`
+          ${CONTENT_NODE_TYPE_LABELS.map(
+            (t) =>
+              `<button class="quick-create-option content-add-option" data-node-type="${t.value}">${escapeHtml(t.label)}</button>`,
           ).join('')}
         </div>
       </div>
@@ -547,8 +714,9 @@ function renderContentNodeCard(node: ContentNode, index: number): string {
   const isLast = index === editingContentNodes.length - 1;
   const showReorder = editingContentNodes.length > 1;
 
-  const typeLabel = CONTENT_NODE_TYPE_LABELS.find(t => t.value === node.type)?.label
-    ?? node.type.toUpperCase();
+  const typeLabel =
+    CONTENT_NODE_TYPE_LABELS.find((t) => t.value === node.type)?.label ??
+    node.type.toUpperCase();
   const textValue = node.type === 'image' ? '' : escapeHtml(node.text);
 
   const reorderHtml = showReorder
@@ -648,6 +816,7 @@ export function wireComponentsPanel(): void {
   // Component card actions (delegation on grid)
   const grid = document.getElementById('components-grid');
   grid?.addEventListener('click', handleGridClick);
+  grid?.addEventListener('change', handleGridChange);
 
   // Unassigned section (delegation)
   const unassignedList = document.getElementById('components-unassigned-list');
@@ -678,7 +847,9 @@ function handleGridClick(e: Event): void {
   }
 
   // Delete button
-  const deleteBtn = target.closest('.component-delete-btn') as HTMLElement | null;
+  const deleteBtn = target.closest(
+    '.component-delete-btn',
+  ) as HTMLElement | null;
   if (deleteBtn) {
     const componentId = deleteBtn.dataset.componentId!;
     deleteComponent(componentId);
@@ -688,14 +859,24 @@ function handleGridClick(e: Event): void {
   // Reorder up
   const upBtn = target.closest('.component-reorder-up') as HTMLElement | null;
   if (upBtn && !(upBtn as HTMLButtonElement).disabled) {
-    reorderRequirement(upBtn.dataset.componentId!, parseInt(upBtn.dataset.reqIndex!, 10), -1);
+    reorderRequirement(
+      upBtn.dataset.componentId!,
+      parseInt(upBtn.dataset.reqIndex!, 10),
+      -1,
+    );
     return;
   }
 
   // Reorder down
-  const downBtn = target.closest('.component-reorder-down') as HTMLElement | null;
+  const downBtn = target.closest(
+    '.component-reorder-down',
+  ) as HTMLElement | null;
   if (downBtn && !(downBtn as HTMLButtonElement).disabled) {
-    reorderRequirement(downBtn.dataset.componentId!, parseInt(downBtn.dataset.reqIndex!, 10), 1);
+    reorderRequirement(
+      downBtn.dataset.componentId!,
+      parseInt(downBtn.dataset.reqIndex!, 10),
+      1,
+    );
     return;
   }
 
@@ -705,16 +886,59 @@ function handleGridClick(e: Event): void {
     openInlayPicker(addBtn.dataset.componentId!);
     return;
   }
-  const changeBtn = target.closest('.inlay-attach-change-btn') as HTMLElement | null;
+  const changeBtn = target.closest(
+    '.inlay-attach-change-btn',
+  ) as HTMLElement | null;
   if (changeBtn) {
     openInlayPicker(changeBtn.dataset.componentId!);
     return;
   }
-  const removeBtn = target.closest('.inlay-attach-remove-btn') as HTMLElement | null;
+  const removeBtn = target.closest(
+    '.inlay-attach-remove-btn',
+  ) as HTMLElement | null;
   if (removeBtn) {
     clearInlayAttachment(removeBtn.dataset.componentId!);
     return;
   }
+}
+
+function handleGridChange(e: Event): void {
+  const target = e.target as HTMLElement;
+  const sel = target.closest(
+    '.checklist-config-select',
+  ) as HTMLSelectElement | null;
+  if (!sel) return;
+  const componentId = sel.dataset.componentId!;
+  const key = sel.dataset.configKey as 'labelField' | 'checkedField';
+  if (!componentId || !key) return;
+  const value = sel.value;
+  if (value === '__stale__') return;
+
+  const state = getWizardState();
+  const component = state.components.find((c) => c.id === componentId);
+  if (!component) return;
+
+  // Materialize concrete config; for the field the user did not change,
+  // preserve the existing value or compute the default if absent.
+  const recordType = getBoundRecordTypeForComponent(component);
+  const existing = component.checklistConfig;
+  let labelField = existing?.labelField ?? '';
+  let checkedField = existing?.checkedField ?? '';
+
+  if (!existing && recordType) {
+    const fallback = pickDefaultChecklistConfig(recordType);
+    if (fallback) {
+      labelField = fallback.labelField;
+      checkedField = fallback.checkedField;
+    }
+  }
+
+  if (key === 'labelField') labelField = value;
+  else checkedField = value;
+
+  component.checklistConfig = { labelField, checkedField };
+  saveWizardState(state);
+  rerender();
 }
 
 async function openInlayPicker(componentId: string): Promise<void> {
@@ -749,8 +973,12 @@ function handleUnassignedClick(e: Event): void {
     e.stopPropagation();
     const name = option.dataset.name!;
     const reqId = option.dataset.reqId!;
-    const componentType = option.dataset.componentType as ComponentType | undefined;
-    const contentNodeType = option.dataset.contentNodeType as ContentNodeType | undefined;
+    const componentType = option.dataset.componentType as
+      | ComponentType
+      | undefined;
+    const contentNodeType = option.dataset.contentNodeType as
+      | ContentNodeType
+      | undefined;
     quickCreateComponent(name, reqId, componentType, contentNodeType);
     return;
   }
@@ -792,7 +1020,9 @@ function openNewForm(): void {
 }
 
 function openEditForm(componentId: string): void {
-  const component = getWizardState().components.find((c) => c.id === componentId);
+  const component = getWizardState().components.find(
+    (c) => c.id === componentId,
+  );
   if (!component) return;
 
   editingComponentId = componentId;
@@ -804,11 +1034,15 @@ function openEditForm(componentId: string): void {
   // Text components use content editor; others use chip selector
   if (component.componentType === 'text') {
     formMode = 'content';
-    editingContentNodes = component.contentNodes ? component.contentNodes.map(n => ({ ...n })) : [];
+    editingContentNodes = component.contentNodes
+      ? component.contentNodes.map((n) => ({ ...n }))
+      : [];
     // Pre-populate linked know requirements from the component's requirementIds.
     // Filter to ones still extant in state and of type=know.
-    const knowMap = new Map(requirements.filter(r => r.type === 'know').map(r => [r.id, r]));
-    linkedKnowReqIds = component.requirementIds.filter(id => knowMap.has(id));
+    const knowMap = new Map(
+      requirements.filter((r) => r.type === 'know').map((r) => [r.id, r]),
+    );
+    linkedKnowReqIds = component.requirementIds.filter((id) => knowMap.has(id));
   } else {
     formMode = 'chip';
     editingContentNodes = [];
@@ -831,7 +1065,9 @@ function showForm(): void {
   wireForm();
 
   // Focus the name input
-  const nameInput = document.getElementById('component-name-input') as HTMLInputElement | null;
+  const nameInput = document.getElementById(
+    'component-name-input',
+  ) as HTMLInputElement | null;
   nameInput?.focus();
 
   // Scroll form into view
@@ -869,7 +1105,9 @@ function wireForm(): void {
   }
 
   // Name input — update save button state (content/chip modes)
-  const nameInput = document.getElementById('component-name-input') as HTMLInputElement | null;
+  const nameInput = document.getElementById(
+    'component-name-input',
+  ) as HTMLInputElement | null;
   nameInput?.addEventListener('input', updateSaveButtonState);
 
   if (formMode === 'content') {
@@ -886,13 +1124,15 @@ function wireForm(): void {
 function wireModePicker(): void {
   document.querySelectorAll('.component-mode-card').forEach((card) => {
     card.addEventListener('click', (e) => {
-      const target = (e.currentTarget as HTMLElement);
+      const target = e.currentTarget as HTMLElement;
       const mode = target.dataset.mode as 'content' | 'chip' | undefined;
       if (mode === 'content' || mode === 'chip') {
         formMode = mode;
         refreshFormContents();
         // Focus the name input after transition
-        const nameInput = document.getElementById('component-name-input') as HTMLInputElement | null;
+        const nameInput = document.getElementById(
+          'component-name-input',
+        ) as HTMLInputElement | null;
         nameInput?.focus();
       }
     });
@@ -901,9 +1141,13 @@ function wireModePicker(): void {
 
 function wireContentEditorForm(): void {
   // Linked know requirements: add via available-list click, remove via chip ×
-  const linkedAvailable = document.getElementById('component-linked-know-available');
+  const linkedAvailable = document.getElementById(
+    'component-linked-know-available',
+  );
   linkedAvailable?.addEventListener('click', (e) => {
-    const item = (e.target as HTMLElement).closest('.linked-know-add') as HTMLElement | null;
+    const item = (e.target as HTMLElement).closest(
+      '.linked-know-add',
+    ) as HTMLElement | null;
     if (!item) return;
     const reqId = item.dataset.reqId!;
     if (!linkedKnowReqIds.includes(reqId)) {
@@ -914,7 +1158,9 @@ function wireContentEditorForm(): void {
 
   const linkedChips = document.getElementById('component-linked-know-chips');
   linkedChips?.addEventListener('click', (e) => {
-    const removeBtn = (e.target as HTMLElement).closest('.linked-know-remove') as HTMLElement | null;
+    const removeBtn = (e.target as HTMLElement).closest(
+      '.linked-know-remove',
+    ) as HTMLElement | null;
     if (!removeBtn) return;
     const reqId = removeBtn.dataset.reqId!;
     const idx = linkedKnowReqIds.indexOf(reqId);
@@ -929,7 +1175,9 @@ function wireContentEditorForm(): void {
     const target = e.target as HTMLElement;
 
     // Remove button
-    const removeBtn = target.closest('.content-node-remove') as HTMLElement | null;
+    const removeBtn = target.closest(
+      '.content-node-remove',
+    ) as HTMLElement | null;
     if (removeBtn) {
       const idx = parseInt(removeBtn.dataset.nodeIndex!, 10);
       editingContentNodes.splice(idx, 1);
@@ -942,8 +1190,10 @@ function wireContentEditorForm(): void {
     if (upBtn && !(upBtn as HTMLButtonElement).disabled) {
       const idx = parseInt(upBtn.dataset.nodeIndex!, 10);
       if (idx > 0) {
-        [editingContentNodes[idx - 1], editingContentNodes[idx]] =
-          [editingContentNodes[idx], editingContentNodes[idx - 1]];
+        [editingContentNodes[idx - 1], editingContentNodes[idx]] = [
+          editingContentNodes[idx],
+          editingContentNodes[idx - 1],
+        ];
         refreshFormContents();
       }
       return;
@@ -954,8 +1204,10 @@ function wireContentEditorForm(): void {
     if (downBtn && !(downBtn as HTMLButtonElement).disabled) {
       const idx = parseInt(downBtn.dataset.nodeIndex!, 10);
       if (idx < editingContentNodes.length - 1) {
-        [editingContentNodes[idx], editingContentNodes[idx + 1]] =
-          [editingContentNodes[idx + 1], editingContentNodes[idx]];
+        [editingContentNodes[idx], editingContentNodes[idx + 1]] = [
+          editingContentNodes[idx + 1],
+          editingContentNodes[idx],
+        ];
         refreshFormContents();
       }
       return;
@@ -978,7 +1230,11 @@ function wireContentEditorForm(): void {
   // Enter to confirm (blur) textarea; Shift+Enter for newline
   nodesList?.addEventListener('keydown', (e) => {
     const target = e.target as HTMLElement;
-    if (target.classList.contains('content-node-text') && e.key === 'Enter' && !e.shiftKey) {
+    if (
+      target.classList.contains('content-node-text') &&
+      e.key === 'Enter' &&
+      !e.shiftKey
+    ) {
       e.preventDefault();
       (target as HTMLTextAreaElement).blur();
     }
@@ -996,7 +1252,9 @@ function wireContentEditorForm(): void {
   const dropdown = document.getElementById('content-add-dropdown');
   dropdown?.addEventListener('click', (e) => {
     e.stopPropagation();
-    const option = (e.target as HTMLElement).closest('.content-add-option') as HTMLElement | null;
+    const option = (e.target as HTMLElement).closest(
+      '.content-add-option',
+    ) as HTMLElement | null;
     if (!option) return;
     const nodeType = option.dataset.nodeType as ContentNodeType;
     if (nodeType === 'image') {
@@ -1008,7 +1266,9 @@ function wireContentEditorForm(): void {
     refreshFormContents();
     // Focus the newly added content node's textarea (query fresh DOM after re-render)
     const freshList = document.getElementById('content-nodes-list');
-    const lastTextarea = freshList?.querySelector('.content-node-card:last-child .content-node-text') as HTMLTextAreaElement | null;
+    const lastTextarea = freshList?.querySelector(
+      '.content-node-card:last-child .content-node-text',
+    ) as HTMLTextAreaElement | null;
     lastTextarea?.focus();
   });
 
@@ -1021,8 +1281,8 @@ function renderContentEditorPreview(): void {
   if (!container) return;
   container.innerHTML = '';
 
-  const nonEmptyNodes = editingContentNodes.filter(n =>
-    n.type === 'image' ? !!n.src : !!n.text
+  const nonEmptyNodes = editingContentNodes.filter((n) =>
+    n.type === 'image' ? !!n.src : !!n.text,
   );
   if (nonEmptyNodes.length === 0) return;
 
@@ -1037,7 +1297,9 @@ function wireChipSelectorForm(): void {
   // Available list — click to toggle selection
   const availList = document.getElementById('component-available-list');
   availList?.addEventListener('click', (e) => {
-    const item = (e.target as HTMLElement).closest('.available-item') as HTMLElement | null;
+    const item = (e.target as HTMLElement).closest(
+      '.available-item',
+    ) as HTMLElement | null;
     if (!item) return;
     const reqId = item.dataset.reqId!;
     toggleRequirementSelection(reqId);
@@ -1046,7 +1308,9 @@ function wireChipSelectorForm(): void {
   // Chip remove buttons (delegation on chips container)
   const chipsContainer = document.getElementById('component-selected-chips');
   chipsContainer?.addEventListener('click', (e) => {
-    const removeBtn = (e.target as HTMLElement).closest('.chip-remove') as HTMLElement | null;
+    const removeBtn = (e.target as HTMLElement).closest(
+      '.chip-remove',
+    ) as HTMLElement | null;
     if (!removeBtn) return;
     const reqId = removeBtn.dataset.reqId!;
     toggleRequirementSelection(reqId);
@@ -1068,12 +1332,14 @@ function refreshFormContents(): void {
   if (!form) return;
 
   // Preserve name input value
-  const nameInput = document.getElementById('component-name-input') as HTMLInputElement | null;
+  const nameInput = document.getElementById(
+    'component-name-input',
+  ) as HTMLInputElement | null;
   const currentName = nameInput?.value ?? '';
 
   // For content editor, sync textarea values to state before re-render
   if (formMode === 'content') {
-    document.querySelectorAll('.content-node-text').forEach(el => {
+    document.querySelectorAll('.content-node-text').forEach((el) => {
       const idx = parseInt((el as HTMLElement).dataset.nodeIndex!, 10);
       const node = editingContentNodes[idx];
       if (node && node.type !== 'image') {
@@ -1085,7 +1351,9 @@ function refreshFormContents(): void {
   form.innerHTML = renderInlineForm();
 
   // Restore name
-  const newNameInput = document.getElementById('component-name-input') as HTMLInputElement | null;
+  const newNameInput = document.getElementById(
+    'component-name-input',
+  ) as HTMLInputElement | null;
   if (newNameInput && currentName) {
     newNameInput.value = currentName;
   }
@@ -1095,8 +1363,12 @@ function refreshFormContents(): void {
 }
 
 function updateSaveButtonState(): void {
-  const nameInput = document.getElementById('component-name-input') as HTMLInputElement | null;
-  const saveBtn = document.getElementById('component-save-btn') as HTMLButtonElement | null;
+  const nameInput = document.getElementById(
+    'component-name-input',
+  ) as HTMLInputElement | null;
+  const saveBtn = document.getElementById(
+    'component-save-btn',
+  ) as HTMLButtonElement | null;
   if (!nameInput || !saveBtn) return;
 
   const hasName = nameInput.value.trim().length > 0;
@@ -1111,7 +1383,9 @@ function updateSaveButtonState(): void {
 // ── CRUD operations ──────────────────────────────────────────────────
 
 function saveComponent(): void {
-  const nameInput = document.getElementById('component-name-input') as HTMLInputElement | null;
+  const nameInput = document.getElementById(
+    'component-name-input',
+  ) as HTMLInputElement | null;
   if (!nameInput) return;
 
   const name = nameInput.value.trim();
@@ -1119,7 +1393,7 @@ function saveComponent(): void {
 
   // Sync textarea values one final time for content editor
   if (formMode === 'content') {
-    document.querySelectorAll('.content-node-text').forEach(el => {
+    document.querySelectorAll('.content-node-text').forEach((el) => {
       const idx = parseInt((el as HTMLElement).dataset.nodeIndex!, 10);
       const node = editingContentNodes[idx];
       if (node && node.type !== 'image') {
@@ -1133,7 +1407,9 @@ function saveComponent(): void {
   if (formMode === 'content') {
     if (editingComponentId) {
       // Update existing text component
-      const component = state.components.find((c) => c.id === editingComponentId);
+      const component = state.components.find(
+        (c) => c.id === editingComponentId,
+      );
       if (component) {
         component.name = name;
         component.contentNodes = [...editingContentNodes];
@@ -1156,7 +1432,9 @@ function saveComponent(): void {
     if (selectedReqIds.length === 0) return;
 
     if (editingComponentId) {
-      const component = state.components.find((c) => c.id === editingComponentId);
+      const component = state.components.find(
+        (c) => c.id === editingComponentId,
+      );
       if (component) {
         component.name = name;
         component.requirementIds = [...selectedReqIds];
@@ -1183,9 +1461,14 @@ function deleteComponent(componentId: string): void {
   rerender();
 }
 
-function quickCreateComponent(fallbackName: string, reqId: string, componentType?: ComponentType, contentNodeType?: ContentNodeType): void {
+function quickCreateComponent(
+  fallbackName: string,
+  reqId: string,
+  componentType?: ComponentType,
+  contentNodeType?: ContentNodeType,
+): void {
   const state = getWizardState();
-  const req = state.requirements.find(r => r.id === reqId);
+  const req = state.requirements.find((r) => r.id === reqId);
 
   // Use the requirement's title as the component name, falling back to the dropdown label
   const name = req ? getRequirementShortText(req) : fallbackName;
@@ -1201,19 +1484,35 @@ function quickCreateComponent(fallbackName: string, reqId: string, componentType
     }
   }
 
+  // For checklist quick-create, populate config from the convention so the
+  // component is immediately usable.
+  let checklistConfig: Component['checklistConfig'];
+  if (componentType === 'checklist' && req) {
+    const recordType = getBoundRecordTypeForRequirement(req);
+    if (recordType) {
+      const defaults = pickDefaultChecklistConfig(recordType);
+      if (defaults) checklistConfig = defaults;
+    }
+  }
+
   const component: Component = {
     id: generateId(),
     name,
     requirementIds: [reqId],
     ...(componentType && { componentType }),
     ...(contentNodes && { contentNodes }),
+    ...(checklistConfig && { checklistConfig }),
   };
   state.components.push(component);
   saveWizardState(state);
   rerender();
 }
 
-function reorderRequirement(componentId: string, index: number, direction: -1 | 1): void {
+function reorderRequirement(
+  componentId: string,
+  index: number,
+  direction: -1 | 1,
+): void {
   const state = getWizardState();
   const component = state.components.find((c) => c.id === componentId);
   if (!component) return;
@@ -1257,11 +1556,11 @@ function renderInlayPreviews(): void {
   const containers = document.querySelectorAll('.component-card-inlay-preview');
   const { components } = getWizardState();
 
-  containers.forEach(container => {
+  containers.forEach((container) => {
     const componentId = (container as HTMLElement).dataset.componentId;
     if (!componentId) return;
 
-    const component = components.find(c => c.id === componentId);
+    const component = components.find((c) => c.id === componentId);
     if (!component?.contentNodes?.length) return;
 
     const tree = buildContentNodeTree(component.contentNodes);
@@ -1297,8 +1596,7 @@ export function updateComponentsSidebar(): void {
   if (!itemsContainer) return;
 
   if (components.length === 0) {
-    itemsContainer.innerHTML =
-      '<div class="sidebar-item-empty">None yet</div>';
+    itemsContainer.innerHTML = '<div class="sidebar-item-empty">None yet</div>';
   } else {
     itemsContainer.innerHTML = components
       .map(
@@ -1314,7 +1612,9 @@ export function updateComponentsSidebar(): void {
 function rerender(): void {
   // Re-render into the visible container (accordion on narrow, workspace on wide)
   const body = isNarrowViewport()
-    ? document.querySelector('.accordion-section[data-section="components"] .accordion-body')
+    ? document.querySelector(
+        '.accordion-section[data-section="components"] .accordion-body',
+      )
     : document.getElementById('workspace-panel-body');
 
   if (body) {

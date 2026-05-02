@@ -34,6 +34,10 @@ import { generateRouterTs } from './app/Router';
 // View and component generators
 import { generateViewPage } from './views/ViewPage';
 import { generateNavMenuComponent } from './components/NavMenu';
+import {
+  generateChecklistComponent,
+  resolveChecklistConfig,
+} from './components/Checklist';
 
 // Other generators
 import { generateRecordLexicon, computeRecordTypeNsid } from './Lexicon';
@@ -163,6 +167,26 @@ export async function generateAllFiles(
     );
   }
 
+  // ── Checklist components ──────────────────────────────────────────
+
+  const checklistComponents = assignedComponents.filter(
+    c => c.componentType === 'checklist',
+  );
+  for (const component of checklistComponents) {
+    const recordType = findBoundRecordTypeFor(component, wizardState);
+    if (!recordType) continue;
+    const resolution = resolveChecklistConfig(component, recordType);
+    if (resolution.kind !== 'ok') continue;
+    const fileName = componentFileNames.get(component.id)!;
+    const functionName = `render${fileName}`;
+    files[`src/components/${fileName}.ts`] = generateChecklistComponent(
+      component,
+      resolution.recordType,
+      resolution.config,
+      functionName,
+    );
+  }
+
   // ── View pages ─────────────────────────────────────────────────────
 
   for (const view of views) {
@@ -181,6 +205,21 @@ export async function generateAllFiles(
             componentFile: compFileName,
             componentFunction: `render${compFileName}`,
           };
+        }
+        if (component.componentType === 'checklist') {
+          // Only emit a real-component reference if the file was actually
+          // generated; otherwise ViewPage falls through to placeholder.
+          const compFileName = componentFileNames.get(component.id)!;
+          const functionName = `render${compFileName}`;
+          const wasEmitted =
+            !!files[`src/components/${compFileName}.ts`];
+          if (wasEmitted) {
+            return {
+              component,
+              componentFile: compFileName,
+              componentFunction: functionName,
+            };
+          }
         }
         return { component };
       });
@@ -211,3 +250,18 @@ export async function generateAllFiles(
 
 // Re-export for use in views
 export { generateRecordLexicon, computeRecordTypeNsid } from './Lexicon';
+
+function findBoundRecordTypeFor(
+  component: Component,
+  wizardState: WizardState,
+) {
+  for (const reqId of component.requirementIds) {
+    const req = wizardState.requirements.find(r => r.id === reqId);
+    if (req?.type !== 'do' || !req.dataTypeIds || req.dataTypeIds.length === 0) {
+      continue;
+    }
+    const rt = wizardState.recordTypes.find(r => r.id === req.dataTypeIds![0]);
+    if (rt) return rt;
+  }
+  return null;
+}

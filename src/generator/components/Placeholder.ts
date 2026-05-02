@@ -17,6 +17,7 @@ const COMPONENT_TYPE_LABELS: Record<ComponentType, string> = {
   table: 'Table',
   card: 'Card',
   text: 'Text',
+  checklist: 'Checklist',
 };
 
 /**

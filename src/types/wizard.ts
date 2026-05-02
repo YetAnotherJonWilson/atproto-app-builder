@@ -93,7 +93,7 @@ export interface NonDataElement {
   name: string; // human-readable label, e.g. "Timer"
 }
 
-export type ComponentType = 'menu' | 'list' | 'detail' | 'form' | 'table' | 'card' | 'text';
+export type ComponentType = 'menu' | 'list' | 'detail' | 'form' | 'table' | 'card' | 'text' | 'checklist';
 
 export type TextVariant = 'paragraph' | 'heading' | 'section' | 'infoBox' | 'banner';
 
@@ -116,6 +116,11 @@ export type ContentNode =
   | BannerNode
   | ImageNode;
 
+export interface ChecklistConfig {
+  labelField: string; // field name on bound RecordType
+  checkedField: string; // field name on bound RecordType
+}
+
 export interface Component {
   id: string;
   name: string; // user-given name, e.g. "Post Feed", "About Section"
@@ -123,6 +128,7 @@ export interface Component {
   componentType?: ComponentType; // determines generator component rendering
   contentNodes?: ContentNode[]; // ordered content for text components
   inlayComponentRef?: string; // AT-URI of an attached Inlay template component
+  checklistConfig?: ChecklistConfig; // for checklist components
 }
 
 export interface View {
