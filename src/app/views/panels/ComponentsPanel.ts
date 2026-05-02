@@ -27,10 +27,13 @@ import { showInlayComponentPicker } from '../../dialogs/InlayComponentPickerDial
 
 // ── Module-level state ────────────────────────────────────────────────
 
+type FormMode = 'mode-picker' | 'content' | 'chip';
+
 let editingComponentId: string | null = null;
 let selectedReqIds: string[] = [];
 let editingContentNodes: ContentNode[] = [];
-let isContentEditorMode = false;
+let linkedKnowReqIds: string[] = [];
+let formMode: FormMode | null = null;
 
 /**
  * Synchronously-readable mirror of resolved Inlay template results, keyed
@@ -416,10 +419,32 @@ function renderUnassignedSection(unassigned: Requirement[]): string {
 }
 
 function renderInlineForm(): string {
-  if (isContentEditorMode) {
-    return renderContentEditorForm();
-  }
-  return renderChipSelectorForm();
+  if (formMode === 'mode-picker') return renderModePicker();
+  if (formMode === 'content') return renderContentEditorForm();
+  if (formMode === 'chip') return renderChipSelectorForm();
+  return '';
+}
+
+// ── Mode picker (new component) ─────────────────────────────────────────
+
+function renderModePicker(): string {
+  return `
+    <div class="form-group">
+      <label>What kind of component?</label>
+    </div>
+    <div class="component-mode-picker">
+      <button class="component-mode-card" data-mode="content" type="button">
+        <div class="component-mode-card-title">Text / info content</div>
+        <div class="component-mode-card-desc">Headings, paragraphs, info boxes &mdash; fulfills know requirements</div>
+      </button>
+      <button class="component-mode-card" data-mode="chip" type="button">
+        <div class="component-mode-card-title">Combine requirements</div>
+        <div class="component-mode-card-desc">Pick existing requirements (any type) and bundle them as one component</div>
+      </button>
+    </div>
+    <div class="form-footer">
+      <button class="btn-ghost" id="component-cancel-btn">Cancel</button>
+    </div>`;
 }
 
 // ── Content editor form (text components) ───────────────────────────────
@@ -439,18 +464,45 @@ function renderContentEditorForm(): string {
 
   const nameValue = component ? escapeHtml(component.name) : '';
 
-  // Show linked requirement as fulfills badge
-  let fulfillsHtml = '';
-  if (component && component.requirementIds.length > 0) {
-    const { requirements } = getWizardState();
-    const linked = component.requirementIds
-      .map(id => requirements.find(r => r.id === id))
-      .filter((r): r is Requirement => r !== undefined && r.type === 'know')
-      .map(r => escapeHtml(truncate(r.text ?? '', 60)));
-    if (linked.length > 0) {
-      fulfillsHtml = `<div class="form-hint" style="margin-bottom:8px;">Fulfills: ${linked.join(', ')}</div>`;
-    }
+  // ── Linked know requirements section ────────────────────────────────
+  const { requirements, components } = getWizardState();
+  const linkedReqs = linkedKnowReqIds
+    .map(id => requirements.find(r => r.id === id))
+    .filter((r): r is Requirement => r !== undefined && r.type === 'know');
+
+  const chipsHtml = linkedReqs.length > 0
+    ? linkedReqs.map(r => `<span class="chip" data-req-id="${r.id}">
+        ${escapeHtml(getRequirementShortText(r))}
+        <button class="linked-know-remove chip-remove" data-req-id="${r.id}">&#10005;</button>
+      </span>`).join('')
+    : '<span class="chips-placeholder">Optional &mdash; link existing know requirements this component fulfills</span>';
+
+  // Available = know reqs not in linkedKnowReqIds AND
+  // (unassigned OR linked to the component currently being edited)
+  const linkedSet = new Set(linkedKnowReqIds);
+  const assignedToOthers = new Set<string>();
+  for (const c of components) {
+    if (c.id === editingComponentId) continue;
+    for (const rid of c.requirementIds) assignedToOthers.add(rid);
   }
+  const availableKnowReqs = requirements.filter(r =>
+    r.type === 'know' && !linkedSet.has(r.id) && !assignedToOthers.has(r.id),
+  );
+
+  const availableHtml = availableKnowReqs.length > 0
+    ? availableKnowReqs.map(r => `<li class="available-item linked-know-add" data-req-id="${r.id}">
+        <span class="avail-type">know</span>
+        <span class="avail-text">${escapeHtml(getRequirementShortText(r))}</span>
+      </li>`).join('')
+    : '<li class="available-item-empty">No unassigned know requirements available.</li>';
+
+  const linkedSection = `
+    <div class="form-group">
+      <label>Linked know requirements</label>
+      <div class="selected-chips" id="component-linked-know-chips">${chipsHtml}</div>
+      <div class="available-list-label">Available know requirements</div>
+      <ul class="available-list" id="component-linked-know-available">${availableHtml}</ul>
+    </div>`;
 
   // Render content node cards
   const nodesHtml = editingContentNodes.length > 0
@@ -466,7 +518,7 @@ function renderContentEditorForm(): string {
         placeholder="e.g., About This App, Welcome Section"
         value="${nameValue}">
     </div>
-    ${fulfillsHtml}
+    ${linkedSection}
     <div class="form-group">
       <label>Content</label>
       <div class="content-nodes-list" id="content-nodes-list">
@@ -734,7 +786,8 @@ function openNewForm(): void {
   editingComponentId = null;
   selectedReqIds = [];
   editingContentNodes = [];
-  isContentEditorMode = true; // new components default to content editor (text component)
+  linkedKnowReqIds = [];
+  formMode = 'mode-picker';
   showForm();
 }
 
@@ -750,11 +803,16 @@ function openEditForm(componentId: string): void {
 
   // Text components use content editor; others use chip selector
   if (component.componentType === 'text') {
-    isContentEditorMode = true;
+    formMode = 'content';
     editingContentNodes = component.contentNodes ? component.contentNodes.map(n => ({ ...n })) : [];
+    // Pre-populate linked know requirements from the component's requirementIds.
+    // Filter to ones still extant in state and of type=know.
+    const knowMap = new Map(requirements.filter(r => r.type === 'know').map(r => [r.id, r]));
+    linkedKnowReqIds = component.requirementIds.filter(id => knowMap.has(id));
   } else {
-    isContentEditorMode = false;
+    formMode = 'chip';
     editingContentNodes = [];
+    linkedKnowReqIds = [];
   }
   showForm();
 }
@@ -794,32 +852,78 @@ function hideForm(): void {
   editingComponentId = null;
   selectedReqIds = [];
   editingContentNodes = [];
-  isContentEditorMode = false;
+  linkedKnowReqIds = [];
+  formMode = null;
 }
 
 function wireForm(): void {
-  // Name input — update save button state
+  // Cancel button (present in all modes)
+  const cancelBtn = document.getElementById('component-cancel-btn');
+  cancelBtn?.addEventListener('click', () => {
+    hideForm();
+  });
+
+  if (formMode === 'mode-picker') {
+    wireModePicker();
+    return;
+  }
+
+  // Name input — update save button state (content/chip modes)
   const nameInput = document.getElementById('component-name-input') as HTMLInputElement | null;
   nameInput?.addEventListener('input', updateSaveButtonState);
 
-  if (isContentEditorMode) {
+  if (formMode === 'content') {
     wireContentEditorForm();
-  } else {
+  } else if (formMode === 'chip') {
     wireChipSelectorForm();
   }
 
   // Save button
   const saveBtn = document.getElementById('component-save-btn');
   saveBtn?.addEventListener('click', saveComponent);
+}
 
-  // Cancel button
-  const cancelBtn = document.getElementById('component-cancel-btn');
-  cancelBtn?.addEventListener('click', () => {
-    hideForm();
+function wireModePicker(): void {
+  document.querySelectorAll('.component-mode-card').forEach((card) => {
+    card.addEventListener('click', (e) => {
+      const target = (e.currentTarget as HTMLElement);
+      const mode = target.dataset.mode as 'content' | 'chip' | undefined;
+      if (mode === 'content' || mode === 'chip') {
+        formMode = mode;
+        refreshFormContents();
+        // Focus the name input after transition
+        const nameInput = document.getElementById('component-name-input') as HTMLInputElement | null;
+        nameInput?.focus();
+      }
+    });
   });
 }
 
 function wireContentEditorForm(): void {
+  // Linked know requirements: add via available-list click, remove via chip ×
+  const linkedAvailable = document.getElementById('component-linked-know-available');
+  linkedAvailable?.addEventListener('click', (e) => {
+    const item = (e.target as HTMLElement).closest('.linked-know-add') as HTMLElement | null;
+    if (!item) return;
+    const reqId = item.dataset.reqId!;
+    if (!linkedKnowReqIds.includes(reqId)) {
+      linkedKnowReqIds.push(reqId);
+      refreshFormContents();
+    }
+  });
+
+  const linkedChips = document.getElementById('component-linked-know-chips');
+  linkedChips?.addEventListener('click', (e) => {
+    const removeBtn = (e.target as HTMLElement).closest('.linked-know-remove') as HTMLElement | null;
+    if (!removeBtn) return;
+    const reqId = removeBtn.dataset.reqId!;
+    const idx = linkedKnowReqIds.indexOf(reqId);
+    if (idx >= 0) {
+      linkedKnowReqIds.splice(idx, 1);
+      refreshFormContents();
+    }
+  });
+
   const nodesList = document.getElementById('content-nodes-list');
   nodesList?.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
@@ -968,7 +1072,7 @@ function refreshFormContents(): void {
   const currentName = nameInput?.value ?? '';
 
   // For content editor, sync textarea values to state before re-render
-  if (isContentEditorMode) {
+  if (formMode === 'content') {
     document.querySelectorAll('.content-node-text').forEach(el => {
       const idx = parseInt((el as HTMLElement).dataset.nodeIndex!, 10);
       const node = editingContentNodes[idx];
@@ -996,10 +1100,10 @@ function updateSaveButtonState(): void {
   if (!nameInput || !saveBtn) return;
 
   const hasName = nameInput.value.trim().length > 0;
-  if (isContentEditorMode) {
+  if (formMode === 'content') {
     // Content editor only requires a name — content can be empty
     saveBtn.disabled = !hasName;
-  } else {
+  } else if (formMode === 'chip') {
     saveBtn.disabled = !(hasName && selectedReqIds.length > 0);
   }
 }
@@ -1014,7 +1118,7 @@ function saveComponent(): void {
   if (!name) return;
 
   // Sync textarea values one final time for content editor
-  if (isContentEditorMode) {
+  if (formMode === 'content') {
     document.querySelectorAll('.content-node-text').forEach(el => {
       const idx = parseInt((el as HTMLElement).dataset.nodeIndex!, 10);
       const node = editingContentNodes[idx];
@@ -1026,34 +1130,28 @@ function saveComponent(): void {
 
   const state = getWizardState();
 
-  if (isContentEditorMode) {
+  if (formMode === 'content') {
     if (editingComponentId) {
       // Update existing text component
       const component = state.components.find((c) => c.id === editingComponentId);
       if (component) {
         component.name = name;
         component.contentNodes = [...editingContentNodes];
+        component.requirementIds = [...linkedKnowReqIds];
       }
     } else {
-      // Create new text component from scratch
-      // Auto-create a know requirement if none is linked
-      const reqId = generateId();
-      state.requirements.push({
-        id: reqId,
-        type: 'know',
-        text: name,
-      });
-
+      // Create new text component. Use the user-selected linked know
+      // requirements as-is (may be empty); never silently fabricate one.
       const component: Component = {
         id: generateId(),
         name,
-        requirementIds: [reqId],
+        requirementIds: [...linkedKnowReqIds],
         componentType: 'text',
         contentNodes: [...editingContentNodes],
       };
       state.components.push(component);
     }
-  } else {
+  } else if (formMode === 'chip') {
     // Chip selector mode (non-text components)
     if (selectedReqIds.length === 0) return;
 

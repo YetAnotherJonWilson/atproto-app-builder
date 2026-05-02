@@ -53,6 +53,7 @@ Pick one item from "Up Next" before starting a coding session.
 
 ### UX Improvements
 
+- [ ] Inlay component library — browse and preview — see `.specs/active/inlay-component-library.md`
 - [ ] Field length guidance (graphemes + bytes auto-conversion) — see `.specs/active/field-length-guidance.md`
 - [ ] Data modeling hints (AT Protocol guidance for users) — see `.specs/active/data-modeling-hints.md`
 
@@ -69,6 +70,7 @@ Pick one item from "Up Next" before starting a coding session.
 
 <!-- Move completed items here with date -->
 
+- [x] Components panel — "+ New Component" creation flow rework — see `.specs/done/components-panel-creation-flow.md` 5/1/26
 - [x] Inlay template components — wizard wiring + generator + UI — see `.specs/done/inlay-template-components.md` 4/29/26
 - [x] Remove dead `appInfo.domain` field (also fixed `api.ts` ignoring `namespaceOption`) — see `.specs/done/remove-dead-domain-field.md` 4/25/26
 - [x] Inlay template foundation — see `.specs/done/inlay-template-foundation.md` 4/16/26

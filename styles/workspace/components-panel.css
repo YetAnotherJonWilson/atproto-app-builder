@@ -548,6 +548,63 @@
     display: none;
   }
 
+  /* ===== MODE PICKER ===== */
+
+  .component-mode-picker {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .component-mode-card {
+    background: var(--bg-surface-2);
+    border: 1px solid var(--border-accent);
+    border-radius: 6px;
+    padding: 0.875rem 1rem;
+    text-align: left;
+    color: var(--text-primary);
+    cursor: pointer;
+    font: inherit;
+    transition:
+      box-shadow 0.15s,
+      border-color 0.15s,
+      background-color 0.15s;
+  }
+
+  .component-mode-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 2px 12px rgba(0, 229, 255, 0.1);
+  }
+
+  .component-mode-card:focus-visible {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-glow);
+  }
+
+  .component-mode-card-title {
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+  }
+
+  .component-mode-card-desc {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+
+  /* ===== LINKED KNOW REQUIREMENTS (content editor) ===== */
+
+  .available-item-empty {
+    list-style: none;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
   /* ===== FORM FOOTER ===== */
 
   .form-footer {
@@ -562,6 +619,10 @@
 
   @media (max-width: 767px) {
     .component-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .component-mode-picker {
       grid-template-columns: 1fr;
     }
 
