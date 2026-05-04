@@ -1174,6 +1174,11 @@ function wireContentEditorForm(): void {
   nodesList?.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
 
+    // Snapshot DOM textarea values into state before any reorder/remove
+    // mutates the array — otherwise stale data-node-index values cause
+    // text to be written into the wrong (now-shifted) node.
+    syncContentNodesFromDOM();
+
     // Remove button
     const removeBtn = target.closest(
       '.content-node-remove',
@@ -1276,6 +1281,20 @@ function wireContentEditorForm(): void {
   renderContentEditorPreview();
 }
 
+// Copy textarea values from the rendered DOM back into editingContentNodes.
+// Must be called BEFORE any mutation that reorders or removes entries —
+// after mutation, the DOM's data-node-index values point at stale array
+// positions and would write text into the wrong nodes.
+function syncContentNodesFromDOM(): void {
+  document.querySelectorAll('.content-node-text').forEach((el) => {
+    const idx = parseInt((el as HTMLElement).dataset.nodeIndex!, 10);
+    const node = editingContentNodes[idx];
+    if (node && node.type !== 'image') {
+      node.text = (el as HTMLTextAreaElement).value;
+    }
+  });
+}
+
 function renderContentEditorPreview(): void {
   const container = document.getElementById('content-editor-preview');
   if (!container) return;
@@ -1337,17 +1356,6 @@ function refreshFormContents(): void {
   ) as HTMLInputElement | null;
   const currentName = nameInput?.value ?? '';
 
-  // For content editor, sync textarea values to state before re-render
-  if (formMode === 'content') {
-    document.querySelectorAll('.content-node-text').forEach((el) => {
-      const idx = parseInt((el as HTMLElement).dataset.nodeIndex!, 10);
-      const node = editingContentNodes[idx];
-      if (node && node.type !== 'image') {
-        node.text = (el as HTMLTextAreaElement).value;
-      }
-    });
-  }
-
   form.innerHTML = renderInlineForm();
 
   // Restore name
@@ -1393,13 +1401,7 @@ function saveComponent(): void {
 
   // Sync textarea values one final time for content editor
   if (formMode === 'content') {
-    document.querySelectorAll('.content-node-text').forEach((el) => {
-      const idx = parseInt((el as HTMLElement).dataset.nodeIndex!, 10);
-      const node = editingContentNodes[idx];
-      if (node && node.type !== 'image') {
-        node.text = (el as HTMLTextAreaElement).value;
-      }
-    });
+    syncContentNodesFromDOM();
   }
 
   const state = getWizardState();
