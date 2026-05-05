@@ -136,4 +136,85 @@ Suggested investigation order (cheapest to most expensive):
 
 ## Findings
 
-_To be filled in during the spike._
+Investigation date: 2026-05-04. All citations refer to `tangled.org/tangled.org/core` at `master` and `docs.tangled.org`.
+
+### Q1 — Public HTTP API for repo creation? **Yes, via XRPC.**
+
+`sh.tangled.repo.create` is a documented XRPC procedure (`lexicons/repo/create.json`). Input: `rkey` (string, required), `name` (string, required), `defaultBranch` (string, optional), `source` (string, optional — "A source URL to clone from, populate this when forking or importing a repository"), `repoDid` (did, optional). Output: `{ repoDid }`.
+
+Auth model: tangled standardised on atproto **inter-service authentication JWTs** for all XRPC calls in v1.7+ (deprecated the old shared-secret HTTP API after v1.8.2). Per the docs single-page guide, "All authorized commands to knots are managed via Inter-Service Authentication." That means a browser client holding the user's atproto OAuth session can mint a service-auth JWT (with `aud` = the appview/knot DID and `lxm` = `sh.tangled.repo.create`) and call the procedure directly — no separate tangled-issued token required.
+
+### Q2 — Atproto-native repo creation path? **Partially — record on user PDS, plus knot-side state.**
+
+`sh.tangled.repo` (`lexicons/repo/repo.json`) is a record stored on the user's PDS, keyed by `tid`. Required fields: `name`, `knot`, `createdAt`. Optional: `description`, `website`, `topics`, `source`, `spindle`, `labels`, `repoDid`. So the public/federated half of repo creation IS just an atproto record write — the wizard could in principle `putRecord` against the user's PDS using the existing OAuth session.
+
+**However**, that record alone doesn't create a working git repo: a knot also needs to provision storage, set up refs, etc. The `sh.tangled.repo.create` XRPC procedure is what triggers the knot side. So practically, the wizard would call `repo.create` (which presumably writes the PDS record AND provisions the knot) rather than splitting the two.
+
+### Q3 — Push protocol options. **SSH-only for write. HTTPS works for clone (read), not push.**
+
+- **Clone over HTTPS works** — `git clone https://tangled.sh/@user.example/repo` is supported; the central appview proxies fetch over HTTP (confirmed in anil.recoil.org's writeup: "the central tangled web server can proxy the Git contents over HTTP").
+- **Push over HTTPS does NOT work** — no smart-HTTP `git-receive-pack` is exposed. The official "Push to tangled.org" GitHub Action (github.com/marketplace/actions/push-to-tangled-org) uses SSH with a `TANGLED_KEY` secret (private key) and runs `git push --mirror`.
+- **No XRPC write-side primitive** — the `repo/` lexicon directory (27 files) contains no upload-pack / write-blob / write-commit / write-tree procedure. `sh.tangled.git.refUpdate` is a *record describing* push events emitted by knots, not an input. `sh.tangled.repo.blob`, `tree`, `branch`, `log`, `archive` are queries. Mutating procedures are limited to `create`, `delete`, `deleteBranch`, `merge`, `forkSync`, `archive`, `addSecret`/`removeSecret`/`listSecrets`, `defaultBranch`, `collaborator` — none of which accept a git pack or commit content.
+- **Knot subscription** — `sh.tangled.knot.subscribeRepos` is a firehose subscription (output stream of repo events), not an input.
+
+### Q4 — Knot vs. tangled.sh distinction.
+
+Tangled-hosted "managed knots" exist (knot1.tangled.sh is publicly visible / used by many tangled-hosted repos). The user has to **select a knot** at create time per the Quick Start Guide ("Choose a knotserver to host this repository on"); there's a default suggested but the field is exposed. Knots and the appview share the same XRPC lexicon surface, so a wizard targeting either follows the same protocol.
+
+### Q5 — Auth model end-to-end (best case attempted path).
+
+1. User logs in to wizard via existing atproto OAuth → wizard has session bound to user's DID.
+2. Wizard mints a service-auth JWT (`aud: <tangled-appview-DID>`, `lxm: sh.tangled.repo.create`) signed with the OAuth session key → calls `POST https://tangled.sh/xrpc/sh.tangled.repo.create` with `{ rkey, name, knot, ... }`. This **should** succeed without any additional credentials (depends on tangled accepting service-auth JWTs from arbitrary client DIDs — needs to be verified end-to-end before relying on it; the lexicon doesn't declare a custom auth scheme so default atproto rules apply).
+3. **Push step**: this is where it breaks. The user must upload an SSH public key via the tangled.sh web UI ("you can start creating repositories and pushing code" — gated on SSH key). From the browser, the wizard cannot do SSH. There is no in-wizard place to ask the user for credentials that would resolve this.
+
+So steps 1–2 are clean atproto. Step 3 is the brick wall: no atproto-native push, no HTTPS-push fallback, and the user already needs to have done out-of-band SSH-key setup for any of it to matter.
+
+### Q6 — Cloudflare Worker as a proxy?
+
+Workers gained TCP `connect()` in 2024, so an SSH client implemented in pure JS *can* run inside a Worker. But it's a lot of ground to cover:
+- Bundling a JS SSH-2 client (`ssh2`-class library, ~MB-scale dep, designed for Node not Workers) and a JS git pack-protocol implementation (`isomorphic-git` covers HTTP push but not SSH).
+- Per-request key material — either the user uploads a private key into the wizard (terrible posture: the wizard's Worker would be handling a long-lived push credential), or we mint per-export ephemeral keys and add/remove them via tangled's UI on the user's behalf (requires browser automation against tangled.sh; even worse).
+- Host fingerprint trust, error surfaces, key rotation, audit.
+
+The thelexfiles.com Worker's current remit is "publish lexicons to the protopunx.bsky.social PDS, serve the SPA, host `.well-known`." Adding "SSH-from-Worker git push proxy with user credentials" is a major scope expansion — well outside what the wizard's infra is designed to do.
+
+A lighter alternative considered: have the Worker host the generated repo as a *public read-only git URL* just long enough for tangled's `repo.create` to clone it via the `source` param. That only requires implementing fetch-side smart HTTP (much smaller), but it doesn't solve subsequent-generation pushes — only the initial create — and it requires standing up new infrastructure (storage of pending bundles, ephemeral URLs, GC) that the Worker doesn't currently have.
+
+### Q7 — API stability.
+
+Not stable yet. The 6-months blog post (blog.tangled.org/6-months) explicitly flags lexicon stability as future work: "Once the lexicon definitions for these XRPC calls are stabilized, building clients for knots or alternate implementations should become much simpler." The HTTP API was *deprecated* after v1.8.2 in favour of XRPC, which is itself still moving. Building against the surface today means accepting churn.
+
+### Q8 — User-facing differences vs. GitHub.
+
+- Public viewing: tangled URLs (`tangled.sh/@user/repo`) are publicly viewable analogously to GitHub. Good.
+- `git clone` works for non-tangled-aware clients (over HTTPS, proxied). Good.
+- Discovery / search outside the atproto ecosystem is weaker (no Google/StackOverflow critical mass yet). Acceptable trade-off given the "atproto-native" framing.
+- One concrete UX downside vs. GitHub: tangled requires SSH key upload through the web UI before any push. GitHub allows username + PAT entered in-wizard. So even if we solved the push-from-browser problem, the user would still need a manual side-quest to add an SSH key on tangled.sh first.
+
+---
+
+## Decision: **NO-GO (yet)**
+
+Tangled has the read side and the metadata side of repo creation cleanly exposed via XRPC, and the auth model lines up with the wizard's existing atproto OAuth session. But there is no path to actually push commits from a browser:
+
+- No git-over-HTTPS push.
+- No XRPC blob/tree/commit write procedure.
+- SSH from the browser is not possible.
+- Worker-as-SSH-proxy is a major architectural shift that the wizard's infra wasn't designed for, with credential-handling concerns we don't want to take on.
+- The `source` URL parameter on `repo.create` only solves *initial* creation, requires standing up ephemeral-git-URL infrastructure, and doesn't help with re-generation.
+
+Additionally, the API surface is explicitly not yet stable — building against it today means accepting churn during tangled's stabilization period.
+
+### Conditions to re-trigger investigation
+
+Any **one** of the following would warrant reopening:
+
+1. **Tangled exposes git-over-HTTPS push** on the central appview (smart HTTP `receive-pack`), authenticated via the user's atproto session or an app-password.
+2. **Tangled adds an XRPC write-side procedure** for git content (commit/tree/blob upload, or pack-receive over XRPC). Watch for new files in `lexicons/repo/` or `lexicons/git/` that are `procedure` type and accept binary input — `addCommit`, `pushPack`, `uploadPack`, etc.
+3. **Tangled publishes an official browser-friendly SDK** that hides whatever the underlying mechanism is.
+4. **The wizard gains a long-running backend component** (not the existing Worker) where SSH-from-server with managed credentials is part of the explicit scope from day one — at which point the trade-off changes.
+5. **Tangled marks its XRPC lexicon surface as stable** (blog post / docs language change). Currently called out as future work.
+
+### Recommendation
+
+Ship the GitHub export (`.specs/active/github-repo-export.md`) as the primary code-hosting destination. Revisit tangled when condition 1 or 2 above lands — at that point a follow-up implementation spec can be written with concrete acceptance criteria, since the auth and metadata sides are already known to work.

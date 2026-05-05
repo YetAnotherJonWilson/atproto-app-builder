@@ -28,7 +28,7 @@ Pick one item from "Up Next" before starting a coding session.
 
 - [ ] Add Vitest unit tests for generator output — see `.specs/active/001-example-add-tests-for-generators.md`
 - [ ] Add Vitest unit tests for utility functions (text, id, html)
-- [ ] Tangled.sh export — feasibility spike (atproto-native git host as alternative/replacement for GitHub export) — see `.specs/active/tangled-export-spike.md`. Investigation only; deliverable is a go/no-go + a follow-up implementation spec on go.
+- [x] Tangled.sh export — feasibility spike — see `.specs/done/tangled-export-spike.md` 5/4/26. **No-go**: push from browser is not possible (SSH-only push, no XRPC write-side, no git-over-HTTPS push). Re-trigger conditions documented in spec.
 
 ### Post-Views Panel (depends on Phase 5)
 
@@ -75,6 +75,7 @@ Pick one item from "Up Next" before starting a coding session.
 
 <!-- Move completed items here with date -->
 
+- [x] Tangled.sh export — feasibility spike — see `.specs/done/tangled-export-spike.md` 5/4/26 (no-go for now)
 - [x] Checklist component type (Grocery List demo centerpiece) — see `.specs/done/checklist-component.md` 5/2/26
 - [x] Components panel — "+ New Component" creation flow rework — see `.specs/done/components-panel-creation-flow.md` 5/1/26
 - [x] Inlay template components — wizard wiring + generator + UI — see `.specs/done/inlay-template-components.md` 4/29/26
