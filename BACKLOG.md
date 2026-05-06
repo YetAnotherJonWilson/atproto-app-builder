@@ -32,7 +32,7 @@ Pick one item from "Up Next" before starting a coding session.
 
 ### Post-Views Panel (depends on Phase 5)
 
-- [ ] App config placement — see `.specs/active/app-config-placement.md`
+- [ ] AppConfig cleanup — drop dead `primaryRecordType` / `listDisplayFields` and the three orphaned record-view generators — see `.specs/active/appconfig-cleanup.md`
 
 ### Post-Migration Features
 
