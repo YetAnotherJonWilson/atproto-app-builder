@@ -216,100 +216,6 @@ button.danger:hover {
   font-style: italic;
 }
 
-/* List items */
-.list-container {
-  margin: 20px 0;
-}
-
-.list-item {
-  padding: 15px;
-  background: #f9f9f9;
-  border: 1px solid #e0e0e0;
-  border-radius: 5px;
-  margin-bottom: 10px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.list-item:hover {
-  background: #f0f0f0;
-}
-
-.list-item h3 {
-  margin: 0 0 8px 0;
-  color: #333;
-}
-
-.list-item p {
-  margin: 4px 0;
-  color: #666;
-  font-size: 14px;
-}
-
-.list-item .meta {
-  font-size: 12px;
-  color: #999;
-  margin-top: 8px;
-}
-
-/* Empty state */
-.no-data {
-  text-align: center;
-  padding: 40px 20px;
-  color: #666;
-  font-style: italic;
-}
-
-/* Form styling */
-.form-container {
-  margin: 20px 0;
-}
-
-.form-container label {
-  display: block;
-  margin: 15px 0 5px;
-  font-weight: 500;
-  color: #333;
-}
-
-.form-container .field-help {
-  font-size: 12px;
-  color: #666;
-  margin-top: 4px;
-}
-
-/* Button group */
-.button-group {
-  display: flex;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.button-group button {
-  flex: 1;
-}
-
-/* Detail view */
-.detail-container {
-  margin: 20px 0;
-}
-
-.detail-container .field-group {
-  margin-bottom: 15px;
-}
-
-.detail-container .field-label {
-  font-weight: 500;
-  color: #666;
-  font-size: 12px;
-  text-transform: uppercase;
-  margin-bottom: 4px;
-}
-
-.detail-container .field-value {
-  color: #333;
-}
-
 /* Media previews */
 .media-preview {
   max-width: 100%;
@@ -342,19 +248,6 @@ button.danger:hover {
   padding: 4px 8px;
   border-radius: 3px;
   font-size: 12px;
-}
-
-/* Checkbox styling */
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-}
-
-.checkbox-label input[type="checkbox"] {
-  width: auto;
-  margin: 0;
 }
 
 /* Checklist component */
