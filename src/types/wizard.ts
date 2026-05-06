@@ -79,8 +79,6 @@ export interface AppInfo {
 }
 
 export interface AppConfig {
-  primaryRecordType: string;
-  listDisplayFields: string[];
   outputMethod: 'zip' | 'github';
 }
 

@@ -96,13 +96,7 @@ export function deleteRecordType(id: string): void {
 
 function performDelete(id: string): void {
   const wizardState = getWizardState();
-  const rt = wizardState.recordTypes.find(r => r.id === id);
   wizardState.recordTypes = wizardState.recordTypes.filter(r => r.id !== id);
-
-  // Auto-clear primaryRecordType if it pointed to the deleted record
-  if (rt && wizardState.appConfig.primaryRecordType === rt.name) {
-    wizardState.appConfig.primaryRecordType = '';
-  }
 
   saveWizardState(wizardState);
   renderCurrentStep();

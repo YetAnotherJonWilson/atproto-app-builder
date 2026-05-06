@@ -18,13 +18,8 @@ export async function generateApp(): Promise<void> {
     throw new Error('validation');
   }
 
-  // Ensure appConfig has a primary record type
-  if (!wizardState.appConfig.primaryRecordType && wizardState.recordTypes.length > 0) {
-    wizardState.appConfig.primaryRecordType = wizardState.recordTypes[0].name;
-  }
-
   // Generate all files using the generator
-  const files = await generateAllFiles(wizardState, wizardState.appConfig);
+  const files = await generateAllFiles(wizardState);
 
   // Determine output method
   const outputMethod = wizardState.appConfig.outputMethod || 'zip';

@@ -45,7 +45,7 @@ function makeMinimalState(overrides: Partial<WizardState> = {}): WizardState {
     recordTypes: [],
     queryMethods: [],
     procedureMethods: [],
-    appConfig: { primaryRecordType: '', listDisplayFields: [], outputMethod: 'zip' },
+    appConfig: { outputMethod: 'zip' },
     requirements: [],
     nonDataElements: [],
     components: [],

@@ -77,8 +77,6 @@ function makeWizardState(parts: {
     queryMethods: [],
     procedureMethods: [],
     appConfig: {
-      primaryRecordType: '',
-      listDisplayFields: [],
       outputMethod: 'zip',
     },
     requirements: parts.requirements ?? [],

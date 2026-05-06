@@ -2,7 +2,7 @@
  * Main generator module - orchestrates all file generation
  */
 
-import type { WizardState, AppConfig, View, Component } from '../types/wizard';
+import type { WizardState, View, Component } from '../types/wizard';
 import type { FileOutput } from '../types/generation';
 import { toPascalCase, toCamelCase } from '../utils';
 import { buildScopeFromNsids } from '../shared/scopes';
@@ -84,8 +84,7 @@ function getAssignedComponents(views: View[], allComponents: Component[]): Compo
 // ── Main generation entry point ──────────────────────────────────────
 
 export async function generateAllFiles(
-  wizardState: WizardState,
-  appConfig: AppConfig
+  wizardState: WizardState
 ): Promise<FileOutput> {
   const files: FileOutput = {};
   const { appInfo, recordTypes, views, components } = wizardState;

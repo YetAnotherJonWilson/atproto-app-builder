@@ -136,8 +136,6 @@ export function initializeWizardState(): WizardState {
     queryMethods: [],
     procedureMethods: [],
     appConfig: {
-      primaryRecordType: '',
-      listDisplayFields: [],
       outputMethod: 'zip'
     },
     requirements: [],
@@ -171,6 +169,8 @@ export function setWizardState(state: WizardState): void {
   if (state.appConfig) {
     const legacyAppConfig = state.appConfig as unknown as Record<string, unknown>;
     delete legacyAppConfig.domain;
+    delete legacyAppConfig.primaryRecordType;
+    delete legacyAppConfig.listDisplayFields;
   }
   // Migrate: rename legacy `blocks` field to `components` (and migrate per-
   // component `blockType` → `componentType`). Applies to both localStorage
