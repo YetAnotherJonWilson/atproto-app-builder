@@ -27,7 +27,7 @@ Pick one item from "Up Next" before starting a coding session.
 ### Independent (no blockers)
 
 - [ ] Add Vitest unit tests for generator output — see `.specs/active/001-example-add-tests-for-generators.md`
-- [ ] Add Vitest unit tests for utility functions (text, id, html)
+- [x] Add Vitest unit tests for utility functions (text, id, html) 5/7/26
 - [x] Tangled.sh export — feasibility spike — see `.specs/done/tangled-export-spike.md` 5/4/26. **No-go**: push from browser is not possible (SSH-only push, no XRPC write-side, no git-over-HTTPS push). Re-trigger conditions documented in spec.
 
 ### Post-Views Panel (depends on Phase 5)
