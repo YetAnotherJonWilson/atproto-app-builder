@@ -32,7 +32,7 @@ Pick one item from "Up Next" before starting a coding session.
 
 ### Post-Views Panel (depends on Phase 5)
 
-- [ ] AppConfig cleanup — drop dead `primaryRecordType` / `listDisplayFields` and the three orphaned record-view generators — see `.specs/active/appconfig-cleanup.md`
+- [x] AppConfig cleanup — drop dead `primaryRecordType` / `listDisplayFields` and the three orphaned record-view generators — see `.specs/done/appconfig-cleanup.md` 5/5/26
 
 ### Post-Migration Features
 
@@ -75,6 +75,7 @@ Pick one item from "Up Next" before starting a coding session.
 
 <!-- Move completed items here with date -->
 
+- [x] AppConfig cleanup — drop dead `primaryRecordType` / `listDisplayFields` and the three orphaned record-view generators — see `.specs/done/appconfig-cleanup.md` 5/5/26
 - [x] Tangled.sh export — feasibility spike — see `.specs/done/tangled-export-spike.md` 5/4/26 (no-go for now)
 - [x] Checklist component type (Grocery List demo centerpiece) — see `.specs/done/checklist-component.md` 5/2/26
 - [x] Components panel — "+ New Component" creation flow rework — see `.specs/done/components-panel-creation-flow.md` 5/1/26
