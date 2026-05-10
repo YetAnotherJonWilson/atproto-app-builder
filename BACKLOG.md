@@ -26,6 +26,8 @@ Pick one item from "Up Next" before starting a coding session.
 
 ### Independent (no blockers)
 
+- [ ] Component library — lexicon, storage, picker UX spike — see `.specs/active/component-library-spike.md` (decisions before scaling to ~30+ components; Q2 couples to strategic-thread mirror-flow conversation)
+- [ ] @atcute OAuth migration spike — see `.specs/active/atcute-oauth-spike.md` (seeded with 14× bundle-size delta on 5/9/26; ambiguities to resolve before starting)
 - [ ] Add Vitest unit tests for generator output — see `.specs/active/001-example-add-tests-for-generators.md`
 - [x] Add Vitest unit tests for utility functions (text, id, html) 5/7/26
 - [x] Tangled.sh export — feasibility spike — see `.specs/done/tangled-export-spike.md` 5/4/26. **No-go**: push from browser is not possible (SSH-only push, no XRPC write-side, no git-over-HTTPS push). Re-trigger conditions documented in spec.

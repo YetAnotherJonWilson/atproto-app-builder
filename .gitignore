@@ -9,6 +9,7 @@ test-results/
 .env
 .env.local
 .env.*.local
+.specs/active/component-library-spike.md
 
 # wrangler files
 .wrangler
