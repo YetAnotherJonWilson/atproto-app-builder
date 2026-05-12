@@ -73,7 +73,7 @@ Strategic decisions captured in `wizard-strategy/app-wizard-positioning.md` ("Le
 
 ### Generated-app theming prep (do after `inlay-template-components`)
 
-- [ ] Generated app — CSS custom properties for colors and radii — see `.specs/active/generated-app-css-tokens.md` (draft)
+- [x] Generated app — CSS custom properties for colors and radii — see `.specs/done/generated-app-css-tokens.md` 5/11/26
 - [ ] Generator — shared class-name constants module — see `.specs/active/generator-classname-constants.md` (draft)
 
 ## Ideas / Unrefined
@@ -84,6 +84,7 @@ Strategic decisions captured in `wizard-strategy/app-wizard-positioning.md` ("Le
 
 <!-- Move completed items here with date -->
 
+- [x] Generated app — CSS custom properties for colors and radii — see `.specs/done/generated-app-css-tokens.md` 5/11/26
 - [x] AppConfig cleanup — drop dead `primaryRecordType` / `listDisplayFields` and the three orphaned record-view generators — see `.specs/done/appconfig-cleanup.md` 5/5/26
 - [x] Tangled.sh export — feasibility spike — see `.specs/done/tangled-export-spike.md` 5/4/26 (no-go for now)
 - [x] Checklist component type (Grocery List demo centerpiece) — see `.specs/done/checklist-component.md` 5/2/26

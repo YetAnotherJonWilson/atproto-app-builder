@@ -5,28 +5,57 @@
 import inlayPrimitivesCss from '../../../styles/inlay-primitives.css?raw';
 
 export function generateStyles(): string {
-  return `body {
+  return `:root {
+  --color-bg: #f5f5f5;
+  --color-surface: white;
+  --color-surface-muted: #f9f9f9;
+  --color-surface-subtle: #fafafa;
+  --color-text: #333;
+  --color-text-muted: #999;
+  --color-accent: #0085ff;
+  --color-accent-hover: #0066cc;
+  --color-on-accent: white;
+  --color-secondary: #666;
+  --color-secondary-hover: #555;
+  --color-danger: #dc3545;
+  --color-danger-hover: #c82333;
+  --color-info-bg: #e3f2fd;
+  --color-info-text: #1976d2;
+  --color-error-bg: #ffebee;
+  --color-error-text: #c62828;
+  --color-border: #ddd;
+  --color-border-subtle: #e0e0e0;
+  --color-border-strong: #ccc;
+  --color-spinner-track: #f3f3f3;
+  --color-shadow: rgba(0, 0, 0, 0.1);
+  --radius-sm: 3px;
+  --radius-md: 5px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+}
+
+body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   max-width: 600px;
   margin: 50px auto;
   padding: 20px;
-  background: #f5f5f5;
+  background: var(--color-bg);
 }
 
 .container {
-  background: white;
+  background: var(--color-surface);
   padding: 30px;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 2px 10px var(--color-shadow);
 }
 
 h1 {
-  color: #333;
+  color: var(--color-text);
   margin-bottom: 20px;
 }
 
 h2 {
-  color: #333;
+  color: var(--color-text);
   margin-bottom: 15px;
   font-size: 24px;
 }
@@ -42,8 +71,8 @@ h2 {
 }
 
 .spinner {
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #0085ff;
+  border: 4px solid var(--color-spinner-track);
+  border-top: 4px solid var(--color-accent);
   border-radius: 50%;
   width: 40px;
   height: 40px;
@@ -76,8 +105,8 @@ input, textarea, select {
   width: 100%;
   padding: 10px;
   margin: 10px 0;
-  border: 1px solid #ddd;
-  border-radius: 5px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   box-sizing: border-box;
   font-family: inherit;
 }
@@ -88,11 +117,11 @@ textarea {
 }
 
 button {
-  background: #0085ff;
-  color: white;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
   border: none;
   padding: 12px 24px;
-  border-radius: 5px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   font-size: 16px;
   width: 100%;
@@ -100,42 +129,42 @@ button {
 }
 
 button:hover {
-  background: #0066cc;
+  background: var(--color-accent-hover);
 }
 
 button.secondary {
-  background: #666;
+  background: var(--color-secondary);
 }
 
 button.secondary:hover {
-  background: #555;
+  background: var(--color-secondary-hover);
 }
 
 button.danger {
-  background: #dc3545;
+  background: var(--color-danger);
 }
 
 button.danger:hover {
-  background: #c82333;
+  background: var(--color-danger-hover);
 }
 
 .status {
   padding: 10px;
   margin: 10px 0;
-  border-radius: 5px;
-  background: #e3f2fd;
-  color: #1976d2;
+  border-radius: var(--radius-md);
+  background: var(--color-info-bg);
+  color: var(--color-info-text);
 }
 
 .status.error {
-  background: #ffebee;
-  color: #c62828;
+  background: var(--color-error-bg);
+  color: var(--color-error-text);
 }
 
 .user-info {
   padding: 15px;
-  background: #f5f5f5;
-  border-radius: 5px;
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
   margin: 15px 0;
 }
 
@@ -149,22 +178,22 @@ button.danger:hover {
   display: flex;
   gap: 4px;
   padding: 8px;
-  background: #f5f5f5;
-  border-radius: 8px;
+  background: var(--color-bg);
+  border-radius: var(--radius-lg);
   margin-bottom: 20px;
 }
 
 .nav-menu-item {
   padding: 8px 16px;
-  border-radius: 5px;
+  border-radius: var(--radius-md);
   text-decoration: none;
-  color: #333;
+  color: var(--color-text);
   font-weight: 500;
   transition: background 0.2s;
 }
 
 .nav-menu-item:hover {
-  background: #e0e0e0;
+  background: var(--color-border-subtle);
 }
 
 /* Component sections */
@@ -174,24 +203,24 @@ button.danger:hover {
 
 /* Placeholder components */
 .app-component-placeholder {
-  border: 2px dashed #ccc;
-  border-radius: 8px;
+  border: 2px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
   padding: 20px;
-  background: #fafafa;
+  background: var(--color-surface-subtle);
 }
 
 .app-component-placeholder h3 {
   margin: 0 0 8px 0;
-  color: #666;
+  color: var(--color-secondary);
   font-size: 16px;
 }
 
 .placeholder-type {
   display: inline-block;
   padding: 2px 8px;
-  background: #e3f2fd;
-  color: #1976d2;
-  border-radius: 3px;
+  background: var(--color-info-bg);
+  color: var(--color-info-text);
+  border-radius: var(--radius-sm);
   font-size: 12px;
   font-weight: 500;
   margin-bottom: 8px;
@@ -200,7 +229,7 @@ button.danger:hover {
 .placeholder-requirements {
   margin: 0;
   padding-left: 20px;
-  color: #999;
+  color: var(--color-text-muted);
   font-size: 14px;
 }
 
@@ -212,7 +241,7 @@ button.danger:hover {
 .view-empty {
   text-align: center;
   padding: 40px 20px;
-  color: #999;
+  color: var(--color-text-muted);
   font-style: italic;
 }
 
@@ -220,13 +249,13 @@ button.danger:hover {
 .media-preview {
   max-width: 100%;
   margin: 10px 0;
-  border-radius: 5px;
+  border-radius: var(--radius-md);
 }
 
 .media-preview img {
   max-width: 100%;
   height: auto;
-  border-radius: 5px;
+  border-radius: var(--radius-md);
 }
 
 .media-preview audio,
@@ -243,10 +272,10 @@ button.danger:hover {
 }
 
 .tag {
-  background: #e3f2fd;
-  color: #1976d2;
+  background: var(--color-info-bg);
+  color: var(--color-info-text);
   padding: 4px 8px;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
 }
 
@@ -280,9 +309,9 @@ button.danger:hover {
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  background: #f9f9f9;
-  border: 1px solid #e0e0e0;
-  border-radius: 5px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
   margin-bottom: 6px;
 }
 
@@ -294,7 +323,7 @@ button.danger:hover {
 
 .checklist-item .checklist-item-label {
   flex: 1;
-  color: #333;
+  color: var(--color-text);
 }
 
 .checklist-item-checked .checklist-item-label {
@@ -304,7 +333,7 @@ button.danger:hover {
 
 .checklist-delete-btn {
   background: transparent;
-  color: #999;
+  color: var(--color-text-muted);
   width: auto;
   margin: 0;
   padding: 4px 10px;
@@ -314,19 +343,19 @@ button.danger:hover {
 }
 
 .checklist-delete-btn:hover {
-  background: #ffebee;
-  color: #c62828;
+  background: var(--color-error-bg);
+  color: var(--color-error-text);
 }
 
 .checklist-empty {
   padding: 24px 12px;
-  color: #999;
+  color: var(--color-text-muted);
   font-style: italic;
   text-align: center;
 }
 
 .checklist-error {
-  color: #c62828;
+  color: var(--color-error-text);
   font-size: 13px;
   padding: 6px 0;
 }
@@ -337,7 +366,7 @@ button.danger:hover {
 }
 
 .checklist-loading {
-  color: #999;
+  color: var(--color-text-muted);
   padding: 12px;
   text-align: center;
 }
