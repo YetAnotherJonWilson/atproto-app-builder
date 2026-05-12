@@ -7,7 +7,6 @@ Pick one item from "Up Next" before starting a coding session.
 
 <!-- Move one item here when you start working on it -->
 
-
 ### Layout Migration (sequential phases)
 
 - [x] Phase 0: Preparation — delete orphans, add sidebar HTML/CSS
@@ -29,8 +28,16 @@ Pick one item from "Up Next" before starting a coding session.
 - [ ] Component library — lexicon, storage, picker UX spike — see `.specs/active/component-library-spike.md` (decisions before scaling to ~30+ components; Q2 couples to strategic-thread mirror-flow conversation)
 - [ ] @atcute OAuth migration spike — see `.specs/active/atcute-oauth-spike.md` (seeded with 14× bundle-size delta on 5/9/26; ambiguities to resolve before starting)
 - [ ] Add Vitest unit tests for generator output — see `.specs/active/001-example-add-tests-for-generators.md`
-- [x] Add Vitest unit tests for utility functions (text, id, html) 5/7/26
-- [x] Tangled.sh export — feasibility spike — see `.specs/done/tangled-export-spike.md` 5/4/26. **No-go**: push from browser is not possible (SSH-only push, no XRPC write-side, no git-over-HTTPS push). Re-trigger conditions documented in spec.
+
+### Lexicon stabilization migration (sequential phases — strategic decisions made 2026-05-10)
+
+Strategic decisions captured in `wizard-strategy/app-wizard-positioning.md` ("Lexicon stabilization (decided 2026-05-10)") and `project_lexicon_stabilization.md` memory. Implementation specs to be drafted before each phase starts.
+
+- [ ] Phase 1: starting.place infrastructure setup — Cloudflare zone + Worker (mirror of thelexfiles.com), new wizard-controlled PDS account for lexicon hosting, DNS resolution working end-to-end. _Spec needed._
+- [ ] Phase 2: NSID generation refactor — code change to generate `place.starting.<category>.<type>` for system types and `place.starting.<user>.[temp.]<name>` for user types; `NamespaceOption` updates; reserved-username enforcement for category names. _Spec needed._
+- [ ] Phase 3: Wizard project record migration — one-time migrate on load (`com.thelexfiles.appwizard.project` → `place.starting.system.project`) with read-both fallback; atomic per-record write-new-then-delete-old; cutover to single-read after observed migration completion. _Spec needed._
+- [ ] Phase 4: Move wizard frontend deployment to starting.place — DNS, OAuth callback URLs, deployment Worker, env vars per `project_deployment.md`. _Spec needed._
+- [ ] Phase 5: thelexfiles.com legacy positioning — public page explaining the legacy role of thelexfiles.com (hosts existing user lexicons forever, no new publishing here). _Spec needed._
 
 ### Post-Views Panel (depends on Phase 5)
 
@@ -117,3 +124,5 @@ Pick one item from "Up Next" before starting a coding session.
 - [x] Login flow (AT Protocol OAuth) — see `.specs/done/login-flow.md` 3/18/26
 - [x] Responsive wizard - see `.specs/done/narrow-accordion-layout.md` 3/17/26
 - [x] Landing page header - see `.specs/done/landing-page-header-redesign.md` 3/16/26
+- [x] Add Vitest unit tests for utility functions (text, id, html) 5/7/26
+- [x] Tangled.sh export — feasibility spike — see `.specs/done/tangled-export-spike.md` 5/4/26. **No-go**: push from browser is not possible (SSH-only push, no XRPC write-side, no git-over-HTTPS push). Re-trigger conditions documented in spec.
