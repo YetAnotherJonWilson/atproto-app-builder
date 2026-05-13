@@ -28,6 +28,7 @@ Pick one item from "Up Next" before starting a coding session.
 - [ ] Component library — lexicon, storage, picker UX spike — see `.specs/active/component-library-spike.md` (decisions before scaling to ~30+ components; Q2 couples to strategic-thread mirror-flow conversation)
 - [ ] @atcute OAuth migration spike — see `.specs/active/atcute-oauth-spike.md` (seeded with 14× bundle-size delta on 5/9/26; ambiguities to resolve before starting)
 - [ ] Generated-app Router tests — see `.specs/active/generated-app-router-tests.md` (follow-up to 5/12 unit-tests work; stub spec, needs fleshing before implementation)
+- [ ] Warn on lexicon overwrite + show schema diff — see `.specs/active/lexicon-overwrite-warning.md` (draft 5/13/26; 5 ambiguities to resolve before ready)
 
 ### Lexicon stabilization migration (sequential phases — strategic decisions made 2026-05-10)
 
