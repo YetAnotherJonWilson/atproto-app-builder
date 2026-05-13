@@ -41,4 +41,15 @@ describe('generatePackageJson', () => {
     const parsed = JSON.parse(generatePackageJson(baseAppInfo));
     expect(parsed.author).toBe('Test Author');
   });
+
+  it('includes a test script that runs vitest', () => {
+    const parsed = JSON.parse(generatePackageJson(baseAppInfo));
+    expect(parsed.scripts.test).toBe('vitest run');
+  });
+
+  it('includes vitest and jsdom in devDependencies', () => {
+    const parsed = JSON.parse(generatePackageJson(baseAppInfo));
+    expect(parsed.devDependencies).toHaveProperty('vitest');
+    expect(parsed.devDependencies).toHaveProperty('jsdom');
+  });
 });

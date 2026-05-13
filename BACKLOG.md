@@ -5,7 +5,7 @@ Pick one item from "Up Next" before starting a coding session.
 
 ## In Progress
 
-- [ ] Add Vitest unit tests for generator output — see `.specs/active/generated-app-unit-tests.md` (scope narrowed to harness + Store contract test; Router tests deferred to a follow-up spec)
+<!-- Move one item here when you start working on it -->
 
 ### Layout Migration (sequential phases)
 
@@ -27,6 +27,7 @@ Pick one item from "Up Next" before starting a coding session.
 
 - [ ] Component library — lexicon, storage, picker UX spike — see `.specs/active/component-library-spike.md` (decisions before scaling to ~30+ components; Q2 couples to strategic-thread mirror-flow conversation)
 - [ ] @atcute OAuth migration spike — see `.specs/active/atcute-oauth-spike.md` (seeded with 14× bundle-size delta on 5/9/26; ambiguities to resolve before starting)
+- [ ] Generated-app Router tests — see `.specs/active/generated-app-router-tests.md` (follow-up to 5/12 unit-tests work; stub spec, needs fleshing before implementation)
 
 ### Lexicon stabilization migration (sequential phases — strategic decisions made 2026-05-10)
 
@@ -83,6 +84,7 @@ Strategic decisions captured in `wizard-strategy/app-wizard-positioning.md` ("Le
 
 <!-- Move completed items here with date -->
 
+- [x] Generated-app Vitest harness + Store contract test — see `.specs/done/generated-app-unit-tests.md` 5/12/26 (Router tests deferred — pending follow-up spec)
 - [x] Generated app — CSS custom properties for colors and radii — see `.specs/done/generated-app-css-tokens.md` 5/11/26
 - [x] AppConfig cleanup — drop dead `primaryRecordType` / `listDisplayFields` and the three orphaned record-view generators — see `.specs/done/appconfig-cleanup.md` 5/5/26
 - [x] Tangled.sh export — feasibility spike — see `.specs/done/tangled-export-spike.md` 5/4/26 (no-go for now)
