@@ -5,7 +5,7 @@ Pick one item from "Up Next" before starting a coding session.
 
 ## In Progress
 
-<!-- Move one item here when you start working on it -->
+- [ ] Add Vitest unit tests for generator output — see `.specs/active/generated-app-unit-tests.md` (scope narrowed to harness + Store contract test; Router tests deferred to a follow-up spec)
 
 ### Layout Migration (sequential phases)
 
@@ -27,7 +27,6 @@ Pick one item from "Up Next" before starting a coding session.
 
 - [ ] Component library — lexicon, storage, picker UX spike — see `.specs/active/component-library-spike.md` (decisions before scaling to ~30+ components; Q2 couples to strategic-thread mirror-flow conversation)
 - [ ] @atcute OAuth migration spike — see `.specs/active/atcute-oauth-spike.md` (seeded with 14× bundle-size delta on 5/9/26; ambiguities to resolve before starting)
-- [ ] Add Vitest unit tests for generator output — see `.specs/active/001-example-add-tests-for-generators.md`
 
 ### Lexicon stabilization migration (sequential phases — strategic decisions made 2026-05-10)
 

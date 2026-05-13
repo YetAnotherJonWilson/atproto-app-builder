@@ -23,57 +23,57 @@ working example they can build on, and it doubles as a safety net for
 the generator itself: if the generator emits broken code, its own
 tests will fail.
 
+## Scope decisions (resolved 2026-05-12)
+
+- **Router tests deferred** to a follow-up spec (`generated-app-router-tests.md`). Reason: the emitted `Router.ts` is testable but every test path transitively imports view modules, which pulls in Inlay/Store/Auth — a fragile foundation for starter tests. Defer until view modules have a more isolated test posture (or accept that decision under a dedicated spec).
+- **Store tests are generic, not data-model-aware.** v1 emits a subscribe/unsubscribe contract test only. Per-record-type tests deferred to a future iteration once the data-modeling hints spec lands.
+- **Vitest config:** one global jsdom environment. Matches generated apps' DOM-heavy code (Router, UI).
+- **Vitest version:** match the wizard's major (^4).
+- **Smoke procedure:** documented manually, not automated (install + run is too slow for CI).
+
 ## Acceptance Criteria
 
 - [ ] **`package.json` generation** — `generatePackageJson` emits a
-  `test` script (`"test": "vitest run"`) and adds `vitest` to
-  `devDependencies` at a pinned version.
+  `test` script (`"test": "vitest run"`) and adds `vitest` and
+  `jsdom` to `devDependencies` at pinned versions matching the
+  wizard's own pins.
 
-- [ ] **Vitest config** — a `vitest.config.ts` (or equivalent) is
-  emitted at the generated app's root, configured for the environment
-  the generated app runs in (jsdom for DOM-touching code).
+- [ ] **Vitest config** — a `vitest.config.ts` is emitted at the
+  generated app's root, configured with `environment: 'jsdom'` and
+  `include: ['tests/**/*.{test,spec}.ts']`.
 
 - [ ] **Test directory layout** — tests live in `tests/` at the
-  generated app's root, mirroring `src/` structure
-  (`tests/store.test.ts`, `tests/router.test.ts`, etc.).
+  generated app's root. v1 emits `tests/store.test.ts` only.
 
-- [ ] **Store tests** — cover the state mutation and subscription
-  surface of the generated `Store.ts`:
-  - initial state matches the shape declared by the wizard's data model
-  - setters/updaters produce the expected next state
-  - subscribers fire when (and only when) state changes
-
-- [ ] **Router tests** — cover route matching and navigation in the
-  generated `Router.ts`:
-  - a known path resolves to the expected view
-  - an unknown path resolves to the not-found view (or whatever the
-    current Router does)
-  - navigation updates whatever state/history the Router owns
+- [ ] **Store tests (v1: generic)** — `tests/store.test.ts` covers the
+  generic subscribe/unsubscribe contract:
+  - `storeManager.subscribe(listener)` returns a function
+  - The returned unsubscribe function executes without throwing
+  - The default `Store` export is an object
 
 - [ ] **Generator test coverage** — the wizard's own test suite
-  (`tests/generator/`) gains a test that runs the generator for a
-  representative `WizardState`, then asserts the produced
-  `package.json`, `vitest.config.ts`, and test files are present and
-  well-formed (parseable, importable).
+  (`tests/generator/`) gains assertions that the generator emits:
+  `vitest.config.ts`, `tests/store.test.ts`, and that
+  `package.json` includes the `test` script + `vitest` + `jsdom`
+  devDeps. Emitted test file should parse (no syntax errors).
 
-- [ ] **Smoke test** — there is a way (documented or scripted) to take
-  a generated app, `npm install`, `npm test`, and observe that the
-  emitted tests pass. This catches divergence between the generator's
-  idea of the code and the real emitted code.
+- [ ] **Smoke procedure documented** — this spec's "How to Verify"
+  section includes the exact commands to generate an app, `npm
+  install`, and `npm test` to confirm the emitted tests pass.
 
 ## Scope
 
 **In scope:**
-- Adding Vitest to the generated app's `package.json`
-- Emitting a Vitest config file
-- Emitting starter tests for `Store.ts` and `Router.ts`
-- A wizard-side test that asserts the test files are emitted
-- Documenting how to run the generated app's tests
+- Adding `vitest` + `jsdom` to the generated app's `package.json` (devDeps + `test` script)
+- Emitting `vitest.config.ts` (global jsdom env)
+- Emitting a generic Store subscribe-contract test (`tests/store.test.ts`)
+- Wizard-side tests asserting these emissions
+- Documenting the manual smoke procedure in this spec
 
 **Out of scope:**
-- Tests for `Api.ts`, `Auth.ts`, `Session.ts` — these are
-  network-bound and need a mocking strategy that deserves its own
-  spec
+- Router tests (deferred — see `generated-app-router-tests.md`)
+- Data-model-aware Store tests (per-record-type setter assertions)
+- Tests for `Api.ts`, `Auth.ts`, `Session.ts` — network-bound, separate spec
 - Integration / end-to-end tests for generated apps (Playwright etc.)
 - Coverage reporting, CI config, or watch-mode tooling inside the
   generated app
@@ -82,71 +82,26 @@ tests will fail.
 
 ## Files Likely Affected
 
-- `src/generator/config/PackageJson.ts` — add `test` script, add
-  `vitest` to devDependencies
-- `src/generator/config/` — new file emitting `vitest.config.ts`
-- `src/generator/tests/` (new) — test-file emitters for store, router
+- `src/generator/config/PackageJson.ts` — add `test` script + `vitest` + `jsdom` devDeps
+- `src/generator/config/VitestConfig.ts` (new) — emit `vitest.config.ts`
+- `src/generator/tests/StoreTest.ts` (new) — emit `tests/store.test.ts`
 - `src/generator/index.ts` — wire the new emitters into the output
-  bundle
-- `tests/generator/` — new wizard-side test asserting the generator
-  produces a well-formed test setup
+- `tests/generator/PackageJson.test.ts` — add devDep + script assertions
+- `tests/generator/VitestConfig.test.ts` (new) — assert emitted config shape
+- `tests/generator/StoreTest.test.ts` (new) — assert emitted store test
 
 ## Ambiguity Warnings
 
-1. **How data-model-aware should Store tests be?**
-   The generated Store is shaped by the wizard's data model (record
-   types, fields). Should emitted Store tests be generic (assert the
-   store exists and responds to a dummy set/subscribe cycle) or
-   tailored to the specific data model the user picked (assert that
-   adding a record of the user's chosen type produces the expected
-   state)?
-   - _Likely assumption:_ Start generic — one test that exercises the
-     store's core subscribe/update contract without referencing
-     user-specific record types. Tailored tests can come in a later
-     spec once the data-modeling hints spec lands.
-   - _Please confirm or clarify._
-
-2. **Vitest config environment**
-   Parts of the generated app touch the DOM (`UI.ts`, Router). Tests
-   for those need jsdom; Store tests don't. Should the generator emit
-   one config with jsdom globally, or split per-file with
-   `@vitest-environment` comments?
-   - _Likely assumption:_ One global jsdom config. Simpler, slightly
-     slower, matches how the wizard's own tests are set up.
-   - _Please confirm or clarify._
-
-3. **Vitest version pinning**
-   The wizard's own `package.json` uses Vitest 4.x. Should generated
-   apps pin the same major, or a more conservative minimum?
-   - _Likely assumption:_ Match the wizard's major version for
-     consistency.
-   - _Please confirm or clarify._
-
-4. **Smoke-test automation**
-   The "install + test a generated app" smoke test is high-value but
-   slow (real `npm install`). Should this run in the wizard's normal
-   `npx vitest run` path, be a separate script (`npm run smoke`), or
-   stay manual for now?
-   - _Likely assumption:_ Separate script, not part of the default
-     test run, because of install cost. Document how to run it.
-   - _Please confirm or clarify._
-
-5. **Router testability**
-   Depends on whether the generated `Router.ts` currently exposes its
-   route table in a way that's unit-testable, or whether routing is
-   entangled with `window.location` and DOM side effects. If the
-   latter, this spec may need a small refactor of the emitted Router
-   to make it testable — which arguably belongs in a separate spec.
-   - _Likely assumption:_ Read `src/generator/app/Router.ts` before
-     finalizing this spec and either (a) confirm it's unit-testable
-     as-is, or (b) split the refactor into its own prerequisite spec.
-   - _Please confirm or clarify._
+All five original ambiguity warnings (data-model awareness, jsdom scope, Vitest version, smoke automation, Router testability) were resolved on 2026-05-12 — see the "Scope decisions" section above.
 
 ## How to Verify
 
-- `npx vitest run tests/generator/` — wizard-side test asserting the
-  generator emits the test harness passes.
-- Manually: generate an app, `cd` into it, `npm install`, `npm test` —
-  all emitted tests pass.
-- `npm run build` in the wizard — TypeScript still compiles after
-  generator changes.
+- `npm run verify` (= `npm run build` + `vitest run` + `playwright test`) passes.
+- Wizard-side tests in `tests/generator/` cover that `package.json`, `vitest.config.ts`, and `tests/store.test.ts` are emitted with the expected shape.
+- **Manual smoke procedure:**
+  1. Run the wizard locally, create a minimal app (any name; at least one record type optional), generate the output.
+  2. `cd` into the generated app directory.
+  3. `npm install`
+  4. `npm test`
+  5. Expected: `tests/store.test.ts` runs and passes.
+- TypeScript still compiles in the wizard after generator changes (`npm run build`).
