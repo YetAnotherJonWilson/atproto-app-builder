@@ -10,9 +10,13 @@ import { buildScopeFromNsids } from '../shared/scopes';
 // Config generators
 import { generatePackageJson } from './config/PackageJson';
 import { generateViteConfig } from './config/ViteConfig';
+import { generateVitestConfig } from './config/VitestConfig';
 import { generateTsConfig } from './config/TsConfig';
 import { generateEnvironmentTs } from './config/Environment';
 import { generateEnvExample } from './config/EnvExample';
+
+// Test generators
+import { generateStoreTest } from './tests/StoreTest';
 
 // Template generators
 import { generateIndexHtml } from './templates/IndexHtml';
@@ -123,6 +127,7 @@ export async function generateAllFiles(
 
   files['package.json'] = generatePackageJson(appInfo);
   files['vite.config.ts'] = generateViteConfig(appInfo.appName, scope);
+  files['vitest.config.ts'] = generateVitestConfig();
   files['tsconfig.json'] = generateTsConfig();
   files['.env.example'] = generateEnvExample();
   files['index.html'] = generateIndexHtml(appInfo);
@@ -134,6 +139,10 @@ export async function generateAllFiles(
   files['src/router.ts'] = generateRouterTs(viewEntries);
   files['src/store.ts'] = generateStoreTs(recordTypes);
   files['src/ui.ts'] = generateUITs();
+
+  // ── Tests ──────────────────────────────────────────────────────────
+
+  files['tests/store.test.ts'] = generateStoreTest();
 
   // ── AT Protocol layer ──────────────────────────────────────────────
 

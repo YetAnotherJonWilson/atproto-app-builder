@@ -15,7 +15,8 @@ export function generatePackageJson(appInfo: AppInfo): string {
     "scripts": {
       "dev": "vite",
       "build": "vite build",
-      "preview": "vite preview"
+      "preview": "vite preview",
+      "test": "vitest run"
     },
     "author": appInfo.authorName || "",
     "license": "MIT",
@@ -28,8 +29,10 @@ export function generatePackageJson(appInfo: AppInfo): string {
     },
     "devDependencies": {
       "@types/node": "^25.0.3",
+      "jsdom": "^29.0.0",
       "typescript": "^5.9.3",
-      "vite": "^7.2.4"
+      "vite": "^7.2.4",
+      "vitest": "^4.0.18"
     }
   }, null, 2);
 }
